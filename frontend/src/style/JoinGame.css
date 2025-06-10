@@ -1,0 +1,79 @@
+.join-game-container {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.join-game-container h1 {
+  text-align: center;
+  color: #333;
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.join-form {
+  background-color: #f5f5f5;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  color: #444;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: 1rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #2196F3;
+}
+
+.form-group input::placeholder {
+  color: #999;
+}
+
+.join-button {
+  width: 100%;
+  padding: 1rem;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.join-button:hover {
+  background-color: #1976D2;
+  transform: translateY(-2px);
+}
+
+.join-button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  .join-game-container {
+    padding: 1rem;
+  }
+
+  .join-form {
+    padding: 1.5rem;
+  }
+}
