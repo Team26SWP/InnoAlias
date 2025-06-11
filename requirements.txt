@@ -1,4 +1,4 @@
 uvicorn[standard]
-pymongo
-fastapi
-websockets
+pymongo~=4.13.0
+fastapi~=0.115.12
+pydantic~=2.11.5
