@@ -55,7 +55,7 @@ Elderberry</textarea>
         function connectToGame(gameId) {
             gameIdDisplay.textContent = gameId;
             // --- FIX: Use the absolute WebSocket URL ---
-            const wsUrl = `$/api/game/${gameId}`;
+            const wsUrl = `/api/game/${gameId}`;
             log(`Connecting to: ${wsUrl}`);
 
             websocket = new WebSocket(wsUrl);
