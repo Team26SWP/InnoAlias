@@ -1,4 +1,5 @@
 from models import Game, GameState
+
 from os import getenv
 from asyncio import wait_for, TimeoutError
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -9,8 +10,8 @@ from pymongo import MongoClient, ReturnDocument
 from random import shuffle
 from datetime import datetime, timedelta, timezone
 
-MONGO_URL = getenv("MONGO_URL", "mongodb://localhost:27017")
-client = MongoClient(MONGO_URL)
+MONGO_URI = getenv("MONGO_URI", "mongodb://localhost:27017/")
+client = MongoClient(MONGO_URI)
 db = client.db
 games = db.games
 

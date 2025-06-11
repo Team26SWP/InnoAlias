@@ -35,11 +35,6 @@ Elderberry</textarea>
     <pre id="status-log" style="background-color: #eee; padding: 10px; border: 1px solid #ccc; height: 200px; overflow-y: scroll;"></pre>
 
     <script>
-        // --- NEW: Define the server's absolute URL ---
-        const API_BASE_URL = "http://localhost:8001";
-        const WS_BASE_URL = "ws://localhost:8001";
-
-        // Select all necessary HTML elements
         const createBtn = document.getElementById('create-game-btn');
         const wordListEl = document.getElementById('word-list');
         const gameIdDisplay = document.getElementById('game-id-display');
@@ -60,7 +55,7 @@ Elderberry</textarea>
         function connectToGame(gameId) {
             gameIdDisplay.textContent = gameId;
             // --- FIX: Use the absolute WebSocket URL ---
-            const wsUrl = `${WS_BASE_URL}/game/${gameId}`;
+            const wsUrl = `$/api/game/${gameId}`;
             log(`Connecting to: ${wsUrl}`);
 
             websocket = new WebSocket(wsUrl);
@@ -103,7 +98,7 @@ Elderberry</textarea>
             }
 
             try {
-                const response = await fetch(`${API_BASE_URL}/create/game`, {
+                const response = await fetch(`/api/create/game`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     // --- THE FIX IS HERE ---
