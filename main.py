@@ -65,7 +65,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@app.post("/create/game")
+@app.post("/api/create/game")
 def create_game(game: Game):
     words = game.remaining_words
     shuffle(words)
@@ -116,7 +116,7 @@ async def process_new_word(game_id: ObjectId) -> dict:
     return updated_game
 
 
-@app.websocket("/game/{game_id}")
+@app.websocket("/api/game/{game_id}")
 async def handle_game(websocket: WebSocket, game_id: str):
 
     try:
