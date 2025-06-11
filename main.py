@@ -3,7 +3,6 @@ from models import Game, GameState
 from asyncio import wait_for, TimeoutError
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from bson import ObjectId
 from bson.errors import InvalidId
 from pymongo import MongoClient, ReturnDocument
@@ -15,8 +14,6 @@ db = client.db
 games = db.games
 
 app = FastAPI()
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,  # type: ignore
