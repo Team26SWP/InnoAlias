@@ -1,0 +1,4 @@
+uvicorn[standard]
+pymongo
+fastapi
+websockets

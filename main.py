@@ -1,3 +1,5 @@
+from starlette.staticfiles import StaticFiles
+
 from models import Game, GameState
 
 from asyncio import wait_for, TimeoutError
@@ -14,6 +16,8 @@ db = client.db
 games = db.games
 
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,  # type: ignore

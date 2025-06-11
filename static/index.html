@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Alias - Simplest Tester</title>
+</head>
+<body>
+
+    <h1>Alias Game Tester</h1>
+
+    <hr>
+
+    <h2>1. Create Game</h2>
+    <p>Enter words, one per line:</p>
+    <textarea id="word-list" rows="8" cols="40">Apple
+Banana
+Cherry
+Date
+Elderberry</textarea>
+    <br>
+    <button id="create-game-btn">Create Game & Connect</button>
+    <p><b>Game ID:</b> <span id="game-id-display">---</span></p>
+
+    <hr>
+
+    <h2>2. Play Game</h2>
+    <button id="skip-word-btn" disabled>Send "Skip" Command</button>
+
+    <h3>Current Game State:</h3>
+    <pre id="current-state-display" style="background-color: #eee; padding: 10px; border: 1px solid #ccc;">Not connected.</pre>
+
+    <hr>
+
+    <h2>3. Log</h2>
+    <pre id="status-log" style="background-color: #eee; padding: 10px; border: 1px solid #ccc; height: 200px; overflow-y: scroll;"></pre>
+
+    <script>
+        // --- NEW: Define the server's absolute URL ---
+        const API_BASE_URL = "http://localhost:8001";
+        const WS_BASE_URL = "ws://localhost:8001";
+
+        // Select all necessary HTML elements
+        const createBtn = document.getElementById('create-game-btn');
+        const wordListEl = document.getElementById('word-list');
+        const gameIdDisplay = document.getElementById('game-id-display');
+        const skipBtn = document.getElementById('skip-word-btn');
+        const currentStateDisplay = document.getElementById('current-state-display');
+        const statusLog = document.getElementById('status-log');
+
+        let websocket = null;
+
+        // Simple function to add messages to the log area
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            statusLog.textContent += `[${timestamp}] ${message}\n`;
+            statusLog.scrollTop = statusLog.scrollHeight; // Auto-scroll to bottom
+        }
+
+        // Function to handle connecting to the WebSocket
+        function connectToGame(gameId) {
+            gameIdDisplay.textContent = gameId;
+            // --- FIX: Use the absolute WebSocket URL ---
+            const wsUrl = `${WS_BASE_URL}/game/${gameId}`;
+            log(`Connecting to: ${wsUrl}`);
+
+            websocket = new WebSocket(wsUrl);
+
+            websocket.onopen = () => {
+                log("✅ WebSocket connection successful.");
+                skipBtn.disabled = false; // Enable the skip button
+            };
+
+            websocket.onmessage = (event) => {
+                const state = JSON.parse(event.data);
+                log(`⬇️ Received State from Server.`);
+                // Display the raw state from the server, nicely formatted
+                currentStateDisplay.textContent = JSON.stringify(state, null, 2);
+
+                if (state.state === 'finished') {
+                    log("Game has finished. Server will close connection.");
+                    skipBtn.disabled = true;
+                }
+            };
+
+            websocket.onclose = (event) => {
+                log(`🚫 WebSocket connection closed. Code: ${event.code}`);
+                skipBtn.disabled = true;
+            };
+
+            websocket.onerror = () => {
+                log("❌ WebSocket error occurred.");
+            };
+        }
+
+        // Event listener for the "Create Game" button
+        createBtn.addEventListener('click', async () => {
+            log("Attempting to create a new game...");
+            const words = wordListEl.value.split('\n').filter(w => w.trim() !== '');
+
+            if (words.length === 0) {
+                log("Error: Please provide at least one word.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/create/game`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // --- THE FIX IS HERE ---
+                    body: JSON.stringify({ remaining_words: words })
+                });
+
+                if (!response.ok) {
+                     // Let's get more detail on the error if possible
+                    const errorText = await response.text();
+                    throw new Error(`Server error: ${response.status}. Details: ${errorText}`);
+                }
+
+                const data = await response.json();
+                log(`Game created with ID: ${data.id}`);
+                connectToGame(data.id);
+
+            } catch (error) {
+                log(`Error creating game: ${error.message}`);
+            }
+        });
+        // Event listener for the "Skip" button
+        skipBtn.addEventListener('click', () => {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                const command = { action: 'skip' };
+                log(`⬆️ Sending Command: ${JSON.stringify(command)}`);
+                websocket.send(JSON.stringify(command));
+            } else {
+                log("Cannot send command: WebSocket is not open.");
+            }
+        });
+
+    </script>
+</body>
+</html>
