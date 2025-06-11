@@ -1,59 +1,74 @@
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #fff1e8;
+}
+
 .home-container {
-  margin: 0 auto;
+  background-color: #fff1e8;
+  max-width: 600px;
   padding: 2rem;
   text-align: left;
 }
 
 .home-container h1 {
-  font-size: 2.5rem;
-  color: #333;
-  margin-bottom: 3rem;
+  font-size: 5rem;
+  font-family:"Rubik-Mono-One";
+  color: #3171a6;
+  margin-bottom: 1rem;
+  text-shadow: 3px 3px 0 #ccc;
 }
 
 .home-container h2 {
-  font-size: 34px;
-  max-width: 658px;
+  padding: 1rem;
+  border-left: 8px solid #3171a6;
+  font-size: 1.5rem;
+  line-height: 1.6;
+  border-radius: 10px;
+  max-width: 800px;
   max-height: 366px;
   text-align: justify;
-  color: #333;
+  color: #3171a6; 
   margin-bottom: 3rem;
 }
 
 .home-options {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  max-width: 300px;
-  margin: 0 auto;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 1 rem;
+  max-width: 500px;
 }
 
 .create-button,
 .join-button {
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
+  flex:1;
+  max-width: 420px;
+  padding: 1.5rem;
+  font-size: 1.5rem;
   border: none;
-  border-radius: 8px;
+  font-family:"ADLaM Display"; 
+  border-radius: 15px;
   cursor: pointer;
-  transition: transform 0.2s, background-color 0.2s;
 }
 
 .create-button {
-  background-color: #4CAF50;
-  color: white;
+  background-color: #d6e9f7;
+  color: #3171a6;
 }
 
 .create-button:hover {
-  background-color: #45a049;
+  background-color: #d6e9f7;
   transform: translateY(-2px);
 }
 
 .join-button {
-  background-color: #2196F3;
-  color: white;
+  font-size: 1.5rem;
+  background-color: #d6e9f7;
+  color: #3171a6;
 }
 
 .join-button:hover {
-  background-color: #1976D2;
+  background-color: #d6e9f7;
   transform: translateY(-2px);
 }
 
@@ -67,4 +82,28 @@
   .join-button {
     flex: 1;
   }
+  .home-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem;
+  gap: 2rem;
+}
+
+.home-image img {
+  max-width: 700px;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  .home-wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .home-image img {
+    max-width: 80%;
+  }
+}
+
 } 

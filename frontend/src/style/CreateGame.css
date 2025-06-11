@@ -2,6 +2,111 @@
   max-width: 600px;
   margin: 0 auto;
   padding: 20px;
+  font-family: "Rubik-Mono-One";
+  margin-top: 100px;
+}
+
+.create-game-title {
+  color: #3171a6;
+  margin-bottom: 20px;
+}
+
+.game-code-section {
+  margin-bottom: 20px;
+}
+
+.game-code-input {
+  width: 80%;
+  padding: 3rem;
+  font-size: 20px;
+  border: 2px solid #D9D9D9;
+  border-radius: 10px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.game-code-input:focus {
+  outline: none;
+  border-color: #2196F3;
+}
+
+.word-form {
+  margin-bottom: 20px;
+}
+
+.input-container {
+  display: flex;
+  gap: 10px;
+}
+
+.word-input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #D9D9D9;
+  border-radius: 10px;
+}
+
+.add-word-button {
+  padding: 20px 20px;
+  background-color: #3171a6;
+  color: #D9D9D9;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.add-word-button:hover {
+  background-color: #3171a6;
+}
+
+.words-section {
+  margin-bottom: 20px;
+}
+
+.words-title {
+  color: #3171a6;
+}
+
+.words-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.word-tag {
+  background-color: #D9D9D9;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 16px;
+}
+
+.start-game-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #3171a6;
+  color: #fff1e8;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.start-game-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.start-game-button:not(:disabled):hover {
+  background-color: #1976D2;
+}
+
+.create-game-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
   font-family: Arial, sans-serif;
 }
 

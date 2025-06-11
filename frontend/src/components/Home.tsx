@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../style/Home.css';
+import characterImg from '../assets/character.png';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -14,14 +15,11 @@ const Home: React.FC = () => {
   };
 
   return (
+    <div className ="home-wrapper">
     <div className="home-container">
-      <h1>Alias Game</h1>
-      <h2>"Alias" is the name of a popular word
-        explanation game, often played in
-        teams. The objective of the game is to have your 
-        teammates guess words you are describing without actually 
-        saying the word itself. Alias is sold in over 40 countries
-        and is enjoyed by people of all ages</h2>
+      <h1>ALIAS</h1>
+      <h2>"Alias" is the name of a popular word explanation game, often played in teams. The objective of the game is
+          to have your teammates guess words you are describing without actually saying the word itself.</h2>
       <div className="home-options">
         <button onClick={handleCreateGame} className="create-button">
           Create Game
@@ -30,6 +28,10 @@ const Home: React.FC = () => {
           Join Game
         </button>
       </div>
+      </div>
+      <div className="home-image">
+    <img src={characterImg} alt="Alias character" />
+  </div>
     </div>
   );
 };
