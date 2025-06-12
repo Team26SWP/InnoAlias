@@ -5,6 +5,7 @@ import CreateGame from './components/CreateGame';
 import JoinGame from './components/JoinGame';
 import Quiz from './components/Quiz';
 import Results from './components/Results';
+import Lobby from './components/Lobby';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/join_game" element={<JoinGame />} />
           <Route path="/game/:gameId" element={<Quiz />} />
           <Route path="/results/:gameId" element={<Results />} />
+          <Route path="/lobby/:gameId" element={<Lobby />} />
         </Routes>
       </div>
     </Router>
