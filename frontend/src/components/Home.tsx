@@ -50,9 +50,6 @@ const Home: React.FC = () => {
           <button onClick={handleCreateGame} className="create-button">
             Create Game
           </button>
-          <button onClick={handleJoinGame} className="join-button">
-            Join Game
-          </button>
         </div>
       </div>
 

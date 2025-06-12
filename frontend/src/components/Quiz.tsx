@@ -17,7 +17,7 @@ interface GameState {
 }
 
 // WebSocket server URL for real-time game updates
-const API_URL = 'ws://localhost:8000';
+const API_URL = 'ws://212.113.122.8/';
 
 /**
  * Quiz Component
@@ -36,7 +36,6 @@ const Quiz: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
 
   /**
@@ -77,7 +76,7 @@ const Quiz: React.FC = () => {
       setGameState(data);
 
       if (data.state === 'finished') {
-        navigate(`/results/${gameId}`);
+        navigate(`/`);
       }
     };
 
@@ -94,11 +93,11 @@ const Quiz: React.FC = () => {
       } else {
         setError('Connection closed. Attempting to reconnect...');
         setIsReconnecting(true);
-        
+/*        
         // Attempt to reconnect after 3 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
           connectWebSocket();
-        }, 3000);
+        }, 3000); */
       }
     };
 
@@ -116,21 +115,12 @@ const Quiz: React.FC = () => {
         ws.close();
       }
     };
-  }, [connectWebSocket]);
+  }, [connectWebSocket]); 
 
   const handleSkip = () => {
-    setShowSkipConfirm(true);
-  };
-
-  const confirmSkip = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ action: 'skip' }));
     }
-    setShowSkipConfirm(false);
-  };
-
-  const cancelSkip = () => {
-    setShowSkipConfirm(false);
   };
 
   if (error) {
@@ -176,22 +166,6 @@ const Quiz: React.FC = () => {
         </button>
       </div>
 
-      {showSkipConfirm && (
-        <div className="skip-confirmation">
-          <div className="skip-confirmation-content">
-            <h3>Skip this word?</h3>
-            <p>Are you sure you want to skip to the next word?</p>
-            <div className="skip-confirmation-buttons">
-              <button onClick={confirmSkip} className="confirm-button">
-                Yes, Skip
-              </button>
-              <button onClick={cancelSkip} className="cancel-button">
-                No, Keep
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

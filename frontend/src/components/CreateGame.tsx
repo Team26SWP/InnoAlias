@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../style/CreateGame.css';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'http://212.113.122.8';
 
 /**
  * CreateGame Component
@@ -25,27 +25,6 @@ const CreateGame: React.FC = () => {
   const navigate = useNavigate();
 
   /**
-   * Validates a word before adding it to the list
-   * @param word - The word to validate
-   * @returns string | null - Error message if invalid, null if valid
-   */
-  const validateWord = (word: string): string | null => {
-    if (word.length < 2) {
-      return 'Word must be at least 2 characters long';
-    }
-    if (word.length > 50) {
-      return 'Word must be less than 50 characters';
-    }
-    if (!/^[a-zA-Z\s-]+$/.test(word)) {
-      return 'Word can only contain letters, spaces, and hyphens';
-    }
-    if (words.includes(word.toLowerCase())) {
-      return 'This word has already been added';
-    }
-    return null;
-  };
-
-  /**
    * Handles the form submission when adding a new word
    * Adds the current word to the words list if it's not empty
    * @param e - Form event object
@@ -55,11 +34,6 @@ const CreateGame: React.FC = () => {
     const trimmedWord = currentWord.trim();
     
     if (trimmedWord) {
-      const validationError = validateWord(trimmedWord);
-      if (validationError) {
-        setError(validationError);
-        return;
-      }
       setWords([...words, trimmedWord.toLowerCase()]);
       setCurrentWord('');
       setError(null);
@@ -97,7 +71,7 @@ const CreateGame: React.FC = () => {
       }
 
       const data = await response.json();
-      navigate(`/lobby/${data.id}`);
+      navigate(`/game/${data.gameId}`);
     } catch (err) {
       setError('Failed to create game. Please try again.');
       console.error('Error creating game:', err);
