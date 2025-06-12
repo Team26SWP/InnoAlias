@@ -12,12 +12,10 @@
 
     <h2>1. Create Game</h2>
     <p>Enter words, one per line:</p>
-    <textarea id="word-list" rows="8" cols="40">Apple
-Banana
-Cherry
-Date
-Elderberry</textarea>
+    <textarea id="word-list" rows="8" cols="40"></textarea>
+    <p>Or use import from .txt file:</p>
     <br>
+    <input type="file" id="txtPicker" accept=".txt"/><br><br>
     <button id="create-game-btn">Create Game & Connect</button>
     <p><b>Game ID:</b> <span id="game-id-display">---</span></p>
 
@@ -35,6 +33,7 @@ Elderberry</textarea>
     <pre id="status-log" style="background-color: #eee; padding: 10px; border: 1px solid #ccc; height: 200px; overflow-y: scroll;"></pre>
 
     <script>
+        const picker = document.getElementById('txtPicker');
         const createBtn = document.getElementById('create-game-btn');
         const wordListEl = document.getElementById('word-list');
         const gameIdDisplay = document.getElementById('game-id-display');
@@ -43,6 +42,24 @@ Elderberry</textarea>
         const statusLog = document.getElementById('status-log');
 
         let websocket = null;
+        picker.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.type && !file.type.startsWith('text')) {
+                alert('Please pick a valid .txt file.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                wordListEl.value = e.target.result;
+      };
+      reader.onerror = function() {
+        alert('Could not read the file.');
+      };
+
+      reader.readAsText(file);
+    });
 
         // Simple function to add messages to the log area
         function log(message) {
