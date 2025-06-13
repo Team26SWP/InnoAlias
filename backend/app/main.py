@@ -10,7 +10,7 @@ from pymongo import MongoClient, ReturnDocument
 from random import shuffle
 from datetime import datetime, timedelta, timezone
 
-MONGO_URI = getenv("MONGO_URI", "mongodb://localhost:27017/")
+MONGO_URI = getenv("MONGO_URI", "mongodb://mongo:27017/")
 client = MongoClient(MONGO_URI)
 db = client.db
 games = db.games
