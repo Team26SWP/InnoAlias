@@ -16,8 +16,9 @@ interface GameState {
   state: 'in_progress' | 'finished';
 }
 
+const HOST = window.location.host;
 // WebSocket server URL for real-time game updates
-const API_URL = 'ws://localhost:8000/api';
+const API_URL = "ws://" + HOST + "/api";
 
 /**
  * Quiz Component
