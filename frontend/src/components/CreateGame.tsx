@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../style/CreateGame.css';
 
-const API_URL = 'http://212.113.122.8';
+const API_URL = 'http://localhost:8000/api';
 
 /**
  * CreateGame Component
@@ -15,6 +15,7 @@ const API_URL = 'http://212.113.122.8';
 const CreateGame: React.FC = () => {
   // State to store the list of words added by the user
   const [words, setWords] = useState<string[]>([]);
+  const [fileWords, setFileWords] = useState<string[]>([]);
   // State to manage the current word being typed in the input field
   const [currentWord, setCurrentWord] = useState('');
   // State to handle and display error messages
@@ -38,7 +39,20 @@ const CreateGame: React.FC = () => {
       setCurrentWord('');
       setError(null);
     }
-  };
+    };
+
+    function parse(wordsString: string) {
+        const addingWords = wordsString.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+        setWords(words.concat(addingWords));
+    }
+
+    const fileSubmit = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files != null) {
+            if (event.target.files[0] != undefined) {
+                event.target.files[0].text().then(parse);
+            }
+        }
+    }
 
   /**
    * Handles the game creation process
@@ -46,7 +60,7 @@ const CreateGame: React.FC = () => {
    * Navigates to the game page on success
    * Displays error message if the process fails
    */
-  const handleStartGame = async () => {
+    const handleStartGame = async () => {
     if (words.length === 0) {
       setError('Please add at least one word');
       return;
@@ -71,7 +85,7 @@ const CreateGame: React.FC = () => {
       }
 
       const data = await response.json();
-      navigate(`/game/${data.gameId}`);
+      navigate(`/game/${data.id}`);
     } catch (err) {
       setError('Failed to create game. Please try again.');
       console.error('Error creating game:', err);
@@ -104,10 +118,14 @@ const CreateGame: React.FC = () => {
           <button 
             type="submit"
             className="add-word-button"
-            disabled={isLoading}
-          >
+            disabled={isLoading}>
             Add Word
           </button>
+
+          <label className="custom-file-upload">
+            <input type="file" accept=".txt" id="add-words-import" onChange={fileSubmit} />
+            Upload a file
+          </label>
         </div>
       </form>
 
@@ -129,9 +147,8 @@ const CreateGame: React.FC = () => {
       {/* Button to start the game - disabled if no words are added */}
       <button
         onClick={handleStartGame}
-        disabled={words.length === 0 || isLoading}
-        className="start-game-button"
-      >
+        disabled={words.length === 0 && fileWords.length === 0 || isLoading}
+        className="start-game-button">
         {isLoading ? 'Creating Game...' : 'Start Game'}
       </button>
     </div>

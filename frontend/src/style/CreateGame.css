@@ -92,6 +92,7 @@
   border-radius: 10px;
   font-size: 16px;
   cursor: pointer;
+  margin-bottom: 20px;
 }
 
 .start-game-button:disabled {
@@ -154,16 +155,17 @@
 }
 
 .add-word-button {
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+    padding: 10px 20px;
+    background-color: #3171a6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
 }
 
 .add-word-button:hover {
-  background-color: #45a049;
+    background-color: #317ba6;
 }
 
 .words-section {
@@ -190,14 +192,14 @@
 }
 
 .start-game-button {
-  width: 100%;
-  padding: 12px;
-  background-color: #2196F3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
+    width: 100%;
+    padding: 12px;
+    background-color: #3171a6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
 }
 
 .start-game-button:disabled {
@@ -205,6 +207,25 @@
   cursor: not-allowed;
 }
 
-.start-game-button:not(:disabled):hover {
-  background-color: #1976D2;
+    .start-game-button:not(:disabled):hover {
+        background-color: #317ba6;
+    }
+
+input[type="file"] {
+    display: none;
 }
+
+.custom-file-upload {
+    text-align: center;
+    background-color: #3171a6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 12px;
+}
+
+    .custom-file-upload:hover {
+        background-color: #317ba6;
+    }

@@ -109,19 +109,19 @@
 }
 
 .start-game-button {
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  padding: 12px 30px;
-  font-size: 1.1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+    background-color: #3171a6;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
-.start-game-button:hover:not(:disabled) {
-  background-color: #43a047;
-}
+    .start-game-button:hover:not(:disabled) {
+        background-color: #317ba6;
+    }
 
 .start-game-button:disabled {
   background-color: #cccccc;

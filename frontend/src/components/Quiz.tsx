@@ -11,13 +11,13 @@ import '../style/Quiz.css';
  */
 interface GameState {
   current_word: string | null;
-  expires_at: string | null;
+  expires_at: string;
   remaining_words_count: number;
   state: 'in_progress' | 'finished';
 }
 
 // WebSocket server URL for real-time game updates
-const API_URL = 'ws://212.113.122.8/';
+const API_URL = 'ws://localhost:8000/api';
 
 /**
  * Quiz Component
@@ -37,6 +37,8 @@ const Quiz: React.FC = () => {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const [timeStr, setTimeStr] = useState<string>("");
+  var expiresAt = useRef<string>("");
 
   /**
    * Formats the remaining time in a user-friendly way
@@ -44,11 +46,11 @@ const Quiz: React.FC = () => {
    * @returns string - Formatted time string
    */
   const formatTimeLeft = (expiresAt: string): string => {
-    const now = new Date().getTime();
-    const expires = new Date(expiresAt).getTime();
-    const diff = expires - now;
+    const now = new Date();
+    const expires = new Date(expiresAt);
+    const diff = expires.getTime() - now.getTime() - expires.getTimezoneOffset() * 60000;
     
-    if (diff <= 0) return 'Time\'s up!';
+    if (diff <= 0) return String(diff);
     
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
@@ -61,6 +63,8 @@ const Quiz: React.FC = () => {
    * Establishes WebSocket connection with reconnection logic
    */
   const connectWebSocket = useCallback(() => {
+
+
     if (!gameId) return;
 
     const websocket = new WebSocket(`${API_URL}/game/${gameId}`);
@@ -74,6 +78,7 @@ const Quiz: React.FC = () => {
     websocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setGameState(data);
+      expiresAt.current = data.expires_at;
 
       if (data.state === 'finished') {
         navigate(`/`);
@@ -106,16 +111,17 @@ const Quiz: React.FC = () => {
 
   useEffect(() => {
     connectWebSocket();
+    }, []);
 
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (ws) {
-        ws.close();
-      }
-    };
-  }, [connectWebSocket]); 
+    
+  useEffect(() => {
+      const interval = setInterval(() => {
+          setTimeStr(formatTimeLeft(expiresAt.current));
+      }, 500)
+
+      return () => clearInterval(interval);
+  }, [])
+
 
   const handleSkip = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -151,7 +157,7 @@ const Quiz: React.FC = () => {
           </div>
           {gameState.expires_at && (
             <div className="timer">
-              Time left: {formatTimeLeft(gameState.expires_at)}
+              Time left: {timeStr}
             </div>
           )}
         </div>
