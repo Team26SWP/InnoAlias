@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../style/CreateGame.css';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = '/api';
 
 /**
  * CreateGame Component
