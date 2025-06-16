@@ -11,7 +11,7 @@ import '../style/Quiz.css';
  */
 interface GameState {
   current_word: string | null;
-  expires_at: string;
+  expires_at: string | null;
   remaining_words_count: number;
   state: 'in_progress' | 'finished';
 }
@@ -50,7 +50,7 @@ const Quiz: React.FC = () => {
     const expires = new Date(expiresAt);
     const diff = expires.getTime() - now.getTime() - expires.getTimezoneOffset() * 60000;
     
-    if (diff <= 0) return String(diff);
+    if (diff <= 0) return 'Time\'s up!';
     
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
@@ -63,9 +63,8 @@ const Quiz: React.FC = () => {
    * Establishes WebSocket connection with reconnection logic
    */
   const connectWebSocket = useCallback(() => {
+      if (!gameId) return;
 
-
-    if (!gameId) return;
 
     const websocket = new WebSocket(`${API_URL}/game/${gameId}`);
 
@@ -98,11 +97,6 @@ const Quiz: React.FC = () => {
       } else {
         setError('Connection closed. Attempting to reconnect...');
         setIsReconnecting(true);
-/*        
-        // Attempt to reconnect after 3 seconds
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connectWebSocket();
-        }, 3000); */
       }
     };
 
@@ -111,7 +105,7 @@ const Quiz: React.FC = () => {
 
   useEffect(() => {
     connectWebSocket();
-    }, []);
+  }, [connectWebSocket]);
 
     
   useEffect(() => {

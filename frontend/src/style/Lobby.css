@@ -119,9 +119,9 @@
     transition: background-color 0.2s;
 }
 
-    .start-game-button:hover:not(:disabled) {
-        background-color: #317ba6;
-    }
+.start-game-button:hover:not(:disabled) {
+    background-color: #317ba6;
+}
 
 .start-game-button:disabled {
   background-color: #cccccc;

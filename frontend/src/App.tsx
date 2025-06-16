@@ -7,6 +7,8 @@ import Quiz from './components/Quiz';
 import Results from './components/Results';
 import Lobby from './components/Lobby';
 
+import "./style/style.css"
+
 function App() {
   return (
     <Router>

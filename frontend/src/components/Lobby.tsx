@@ -27,7 +27,7 @@ interface LobbyState {
 }
 
 // WebSocket server URL for real-time lobby updates
-const API_URL = 'ws://localhost:8000';
+const API_URL = 'ws://localhost:8000/api';
 
 /**
  * Lobby Component

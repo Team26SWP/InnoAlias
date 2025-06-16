@@ -56,7 +56,7 @@ body {
   color: #3171a6;
 }
 
-.create-button:hover {
+.create-button:not(:disabled):hover {
   background-color: #d6e9f7;
   transform: translateY(-2px);
 }
@@ -67,7 +67,7 @@ body {
   color: #3171a6;
 }
 
-.join-button:hover {
+.join-button:not(:disabled):hover {
   background-color: #d6e9f7;
   transform: translateY(-2px);
 }

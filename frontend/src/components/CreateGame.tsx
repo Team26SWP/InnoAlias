@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../style/CreateGame.css';
 
@@ -24,26 +24,33 @@ const CreateGame: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   // Hook for programmatic navigation
   const navigate = useNavigate();
-
+    let fileImportField = useRef<HTMLElement | null>(null);
+    let wordInputField = useRef<HTMLTextAreaElement | null>(null);
   /**
    * Handles the form submission when adding a new word
    * Adds the current word to the words list if it's not empty
    * @param e - Form event object
    */
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmedWord = currentWord.trim();
-    
-    if (trimmedWord) {
-      setWords([...words, trimmedWord.toLowerCase()]);
-      setCurrentWord('');
-      setError(null);
+
+    const getWords = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        if (event.target.textContent != null) {
+            setWords(event.target.value.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0));
+        }
     }
-    };
+
+    function handleImportClick() {
+        if (fileImportField.current != null) {
+            fileImportField.current.click();
+        } else console.log("lol")
+    }
 
     function parse(wordsString: string) {
         const addingWords = wordsString.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
-        setWords(words.concat(addingWords));
+        setWords(addingWords.concat(words));
+        if (wordInputField.current != null) {
+            wordInputField.current.value = addingWords.concat(words).join("\n");
+            wordInputField.current.scrollTop = wordInputField.current.scrollHeight;
+        }
     }
 
     const fileSubmit = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,7 +99,12 @@ const CreateGame: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+    };  
+
+    useEffect(() => {
+        fileImportField.current = document.getElementById("add-words-import");
+        wordInputField.current = document.getElementById("words-input-field") as HTMLTextAreaElement;
+    }, [])
 
   return (
     <div className="create-game-container">
@@ -102,55 +114,30 @@ const CreateGame: React.FC = () => {
       {error && <div className="error-message">{error}</div>}
 
       {/* Form for adding new words */}
-      <form onSubmit={handleSubmit} className="word-form">
         <div className="input-container">
-          <input
-            type="text"
-            value={currentWord}
-            onChange={(e) => {
-              setCurrentWord(e.target.value);
-              setError(null);
-            }}
-            placeholder="Enter a word"
+          <textarea 
+            onChange={getWords}
+            placeholder="Enter your words"
             className="word-input"
             disabled={isLoading}
+            id="words-input-field"
           />
-          <button 
-            type="submit"
-            className="add-word-button"
-            disabled={isLoading}>
-            Add Word
-          </button>
 
-          <label className="custom-file-upload">
-            <input type="file" accept=".txt" id="add-words-import" onChange={fileSubmit} />
-            Upload a file
-          </label>
+          
         </div>
-      </form>
-
-      {/* Display section for added words */}
-      <div className="words-section">
-        <h2 className="words-title">Added Words ({words.length}):</h2>
-        <ul className="words-list">
-          {words.map((word, index) => (
-            <li 
-              key={index}
-              className="word-tag"
-            >
-              {word}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Button to start the game - disabled if no words are added */}
+      
+          <button onClick={handleImportClick} className="file-import-btn">
+          <input type="file" accept=".txt" id="add-words-import" onChange={fileSubmit} />
+              Upload a file
+        </button>
+        {/* Button to start the game - disabled if no words are added */}
       <button
-        onClick={handleStartGame}
-        disabled={words.length === 0 && fileWords.length === 0 || isLoading}
-        className="start-game-button">
-        {isLoading ? 'Creating Game...' : 'Start Game'}
+          onClick={handleStartGame}
+          disabled={words.length === 0 && fileWords.length === 0 || isLoading}
+          className="start-game-button">
+          {isLoading ? 'Creating Game...' : 'Start Game'}
       </button>
+      
     </div>
   );
 };
