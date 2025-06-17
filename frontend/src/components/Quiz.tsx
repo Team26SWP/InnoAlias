@@ -17,7 +17,8 @@ interface GameState {
 }
 
 // WebSocket server URL for real-time game updates
-const API_URL = 'ws://localhost:8000/api';
+const HOST = window.location.host;
+const API_URL = "ws://" + HOST + "/api";
 
 /**
  * Quiz Component

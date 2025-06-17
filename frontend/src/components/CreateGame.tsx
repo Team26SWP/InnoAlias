@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../style/CreateGame.css';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = '/api';
 
 /**
  * CreateGame Component
@@ -46,9 +46,9 @@ const CreateGame: React.FC = () => {
 
     function parse(wordsString: string) {
         const addingWords = wordsString.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
-        setWords(addingWords.concat(words));
+        setWords(words.concat(addingWords));
         if (wordInputField.current != null) {
-            wordInputField.current.value = addingWords.concat(words).join("\n");
+            wordInputField.current.value = words.concat(addingWords).join("\n");
             wordInputField.current.scrollTop = wordInputField.current.scrollHeight;
         }
     }

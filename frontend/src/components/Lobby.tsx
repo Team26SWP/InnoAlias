@@ -55,7 +55,7 @@ const Lobby: React.FC = () => {
    * Effect hook to establish and manage WebSocket connection
    * Handles connection events, message processing, and cleanup
    */
-  useEffect(() => {
+useEffect(() => {
     if (!gameId) return;
 
     const websocket = new WebSocket(`${API_URL}/lobby/${gameId}`);
