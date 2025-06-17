@@ -3,12 +3,12 @@ from typing import Optional
 from fastapi import HTTPException, Depends, APIRouter, status
 from jose import JWTError, jwt
 
-from models import User, UserInDB, Token
+from ..models import User, UserInDB, Token
 from decouple import config
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 
-from db import db
+from ..db import db
 
 router = APIRouter(prefix="", tags=["auth"])
 

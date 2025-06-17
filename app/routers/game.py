@@ -1,4 +1,4 @@
-from models import Game, GameState
+from ..models import Game, GameState
 from asyncio import wait_for, TimeoutError
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter
 from bson import ObjectId
@@ -7,7 +7,7 @@ from pymongo import ReturnDocument
 from random import shuffle
 from datetime import datetime, timedelta, timezone
 
-from db import db
+from ..db import db
 
 router = APIRouter(prefix="", tags=["game"])
 
