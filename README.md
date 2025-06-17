@@ -1,1 +1,1 @@
-# InnopolisAlias
+# InnoAlias
