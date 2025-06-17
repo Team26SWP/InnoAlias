@@ -2,12 +2,11 @@ from datetime import timedelta, datetime, timezone
 from typing import Optional
 from fastapi import HTTPException, Depends, APIRouter, status
 from jose import JWTError, jwt
-
-from ..models import User, UserInDB, Token
-from decouple import config
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
+from decouple import config
 
+from ..models import User, UserInDB, Token
 from ..db import db
 
 router = APIRouter(prefix="", tags=["auth"])
@@ -32,9 +31,7 @@ async def create_user(user: User):
 async def get_user(email: str) -> Optional[UserInDB]:
     user = await users.find_one({"email": email})
     if user:
-        return UserInDB(
-            email=user["email"], hashed_password=user["hashed_password"]
-        )
+        return UserInDB(email=user["email"], hashed_password=user["hashed_password"])
     return None
 
 
@@ -88,6 +85,6 @@ async def register(user: User):
 async def login(data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(data.username, data.password)
     if not user:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
     token = create_access_token(data={"sub": user.email})
     return {"access_token": token, "token_type": "bearer"}
