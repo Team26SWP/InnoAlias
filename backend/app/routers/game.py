@@ -61,7 +61,7 @@ class ConnectionManager:
                 expires_at=state.get("expires_at"),
                 state=state.get("state"),
                 remaining_words_count=len(state.get("remaining_words", [])),
-            ).model_dump()
+            ).model_dump(mode="json")
 
             await host_ws.send_json(host_state)
 
@@ -70,7 +70,7 @@ class ConnectionManager:
             state=state["state"],
             remaining_words_count=len(state.get("remaining_words", [])),
             scores=state.get("scores", {}),
-        ).model_dump()
+        ).model_dump(mode="json")
 
         for ws, _ in self.players.get(game_id, []):
             await ws.send_json(pg_state)
@@ -216,8 +216,8 @@ async def handle_player(websocket: WebSocket, game_id: str):
         await manager.broadcast_state(game_id, game)
 
         while True:
-            data = websocket.receive_json()
-            if data.get("action") != "guess":
+            data = await websocket.receive_json()
+            if data["action"] != "guess":
                 continue
 
             guess = data.get("guess", "").strip().lower()
