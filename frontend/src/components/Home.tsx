@@ -31,7 +31,7 @@ const Home: React.FC = () => {
    * Triggered when user clicks the "Join Game" button
    */
   const handleJoinGame = () => {
-    navigate('/join_game');
+    navigate('/join');
   };
 
   return (
@@ -49,6 +49,9 @@ const Home: React.FC = () => {
         <div className="home-options">
           <button onClick={handleCreateGame} className="create-button">
             Create Game
+          </button>
+          <button onClick={handleJoinGame} className="join-button">
+              Join Game
           </button>
         </div>
       </div>
