@@ -227,7 +227,11 @@ async def handle_player(websocket: WebSocket, game_id: str):
                 if game["state"] != "in_progress":
                     continue
 
-                if datetime.now(timezone.utc) > game["expires_at"]:
+                expires_at = game.get("expires_at")
+                if expires_at and expires_at.tzinfo is None:
+                    expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+                if expires_at and datetime.now(timezone.utc) > expires_at:
                     continue
 
                 if guess == game["current_word"].lower():
