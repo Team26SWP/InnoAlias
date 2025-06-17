@@ -1,4 +1,4 @@
-# InnopolisAlias
+# InnoAlias
 
 This repository contains FastAPI backend for an Alias-like game.
 
