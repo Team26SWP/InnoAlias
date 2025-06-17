@@ -1,21 +1,28 @@
 from datetime import datetime
-from typing import Optional, List, Literal
+from typing import Optional, List, Literal, Dict
 from pydantic import BaseModel, Field
 
 
 class Game(BaseModel):
-    id: str = None
+    id: Optional[str] = Field(None, alias="_id")
     remaining_words: List[str]
     current_word: Optional[str] = None
     expires_at: Optional[datetime] = None
     state: Literal["pending", "in_progress", "finished"] = "pending"
-
+    scores: Dict[str, int] = Field(...)
 
 class GameState(BaseModel):
     current_word: Optional[str]
     expires_at: Optional[datetime]
     remaining_words_count: int
-    state: str
+    state: Literal["pending", "in_progress", "finished"]
+
+
+class PlayerGameState(BaseModel):
+    expires_at: Optional[datetime]
+    remaining_words_count: int
+    state: Literal["pending", "in_progress", "finished"]
+    scores: Dict[str, int]
 
 
 class User(BaseModel):
