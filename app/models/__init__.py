@@ -29,5 +29,5 @@ class Token(BaseModel):
 
 
 class UserInDB(BaseModel):
-    email:str
+    email: str
     hashed_password: str
