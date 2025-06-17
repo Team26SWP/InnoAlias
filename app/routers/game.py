@@ -75,19 +75,6 @@ class ConnectionManager:
         for ws, _ in self.players.get(game_id, []):
             await ws.send_json(pg_state)
 
-    async def send_state(self, game_id: str, state: dict):
-        if game_id in self.hosts:
-            websocket = self.hosts[game_id]
-
-            game_state = GameState(
-                current_word=state["current_word"],
-                expires_at=state["expires_at"],
-                state=state["state"],
-                remaining_words_count=len(state.get("remaining_words", [])),
-            )
-
-            await websocket.send_json(game_state.model_dump(mode="json"))
-
 
 manager = ConnectionManager()
 
@@ -162,39 +149,39 @@ async def handle_game(websocket: WebSocket, game_id: str):
 
     try:
         new_state = await process_new_word(game_id_obj)
-        await manager.send_state(game_id, new_state)
+        await manager.broadcast_state(game_id, new_state)
 
-        while new_state and new_state.get("state") == "in_progress":
-            expires_at = new_state["expires_at"]
+        while True:
+            game = await games.find_one({"_id": game_id_obj})
+            if not game or game.get("state") != "in_progress":
+                break
 
+            expires_at = game.get("expires_at")
             if not expires_at:
                 break
 
             if expires_at.tzinfo is None:
                 expires_at = expires_at.replace(tzinfo=timezone.utc)
 
-            time_now = datetime.now(timezone.utc)
-            remaining_time = (expires_at - time_now).total_seconds()
+            remaining_time = (expires_at - datetime.now(timezone.utc)).total_seconds()
 
             if remaining_time <= 0:
                 new_state = await process_new_word(game_id_obj)
-                await manager.send_state(game_id, new_state)
+                await manager.broadcast_state(game_id, new_state)
                 continue
 
             try:
                 data = await wait_for(websocket.receive_json(), timeout=remaining_time)
 
-                action = data["action"]
-
-                if action == "skip":
+                if data.get("action") == "skip":
                     print(f"Getting next word for {game_id}")
                     new_state = await process_new_word(game_id_obj)
-                    await manager.send_state(game_id, new_state)
+                    await manager.broadcast_state(game_id, new_state)
 
             except TimeoutError:
                 print("Timeout")
                 new_state = await process_new_word(game_id_obj)
-                await manager.send_state(game_id, new_state)
+                await manager.broadcast_state(game_id, new_state)
 
         print(f"Game {game_id} finished")
 
@@ -229,7 +216,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
         await manager.broadcast_state(game_id, game)
 
         while True:
-            data = await websocket.receive_json()
+            data = websocket.receive_json()
             if data.get("action") != "guess":
                 continue
 
@@ -245,8 +232,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
 
                 if guess == game["current_word"].lower():
                     await games.find_one_and_update(
-                        {"_id": game_id_obj},
-                        {"$inc": {f"scores.{player_name}": 1}}
+                        {"_id": game_id_obj}, {"$inc": {f"scores.{player_name}": 1}}
                     )
                     new_state = await process_new_word(game_id_obj)
                     await manager.broadcast_state(game_id, new_state)
