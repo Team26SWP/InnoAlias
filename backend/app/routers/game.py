@@ -1,30 +1,17 @@
-from models import Game, GameState
-
-from os import getenv
+from ..models import Game, GameState
 from asyncio import wait_for, TimeoutError
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import WebSocket, WebSocketDisconnect, APIRouter
 from bson import ObjectId
 from bson.errors import InvalidId
-from pymongo import MongoClient, ReturnDocument
+from pymongo import ReturnDocument
 from random import shuffle
 from datetime import datetime, timedelta, timezone
 
-MONGO_URI = getenv("MONGO_URI", "mongodb://localhost:27017/")
-client = MongoClient(MONGO_URI)
-db = client.db
+from ..db import db
+
+router = APIRouter(prefix="", tags=["game"])
+
 games = db.games
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,  # type: ignore
-    allow_credentials=True,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
 class ConnectionManager:
     def __init__(self):
@@ -66,7 +53,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@app.post("/api/create/game")
+@router.post("/create")
 def create_game(game: Game):
     words = game.remaining_words
     shuffle(words)
@@ -117,7 +104,7 @@ async def process_new_word(game_id: ObjectId) -> dict:
     return updated_game
 
 
-@app.websocket("/api/game/{game_id}")
+@router.websocket("/{game_id}")
 async def handle_game(websocket: WebSocket, game_id: str):
 
     try:
