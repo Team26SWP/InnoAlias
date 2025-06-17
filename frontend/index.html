@@ -21,24 +21,21 @@
     <h2>Host Game</h2>
     <input id="hostGameId" placeholder="game id">
     <button id="connectHost">Connect</button>
+    <button id="start" disabled>Start</button>
     <button id="skip" disabled>Skip</button>
     <div id="currentWord"></div>
     <div id="expires"></div>
+    <div id="hostScores"></div>
 </section>
 <section>
-    <h2>Join as Player</h2>
-    <input id="playerName" placeholder="your name">
-    <input id="playerGameId" placeholder="game id">
-    <button id="join">Join</button><br>
-    <input id="guessInput" placeholder="your guess" disabled>
-    <button id="sendGuess" disabled>Guess</button>
-    <div id="scores"></div>
+    <h2>Join as Player(s)</h2>
+    <button id="addPlayer">Add Player</button>
+    <div id="players"></div>
 </section>
 <pre id="messages"></pre>
 <script>
 const hostUrl = "ws://localhost:8000/api/game/";
 let hostSocket = null;
-let playerSocket = null;
 
 document.getElementById('create').onclick = async () => {
     const words = document.getElementById('words').value.split(',').map(w => w.trim()).filter(Boolean);
@@ -50,7 +47,7 @@ document.getElementById('create').onclick = async () => {
     const data = await res.json();
     document.getElementById('gameId').textContent = 'Game ID: ' + data.id;
     document.getElementById('hostGameId').value = data.id;
-    document.getElementById('playerGameId').value = data.id;
+    document.querySelectorAll('.playerGameId').forEach(inp => inp.value = data.id);
 };
 
 document.getElementById('connectHost').onclick = () => {
@@ -61,7 +58,9 @@ document.getElementById('connectHost').onclick = () => {
         const data = JSON.parse(evt.data);
         document.getElementById('currentWord').textContent = 'Word: ' + (data.current_word || '');
         document.getElementById('expires').textContent = data.expires_at ? 'Expires: ' + data.expires_at : '';
-        document.getElementById('skip').disabled = !data.current_word;
+        document.getElementById('hostScores').textContent = 'Players: ' + Object.keys(data.scores || {}).join(', ');
+        document.getElementById('start').disabled = data.state !== 'pending';
+        document.getElementById('skip').disabled = data.state !== 'in_progress';
         log('Host state: ' + evt.data);
     };
     hostSocket.onopen = () => log('Host connected');
@@ -72,42 +71,67 @@ document.getElementById('skip').onclick = () => {
     if (hostSocket) hostSocket.send(JSON.stringify({ action: 'skip' }));
 };
 
-document.getElementById('join').onclick = () => {
-    const id = document.getElementById('playerGameId').value.trim();
-    const name = document.getElementById('playerName').value.trim();
-    if (!id || !name) return;
-    playerSocket = new WebSocket(hostUrl + id + '/player?name=' + encodeURIComponent(name));
-    playerSocket.onmessage = evt => {
-        const data = JSON.parse(evt.data);
-        document.getElementById('scores').textContent = 'Scores: ' + JSON.stringify(data.scores || {});
-        log('Player state: ' + evt.data);
-    };
-    playerSocket.onopen = () => {
-        document.getElementById('guessInput').disabled = false;
-        document.getElementById('sendGuess').disabled = false;
-        document.getElementById('guessInput').focus();
-        log('Player connected');
-    };
-    playerSocket.onclose = () => {
-        document.getElementById('guessInput').disabled = true;
-        document.getElementById('sendGuess').disabled = true;
-        log('Player disconnected');
-    };
+document.getElementById('start').onclick = () => {
+    if (hostSocket) hostSocket.send(JSON.stringify({ action: 'start' }));
 };
 
-document.getElementById('sendGuess').onclick = () => {
-    const guess = document.getElementById('guessInput').value.trim();
-    if (playerSocket && guess) {
-        playerSocket.send(JSON.stringify({ action: 'guess', guess }));
-        document.getElementById('guessInput').value = '';
-    }
-};
+function createPlayerSection() {
+    const container = document.createElement('div');
+    container.className = 'player';
+    container.innerHTML = `
+        <input class="playerName" placeholder="your name">
+        <input class="playerGameId" placeholder="game id">
+        <button class="join">Join</button><br>
+        <input class="guessInput" placeholder="your guess" disabled>
+        <button class="sendGuess" disabled>Guess</button>
+        <div class="scores"></div>
+    `;
+    document.getElementById('players').appendChild(container);
 
-document.getElementById('guessInput').addEventListener('keyup', evt => {
-    if (evt.key === 'Enter') {
-        document.getElementById('sendGuess').click();
-    }
-});
+    let socket = null;
+    const joinBtn = container.querySelector('.join');
+    const guessInput = container.querySelector('.guessInput');
+    const sendGuess = container.querySelector('.sendGuess');
+
+    joinBtn.onclick = () => {
+        const id = container.querySelector('.playerGameId').value.trim();
+        const name = container.querySelector('.playerName').value.trim();
+        if (!id || !name) return;
+        socket = new WebSocket(hostUrl + id + '/player?name=' + encodeURIComponent(name));
+        socket.onmessage = evt => {
+            const data = JSON.parse(evt.data);
+            container.querySelector('.scores').textContent = 'Scores: ' + JSON.stringify(data.scores || {});
+            const playing = data.state === 'in_progress';
+            guessInput.disabled = !playing;
+            sendGuess.disabled = !playing;
+            if (playing) guessInput.focus();
+            log('Player ' + name + ' state: ' + evt.data);
+        };
+        socket.onopen = () => log('Player ' + name + ' connected');
+        socket.onclose = () => {
+            guessInput.disabled = true;
+            sendGuess.disabled = true;
+            log('Player ' + name + ' disconnected');
+        };
+    };
+
+    sendGuess.onclick = () => {
+        const guess = guessInput.value.trim();
+        if (socket && guess) {
+            socket.send(JSON.stringify({ action: 'guess', guess }));
+            guessInput.value = '';
+        }
+    };
+
+    guessInput.addEventListener('keyup', evt => {
+        if (evt.key === 'Enter') {
+            sendGuess.click();
+        }
+    });
+}
+
+createPlayerSection();
+document.getElementById('addPlayer').onclick = createPlayerSection;
 
 function log(msg) {
     const pre = document.getElementById('messages');

@@ -17,6 +17,7 @@ class GameState(BaseModel):
     expires_at: Optional[datetime]
     remaining_words_count: int
     state: Literal["pending", "in_progress", "finished"]
+    scores: Dict[str, int] = Field(default_factory=dict)
 
 
 class PlayerGameState(BaseModel):
