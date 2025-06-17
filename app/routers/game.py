@@ -56,7 +56,14 @@ class ConnectionManager:
     async def broadcast_state(self, game_id: str, state: dict):
         host_ws = self.hosts.get(game_id)
         if host_ws:
-            await host_ws.send_json(GameState(**state).model_dump())
+            host_state = GameState(
+                current_word=state.get("current_word"),
+                expires_at=state.get("expires_at"),
+                state=state.get("state"),
+                remaining_words_count=len(state.get("remaining_words", [])),
+            ).model_dump()
+
+            await host_ws.send_json(host_state)
 
         pg_state = PlayerGameState(
             expires_at=state["expires_at"],
@@ -238,7 +245,8 @@ async def handle_player(websocket: WebSocket, game_id: str):
 
                 if guess == game["current_word"].lower():
                     await games.find_one_and_update(
-                        {"id": game_id_obj}, {"inc": {f"scores.{player_name}": 1}}
+                        {"_id": game_id_obj},
+                        {"$inc": {f"scores.{player_name}": 1}}
                     )
                     new_state = await process_new_word(game_id_obj)
                     await manager.broadcast_state(game_id, new_state)
