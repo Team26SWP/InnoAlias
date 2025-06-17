@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Game(BaseModel):
@@ -16,3 +16,18 @@ class GameState(BaseModel):
     expires_at: Optional[datetime]
     remaining_words_count: int
     state: str
+
+
+class User(BaseModel):
+    email: str = Field(...)
+    password: str = Field(...)
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class UserInDB(BaseModel):
+    email:str
+    hashed_password: str

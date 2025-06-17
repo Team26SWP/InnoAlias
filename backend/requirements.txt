@@ -1,5 +1,9 @@
 uvicorn[standard]
-pymongo
 fastapi
 pydantic
 websocket
+python-jose
+passlib[bcrypt]
+python-decouple
+motor
+python-multipart
