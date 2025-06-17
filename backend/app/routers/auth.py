@@ -48,9 +48,7 @@ async def authenticate_user(email: str, password: str) -> Optional[UserInDB]:
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
-    expire_delta = expires_delta or timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    expire_delta = expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     expire = datetime.now(timezone.utc) + expire_delta
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
