@@ -163,7 +163,9 @@ async def handle_game(websocket: WebSocket, game_id: str):
             if game.get("state") == "in_progress" and expires_at:
                 if expires_at.tzinfo is None:
                     expires_at = expires_at.replace(tzinfo=timezone.utc)
-                remaining_time = (expires_at - datetime.now(timezone.utc)).total_seconds()
+                remaining_time = (
+                    expires_at - datetime.now(timezone.utc)
+                ).total_seconds()
                 if remaining_time <= 0:
                     new_state = await process_new_word(game_id_obj)
                     await manager.broadcast_state(game_id, new_state)
@@ -171,7 +173,9 @@ async def handle_game(websocket: WebSocket, game_id: str):
 
             try:
                 if remaining_time is not None:
-                    data = await wait_for(websocket.receive_json(), timeout=remaining_time)
+                    data = await wait_for(
+                        websocket.receive_json(), timeout=remaining_time
+                    )
                 else:
                     data = await websocket.receive_json()
 
