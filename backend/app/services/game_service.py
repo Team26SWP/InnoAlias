@@ -27,10 +27,14 @@ class ConnectionManager:
         self.players: dict[str, list[tuple[WebSocket, str]]] = {}
         self.locks: dict[str, Lock] = {}
 
-    async def connect_host(self, websocket: WebSocket, game_id: str, name: Optional[str]) -> bool:
+    async def connect_host(
+        self, websocket: WebSocket, game_id: str, name: Optional[str]
+    ) -> bool:
         await websocket.accept()
         if game_id in self.hosts:
-            await websocket.close(code=1008, reason="Game already active and host is connected")
+            await websocket.close(
+                code=1008, reason="Game already active and host is connected"
+            )
             return False
 
         self.hosts[game_id] = websocket
@@ -39,7 +43,9 @@ class ConnectionManager:
         self.locks[game_id] = Lock()
         return True
 
-    async def connect_player(self, websocket: WebSocket, game_id: str, player_name: str) -> bool:
+    async def connect_player(
+        self, websocket: WebSocket, game_id: str, player_name: str
+    ) -> bool:
         await websocket.accept()
         self.players.setdefault(game_id, []).append((websocket, player_name))
         return True
@@ -51,7 +57,9 @@ class ConnectionManager:
             del self.locks[game_id]
         else:
             lst = self.players.get(game_id, [])
-            self.players[game_id] = [(ws, name) for ws, name in lst if ws is not websocket]
+            self.players[game_id] = [
+                (ws, name) for ws, name in lst if ws is not websocket
+            ]
             if not self.players[game_id]:
                 del self.players[game_id]
 
@@ -77,7 +85,11 @@ class ConnectionManager:
                 if tries_per_player:
                     tries_left = max(tries_per_player - attempts, 0)
 
-                word_for_player = state.get("current_word") if state.get("current_master") == name else None
+                word_for_player = (
+                    state.get("current_word")
+                    if state.get("current_master") == name
+                    else None
+                )
 
                 pg_state = PlayerGameState(
                     expires_at=state["expires_at"],
@@ -149,4 +161,3 @@ async def process_new_word(game_id: str, sec: int) -> dict:
     )
 
     return updated_game
-
