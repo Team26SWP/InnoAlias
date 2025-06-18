@@ -1,7 +1,6 @@
-<!DOCTYPE html>
-<html>
+
+<meta charset="utf-8">
 <head>
-    <meta charset="utf-8">
     <title>Alias Game Test</title>
     <style>
         body { font-family: Arial, sans-serif; }
@@ -26,6 +25,7 @@
     <div id="currentWord"></div>
     <div id="expires"></div>
     <div id="hostScores"></div>
+    <div id="correctInfo"></div>
 </section>
 <section>
     <h2>Join as Player(s)</h2>
@@ -37,13 +37,23 @@
 const hostUrl = "ws://localhost:8000/api/game/";
 let hostSocket = null;
 
+function logMessage(msg) {
+    const pre = document.getElementById('messages');
+    pre.textContent += msg + '\n';
+    pre.scrollTop = pre.scrollHeight;
+}
+
 document.getElementById('create').onclick = async () => {
     const words = document.getElementById('words').value.split(',').map(w => w.trim()).filter(Boolean);
     const res = await fetch('http://localhost:8000/api/game/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // for example
-        body: JSON.stringify({ remaining_words: words, time_for_guessing: 6, words_amount: 6})
+        body: JSON.stringify({
+            remaining_words: words,
+            tries_per_player: 3,
+            right_answers_to_advance: 3
+        })
     });
     const data = await res.json();
     document.getElementById('gameId').textContent = 'Game ID: ' + data.id;
@@ -60,12 +70,14 @@ document.getElementById('connectHost').onclick = () => {
         document.getElementById('currentWord').textContent = 'Word: ' + (data.current_word || '');
         document.getElementById('expires').textContent = data.expires_at ? 'Expires: ' + data.expires_at : '';
         document.getElementById('hostScores').textContent = 'Players: ' + Object.keys(data.scores || {}).join(', ');
+        document.getElementById('correctInfo').textContent =
+            'Correct: ' + data.current_correct + ' / ' + data.right_answers_to_advance;
         document.getElementById('start').disabled = data.state !== 'pending';
         document.getElementById('skip').disabled = data.state !== 'in_progress';
-        log('Host state: ' + evt.data);
+        logMessage('Host state: ' + evt.data);
     };
-    hostSocket.onopen = () => log('Host connected');
-    hostSocket.onclose = () => log('Host disconnected');
+    hostSocket.onopen = () => logMessage('Host connected');
+    hostSocket.onclose = () => logMessage('Host disconnected');
 };
 
 document.getElementById('skip').onclick = () => {
@@ -86,6 +98,7 @@ function createPlayerSection() {
         <input class="guessInput" placeholder="your guess" disabled>
         <button class="sendGuess" disabled>Guess</button>
         <div class="scores"></div>
+        <div class="tries"></div>
     `;
     document.getElementById('players').appendChild(container);
 
@@ -103,16 +116,21 @@ function createPlayerSection() {
             const data = JSON.parse(evt.data);
             container.querySelector('.scores').textContent = 'Scores: ' + JSON.stringify(data.scores || {});
             const playing = data.state === 'in_progress';
-            guessInput.disabled = !playing;
-            sendGuess.disabled = !playing;
-            if (playing) guessInput.focus();
-            log('Player ' + name + ' state: ' + evt.data);
+            let disabled = !playing;
+            if (typeof data.tries_left === 'number') {
+                container.querySelector('.tries').textContent = 'Tries left: ' + data.tries_left;
+                if (playing && data.tries_left <= 0) disabled = true;
+            }
+            guessInput.disabled = disabled;
+            sendGuess.disabled = disabled;
+            if (!disabled) guessInput.focus();
+            logMessage('Player ' + name + ' state: ' + evt.data);
         };
-        socket.onopen = () => log('Player ' + name + ' connected');
+        socket.onopen = () => logMessage('Player ' + name + ' connected');
         socket.onclose = () => {
             guessInput.disabled = true;
             sendGuess.disabled = true;
-            log('Player ' + name + ' disconnected');
+            logMessage('Player ' + name + ' disconnected');
         };
     };
 
@@ -135,9 +153,8 @@ createPlayerSection();
 document.getElementById('addPlayer').onclick = createPlayerSection;
 
 function log(msg) {
-    const pre = document.getElementById('messages');
-    pre.textContent += msg + '\n';
-    pre.scrollTop = pre.scrollHeight;
+    console.warn('Deprecated log function used');
+    logMessage(msg);
 }
 </script>
 </body>
