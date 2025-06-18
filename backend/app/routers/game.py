@@ -1,5 +1,5 @@
 from asyncio import wait_for, TimeoutError, Lock
-from fastapi import WebSocket, WebSocketDisconnect, APIRouter
+from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
 from pymongo import ReturnDocument
 from random import shuffle
 from datetime import datetime, timedelta, timezone
@@ -231,6 +231,21 @@ async def handle_game(websocket: WebSocket, game_id: str):
         print(e)
     finally:
         manager.disconnect(game_id)
+
+
+@router.get("/{game_id}/leaderboard")
+async def get_leaderboard(game_id: str):
+    if not await games.find_one({"_id": game_id}):
+        return HTTPException(status_code=404, detail="Game not found")
+
+    game = await games.find_one({"_id": game_id})
+    return dict(
+        sorted(
+            game["scores"].items(),
+            key=lambda kv: kv[1],
+            reverse=True
+        )
+    )
 
 
 @router.websocket("/{game_id}/player")
