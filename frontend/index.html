@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -24,6 +23,7 @@
 <section>
     <h2>Host Game</h2>
     <input id="hostGameId" placeholder="game id">
+    <input id="hostName" placeholder="your name">
     <button id="connectHost">Connect</button>
     <button id="start" disabled>Start</button>
     <button id="skip" disabled>Skip</button>
@@ -42,6 +42,8 @@
 <script>
 const hostUrl = "ws://localhost:8000/api/game/";
 let hostSocket = null;
+let hostPlayerName = '';
+let hostPlayerSection = null;
 
 function logMessage(msg) {
     const pre = document.getElementById('messages');
@@ -72,6 +74,7 @@ document.getElementById('create').onclick = async () => {
 document.getElementById('connectHost').onclick = () => {
     const id = document.getElementById('hostGameId').value.trim();
     if (!id) return;
+    hostPlayerName = document.getElementById('hostName').value.trim();
     hostSocket = new WebSocket(hostUrl + id);
     hostSocket.onmessage = evt => {
         const data = JSON.parse(evt.data);
@@ -82,11 +85,21 @@ document.getElementById('connectHost').onclick = () => {
         document.getElementById('correctInfo').textContent =
             'Correct: ' + data.current_correct + ' / ' + data.right_answers_to_advance;
         document.getElementById('start').disabled = data.state !== 'pending';
-        document.getElementById('skip').disabled = data.state !== 'in_progress';
+        const skipDisabled =
+            data.state !== 'in_progress' ||
+            (data.current_master && data.current_master !== hostPlayerName);
+        document.getElementById('skip').disabled = skipDisabled;
         logMessage('Host state: ' + evt.data);
     };
-    hostSocket.onopen = () => logMessage('Host connected');
-    hostSocket.onclose = () => logMessage('Host disconnected');
+    hostSocket.onopen = () => {
+        logMessage('Host connected');
+        if (hostPlayerName) {
+            hostPlayerSection = createPlayerSection(hostPlayerName, id, true);
+        }
+    };
+    hostSocket.onclose = () => {
+        logMessage('Host disconnected');
+    };
 };
 
 document.getElementById('skip').onclick = () => {
@@ -97,7 +110,7 @@ document.getElementById('start').onclick = () => {
     if (hostSocket) hostSocket.send(JSON.stringify({ action: 'start' }));
 };
 
-function createPlayerSection() {
+function createPlayerSection(defaultName = '', defaultId = '', autoJoin = false) {
     const container = document.createElement('div');
     container.className = 'player';
     container.innerHTML = `
@@ -106,7 +119,7 @@ function createPlayerSection() {
         <button class="join">Join</button><br>
         <input class="guessInput" placeholder="your guess" disabled>
         <button class="sendGuess" disabled>Guess</button>
-        <div class="masterArea" style="display:none">You are the master! Word: <span class="masterWord"></span></div>
+        <div class="masterArea" style="display:none">You are the master! Word: <span class="masterWord"></span> <button class="masterSkip">Skip</button></div>
         <div class="scores"></div>
         <div class="tries"></div>
     `;
@@ -118,10 +131,15 @@ function createPlayerSection() {
     const sendGuess = container.querySelector('.sendGuess');
     const masterArea = container.querySelector('.masterArea');
     const masterWordEl = container.querySelector('.masterWord');
+    const masterSkip = container.querySelector('.masterSkip');
+    const nameInput = container.querySelector('.playerName');
+    const idInput = container.querySelector('.playerGameId');
+    nameInput.value = defaultName;
+    idInput.value = defaultId;
 
-    joinBtn.onclick = () => {
-        const id = container.querySelector('.playerGameId').value.trim();
-        const name = container.querySelector('.playerName').value.trim();
+    const join = () => {
+        const id = idInput.value.trim();
+        const name = nameInput.value.trim();
         if (!id || !name) return;
         socket = new WebSocket(hostUrl + 'player/' + id + '/?name=' + encodeURIComponent(name));
         socket.onmessage = evt => {
@@ -137,6 +155,7 @@ function createPlayerSection() {
             const isMaster = data.current_master === name;
             masterArea.style.display = isMaster ? 'block' : 'none';
             masterWordEl.textContent = isMaster ? (data.current_word || '') : '';
+            masterSkip.style.display = isMaster ? 'inline' : 'none';
             if (isMaster) {
                 disabled = true;
             }
@@ -151,9 +170,16 @@ function createPlayerSection() {
             guessInput.disabled = true;
             sendGuess.disabled = true;
             masterArea.style.display = 'none';
+            masterSkip.style.display = 'none';
             logMessage('Player ' + name + ' disconnected');
         };
     };
+
+    joinBtn.onclick = join;
+
+    if (autoJoin) {
+        join();
+    }
 
     sendGuess.onclick = () => {
         const guess = guessInput.value.trim();
@@ -163,11 +189,19 @@ function createPlayerSection() {
         }
     };
 
+    masterSkip.onclick = () => {
+        if (socket) {
+            socket.send(JSON.stringify({ action: 'skip' }));
+        }
+    };
+
     guessInput.addEventListener('keyup', evt => {
         if (evt.key === 'Enter') {
             sendGuess.click();
         }
     });
+
+    return container;
 }
 
 createPlayerSection();
