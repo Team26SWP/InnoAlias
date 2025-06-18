@@ -44,6 +44,7 @@ const hostUrl = "ws://localhost:8000/api/game/";
 let hostSocket = null;
 let hostPlayerName = '';
 let hostPlayerSection = null;
+let currentMode = 'single';
 
 function logMessage(msg) {
     const pre = document.getElementById('messages');
@@ -54,6 +55,7 @@ function logMessage(msg) {
 document.getElementById('create').onclick = async () => {
     const words = document.getElementById('words').value.split(',').map(w => w.trim()).filter(Boolean);
     const mode = document.querySelector('input[name="mode"]:checked').value;
+    currentMode = mode;
     const res = await fetch('http://localhost:8000/api/game/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -75,7 +77,8 @@ document.getElementById('connectHost').onclick = () => {
     const id = document.getElementById('hostGameId').value.trim();
     if (!id) return;
     hostPlayerName = document.getElementById('hostName').value.trim();
-    hostSocket = new WebSocket(hostUrl + id);
+    const qs = hostPlayerName ? '?name=' + encodeURIComponent(hostPlayerName) : '';
+    hostSocket = new WebSocket(hostUrl + id + qs);
     hostSocket.onmessage = evt => {
         const data = JSON.parse(evt.data);
         document.getElementById('currentWord').textContent = 'Word: ' + (data.current_word || '');
@@ -93,7 +96,7 @@ document.getElementById('connectHost').onclick = () => {
     };
     hostSocket.onopen = () => {
         logMessage('Host connected');
-        if (hostPlayerName) {
+        if (currentMode === 'rotate' && hostPlayerName) {
             hostPlayerSection = createPlayerSection(hostPlayerName, id, true);
         }
     };
