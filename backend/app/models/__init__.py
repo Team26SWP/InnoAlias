@@ -6,10 +6,13 @@ from pydantic import BaseModel, Field
 class Game(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
     remaining_words: List[str]
+    words_amount: Optional[int] = None
     current_word: Optional[str] = None
     expires_at: Optional[datetime] = None
+    time_for_guessing: int = 60
     state: Literal["pending", "in_progress", "finished"] = "pending"
     scores: Dict[str, int] = Field(default_factory=dict)
+
 
 
 class GameState(BaseModel):

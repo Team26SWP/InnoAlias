@@ -85,10 +85,13 @@ async def create_game(game: Game):
     words = game.remaining_words
     shuffle(words)
 
+    amount = game.words_amount if game.words_amount is not None else len(words)
+
     new_game = {
-        "remaining_words": words,
+        "remaining_words": words[:amount],
         "current_word": None,
         "expires_at": None,
+        "time_for_guessing": game.time_for_guessing,
         "state": "pending",
     }
 
@@ -96,7 +99,7 @@ async def create_game(game: Game):
     return {"id": str(result.inserted_id)}
 
 
-async def process_new_word(game_id: ObjectId) -> dict:
+async def process_new_word(game_id: ObjectId, sec: int) -> dict:
     game_before_pop = await games.find_one_and_update(
         {"_id": game_id, "remaining_words.0": {"$exists": True}},
         {"$pop": {"remaining_words": 1}},
@@ -104,15 +107,19 @@ async def process_new_word(game_id: ObjectId) -> dict:
     )
 
     if not game_before_pop:
-        await games.delete_one({"_id": game_id})
-        print(f"Game {game_id} finished and entry deleted from database.")
+        updated_game = await games.find_one_and_update(
+        {"_id": game_id},
+        {
+            "$set": {
+                "current_word": None,
+                "expires_at": None,
+                "state": "finished",
+                "remaining_words": [],
+            }
+        }, return_document=ReturnDocument.AFTER,
+        )
 
-        return {
-            "state": "finished",
-            "current_word": None,
-            "expires_at": None,
-            "remaining_words": [],
-        }
+        return updated_game
 
     new_word = game_before_pop["remaining_words"][-1]
 
@@ -121,7 +128,7 @@ async def process_new_word(game_id: ObjectId) -> dict:
         {
             "$set": {
                 "current_word": new_word,
-                "expires_at": datetime.now(timezone.utc) + timedelta(seconds=60),
+                "expires_at": datetime.now(timezone.utc) + timedelta(seconds=sec),
                 "state": "in_progress",
             }
         },
@@ -167,7 +174,7 @@ async def handle_game(websocket: WebSocket, game_id: str):
                     expires_at - datetime.now(timezone.utc)
                 ).total_seconds()
                 if remaining_time <= 0:
-                    new_state = await process_new_word(game_id_obj)
+                    new_state = await process_new_word(game_id_obj, game["time_for_guessing"])
                     await manager.broadcast_state(game_id, new_state)
                     continue
 
@@ -181,16 +188,16 @@ async def handle_game(websocket: WebSocket, game_id: str):
 
                 action = data.get("action")
                 if action == "start" and game.get("state") == "pending":
-                    new_state = await process_new_word(game_id_obj)
+                    new_state = await process_new_word(game_id_obj, game["time_for_guessing"])
                     await manager.broadcast_state(game_id, new_state)
                 elif action == "skip" and game.get("state") == "in_progress":
                     print(f"Getting next word for {game_id}")
-                    new_state = await process_new_word(game_id_obj)
+                    new_state = await process_new_word(game_id_obj, game["time_for_guessing"])
                     await manager.broadcast_state(game_id, new_state)
 
             except TimeoutError:
                 if game.get("state") == "in_progress":
-                    new_state = await process_new_word(game_id_obj)
+                    new_state = await process_new_word(game_id_obj, game["time_for_guessing"])
                     await manager.broadcast_state(game_id, new_state)
 
         print(f"Game {game_id} finished")
@@ -252,7 +259,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
                     await games.find_one_and_update(
                         {"_id": game_id_obj}, {"$inc": {f"scores.{player_name}": 1}}
                     )
-                    new_state = await process_new_word(game_id_obj)
+                    new_state = await process_new_word(game_id_obj, game["time_for_guessing"])
                     await manager.broadcast_state(game_id, new_state)
 
     except WebSocketDisconnect:

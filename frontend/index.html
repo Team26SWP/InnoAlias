@@ -42,7 +42,8 @@ document.getElementById('create').onclick = async () => {
     const res = await fetch('http://localhost:8000/api/game/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ remaining_words: words })
+        // for example
+        body: JSON.stringify({ remaining_words: words, time_for_guessing: 6, words_amount: 6})
     });
     const data = await res.json();
     document.getElementById('gameId').textContent = 'Game ID: ' + data.id;
