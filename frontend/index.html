@@ -1,0 +1,161 @@
+
+<meta charset="utf-8">
+<head>
+    <title>Alias Game Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        section { margin-bottom: 20px; }
+        #messages { border: 1px solid #ccc; padding: 10px; height: 150px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+<h1>Alias Game Test</h1>
+<section>
+    <h2>Create Game</h2>
+    <textarea id="words" rows="4" cols="50" placeholder="comma separated words"></textarea><br>
+    <button id="create">Create</button>
+    <div id="gameId"></div>
+</section>
+<section>
+    <h2>Host Game</h2>
+    <input id="hostGameId" placeholder="game id">
+    <button id="connectHost">Connect</button>
+    <button id="start" disabled>Start</button>
+    <button id="skip" disabled>Skip</button>
+    <div id="currentWord"></div>
+    <div id="expires"></div>
+    <div id="hostScores"></div>
+    <div id="correctInfo"></div>
+</section>
+<section>
+    <h2>Join as Player(s)</h2>
+    <button id="addPlayer">Add Player</button>
+    <div id="players"></div>
+</section>
+<pre id="messages"></pre>
+<script>
+const hostUrl = "ws://localhost:8000/api/game/";
+let hostSocket = null;
+
+function logMessage(msg) {
+    const pre = document.getElementById('messages');
+    pre.textContent += msg + '\n';
+    pre.scrollTop = pre.scrollHeight;
+}
+
+document.getElementById('create').onclick = async () => {
+    const words = document.getElementById('words').value.split(',').map(w => w.trim()).filter(Boolean);
+    const res = await fetch('http://localhost:8000/api/game/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // for example
+        body: JSON.stringify({
+            remaining_words: words,
+            tries_per_player: 3,
+            right_answers_to_advance: 3
+        })
+    });
+    const data = await res.json();
+    document.getElementById('gameId').textContent = 'Game ID: ' + data.id;
+    document.getElementById('hostGameId').value = data.id;
+    document.querySelectorAll('.playerGameId').forEach(inp => inp.value = data.id);
+};
+
+document.getElementById('connectHost').onclick = () => {
+    const id = document.getElementById('hostGameId').value.trim();
+    if (!id) return;
+    hostSocket = new WebSocket(hostUrl + id);
+    hostSocket.onmessage = evt => {
+        const data = JSON.parse(evt.data);
+        document.getElementById('currentWord').textContent = 'Word: ' + (data.current_word || '');
+        document.getElementById('expires').textContent = data.expires_at ? 'Expires: ' + data.expires_at : '';
+        document.getElementById('hostScores').textContent = 'Players: ' + Object.keys(data.scores || {}).join(', ');
+        document.getElementById('correctInfo').textContent =
+            'Correct: ' + data.current_correct + ' / ' + data.right_answers_to_advance;
+        document.getElementById('start').disabled = data.state !== 'pending';
+        document.getElementById('skip').disabled = data.state !== 'in_progress';
+        logMessage('Host state: ' + evt.data);
+    };
+    hostSocket.onopen = () => logMessage('Host connected');
+    hostSocket.onclose = () => logMessage('Host disconnected');
+};
+
+document.getElementById('skip').onclick = () => {
+    if (hostSocket) hostSocket.send(JSON.stringify({ action: 'skip' }));
+};
+
+document.getElementById('start').onclick = () => {
+    if (hostSocket) hostSocket.send(JSON.stringify({ action: 'start' }));
+};
+
+function createPlayerSection() {
+    const container = document.createElement('div');
+    container.className = 'player';
+    container.innerHTML = `
+        <input class="playerName" placeholder="your name">
+        <input class="playerGameId" placeholder="game id">
+        <button class="join">Join</button><br>
+        <input class="guessInput" placeholder="your guess" disabled>
+        <button class="sendGuess" disabled>Guess</button>
+        <div class="scores"></div>
+        <div class="tries"></div>
+    `;
+    document.getElementById('players').appendChild(container);
+
+    let socket = null;
+    const joinBtn = container.querySelector('.join');
+    const guessInput = container.querySelector('.guessInput');
+    const sendGuess = container.querySelector('.sendGuess');
+
+    joinBtn.onclick = () => {
+        const id = container.querySelector('.playerGameId').value.trim();
+        const name = container.querySelector('.playerName').value.trim();
+        if (!id || !name) return;
+        socket = new WebSocket(hostUrl + id + '/player?name=' + encodeURIComponent(name));
+        socket.onmessage = evt => {
+            const data = JSON.parse(evt.data);
+            container.querySelector('.scores').textContent = 'Scores: ' + JSON.stringify(data.scores || {});
+            const playing = data.state === 'in_progress';
+            let disabled = !playing;
+            if (typeof data.tries_left === 'number') {
+                container.querySelector('.tries').textContent = 'Tries left: ' + data.tries_left;
+                if (playing && data.tries_left <= 0) disabled = true;
+            }
+            guessInput.disabled = disabled;
+            sendGuess.disabled = disabled;
+            if (!disabled) guessInput.focus();
+            logMessage('Player ' + name + ' state: ' + evt.data);
+        };
+        socket.onopen = () => logMessage('Player ' + name + ' connected');
+        socket.onclose = () => {
+            guessInput.disabled = true;
+            sendGuess.disabled = true;
+            logMessage('Player ' + name + ' disconnected');
+        };
+    };
+
+    sendGuess.onclick = () => {
+        const guess = guessInput.value.trim();
+        if (socket && guess) {
+            socket.send(JSON.stringify({ action: 'guess', guess }));
+            guessInput.value = '';
+        }
+    };
+
+    guessInput.addEventListener('keyup', evt => {
+        if (evt.key === 'Enter') {
+            sendGuess.click();
+        }
+    });
+}
+
+createPlayerSection();
+document.getElementById('addPlayer').onclick = createPlayerSection;
+
+function log(msg) {
+    console.warn('Deprecated log function used');
+    logMessage(msg);
+}
+</script>
+</body>
+</html>
