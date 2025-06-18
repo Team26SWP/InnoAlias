@@ -1,7 +1,6 @@
 from asyncio import wait_for, TimeoutError, Lock
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter
-from bson import ObjectId
-from bson.errors import InvalidId
+
 from pymongo import ReturnDocument
 from random import shuffle
 from datetime import datetime, timedelta, timezone
@@ -22,7 +21,6 @@ class ConnectionManager:
         self.locks: dict[str, Lock] = {}
 
     async def connect_host(self, websocket: WebSocket, game_id: str) -> bool:
-        await websocket.accept()
 
         if game_id in self.hosts:
             await websocket.close(
@@ -37,7 +35,6 @@ class ConnectionManager:
     async def connect_player(
         self, websocket: WebSocket, game_id: str, player_name: str
     ) -> bool:
-        await websocket.accept()
         self.players.setdefault(game_id, []).append((websocket, player_name))
         return True
 
@@ -116,7 +113,7 @@ async def create_game(game: Game):
     return {"id": str(result.inserted_id)}
 
 
-async def process_new_word(game_id: ObjectId, sec: int) -> dict:
+async def process_new_word(game_id: str, sec: int) -> dict:
     game_before_pop = await games.find_one_and_update(
         {"_id": game_id, "remaining_words.0": {"$exists": True}},
         {"$pop": {"remaining_words": 1}},
@@ -164,15 +161,11 @@ async def process_new_word(game_id: ObjectId, sec: int) -> dict:
 
 @router.websocket("/{game_id}")
 async def handle_game(websocket: WebSocket, game_id: str):
+    await websocket.accept()
 
-    try:
-        game_id_obj = ObjectId(game_id)
-
-        if not await games.find_one({"_id": game_id_obj}):
-            await websocket.close(code=1011, reason="Game not found")
-            return
-    except InvalidId:
-        await websocket.close(code=1011, reason="GameID is invalid")
+    game = await games.find_one({"_id": game_id})
+    if not game:
+        await websocket.close(code=1011, reason="Game not found")
         return
 
     is_connected = await manager.connect_host(websocket, game_id)
@@ -180,11 +173,11 @@ async def handle_game(websocket: WebSocket, game_id: str):
         return
 
     try:
-        game = await games.find_one({"_id": game_id_obj})
+        game = await games.find_one({"_id": game_id})
         await manager.broadcast_state(game_id, game)
 
         while True:
-            game = await games.find_one({"_id": game_id_obj})
+            game = await games.find_one({"_id": game_id})
             if not game:
                 break
 
@@ -199,38 +192,38 @@ async def handle_game(websocket: WebSocket, game_id: str):
                 ).total_seconds()
                 if remaining_time <= 0:
                     new_state = await process_new_word(
-                        game_id_obj, game["time_for_guessing"]
+                        game_id, game["time_for_guessing"]
                     )
                     await manager.broadcast_state(game_id, new_state)
                     continue
 
-            try:
-                if remaining_time is not None:
-                    data = await wait_for(
-                        websocket.receive_json(), timeout=remaining_time
-                    )
-                else:
-                    data = await websocket.receive_json()
+        try:
+            if remaining_time is not None:
+                data = await wait_for(
+                    websocket.receive_json(), timeout=remaining_time
+                )
+            else:
+                data = await websocket.receive_json()
 
-                action = data.get("action")
-                if action == "start" and game.get("state") == "pending":
-                    new_state = await process_new_word(
-                        game_id_obj, game["time_for_guessing"]
-                    )
-                    await manager.broadcast_state(game_id, new_state)
-                elif action == "skip" and game.get("state") == "in_progress":
-                    print(f"Getting next word for {game_id}")
-                    new_state = await process_new_word(
-                        game_id_obj, game["time_for_guessing"]
-                    )
-                    await manager.broadcast_state(game_id, new_state)
+            action = data.get("action")
+            if action == "start" and game.get("state") == "pending":
+                new_state = await process_new_word(
+                    game_id, game["time_for_guessing"]
+                )
+                await manager.broadcast_state(game_id, new_state)
+            elif action == "skip" and game.get("state") == "in_progress":
+                print(f"Getting next word for {game_id}")
+                new_state = await process_new_word(
+                    game_id, game["time_for_guessing"]
+                )
+                await manager.broadcast_state(game_id, new_state)
 
-            except TimeoutError:
-                if game.get("state") == "in_progress":
-                    new_state = await process_new_word(
-                        game_id_obj, game["time_for_guessing"]
-                    )
-                    await manager.broadcast_state(game_id, new_state)
+        except TimeoutError:
+            if game.get("state") == "in_progress":
+                new_state = await process_new_word(
+                    game_id, game["time_for_guessing"]
+                )
+                await manager.broadcast_state(game_id, new_state)
 
         print(f"Game {game_id} finished")
 
@@ -244,31 +237,28 @@ async def handle_game(websocket: WebSocket, game_id: str):
 
 @router.websocket("/{game_id}/player")
 async def handle_player(websocket: WebSocket, game_id: str):
+    await websocket.accept()
     player_name = websocket.query_params.get("name")
     if not player_name:
         await websocket.close(code=1008, reason="Missing player's name")
         return
 
-    try:
-        game_id_obj = ObjectId(game_id)
-        if not await games.find_one({"_id": game_id_obj}):
-            await websocket.close(code=1011, reason="Game not found")
-            return
-    except InvalidId:
-        await websocket.close(code=1011, reason="GameID is invalid")
+    game = await games.find_one({"_id": game_id})
+    if not game:
+        await websocket.close(code=1011, reason="Game not found")
         return
 
     await manager.connect_player(websocket, game_id, player_name)
     await games.update_one(
-        {"_id": game_id_obj, f"scores.{player_name}": {"$exists": False}},
+        {"_id": game_id, f"scores.{player_name}": {"$exists": False}},
         {"$set": {f"scores.{player_name}": 0}},
     )
     await games.update_one(
-        {"_id": game_id_obj}, {"$set": {f"player_attempts.{player_name}": 0}}
+        {"_id": game_id}, {"$set": {f"player_attempts.{player_name}": 0}}
     )
 
     try:
-        game = await games.find_one({"_id": game_id_obj})
+        game = await games.find_one({"_id": game_id})
         await manager.broadcast_state(game_id, game)
 
         while True:
@@ -279,7 +269,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
             guess = data.get("guess", "").strip().lower()
 
             async with manager.locks[game_id]:
-                game = await games.find_one({"_id": game_id_obj})
+                game = await games.find_one({"_id": game_id})
                 if game["state"] != "in_progress":
                     continue
 
@@ -312,7 +302,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
                         update["$addToSet"] = {"correct_players": player_name}
 
                     new_state = await games.find_one_and_update(
-                        {"_id": game_id_obj},
+                        {"_id": game_id},
                         update,
                         return_document=ReturnDocument.AFTER,
                     )
@@ -321,15 +311,15 @@ async def handle_player(websocket: WebSocket, game_id: str):
                         "right_answers_to_advance", 1
                     ):
                         new_state = await process_new_word(
-                            game_id_obj, game["time_for_guessing"]
+                            game_id, game["time_for_guessing"]
                         )
 
                 else:
                     await games.update_one(
-                        {"_id": game_id_obj},
+                        {"_id": game_id},
                         {"$set": {f"player_attempts.{player_name}": attempts + 1}},
                     )
-                    new_state = await games.find_one({"_id": game_id_obj})
+                    new_state = await games.find_one({"_id": game_id})
 
                 if new_state.get("current_correct", 0) < new_state.get(
                     "right_answers_to_advance", 1
@@ -344,7 +334,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
                         )
                         if all_spent:
                             new_state = await process_new_word(
-                                game_id_obj,
+                                game_id,
                                 new_state.get("time_for_guessing", 0),
                             )
 
