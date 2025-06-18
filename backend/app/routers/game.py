@@ -99,6 +99,7 @@ async def create_game(game: Game):
     new_game = {
         "_id": code,
         "remaining_words": words[:amount],
+        "deck": words,
         "current_word": None,
         "expires_at": None,
         "tries_per_player": game.tries_per_player,
@@ -112,6 +113,14 @@ async def create_game(game: Game):
 
     result = await games.insert_one(new_game)
     return {"id": str(result.inserted_id)}
+
+@router.get("/deck/{game_id}")
+async def get_deck(game_id: str):
+    if not await games.find_one({"_id": game_id}):
+        return HTTPException(status_code=404, detail="Game not found")
+
+    game = await games.find_one({"_id": game_id})
+    return game["deck"]
 
 
 async def process_new_word(game_id: str, sec: int) -> dict:
@@ -233,7 +242,7 @@ async def handle_game(websocket: WebSocket, game_id: str):
         manager.disconnect(game_id)
 
 
-@router.get("/{game_id}/leaderboard")
+@router.get("/leaderboard/{game_id}")
 async def get_leaderboard(game_id: str):
     if not await games.find_one({"_id": game_id}):
         return HTTPException(status_code=404, detail="Game not found")
@@ -247,8 +256,15 @@ async def get_leaderboard(game_id: str):
         )
     )
 
+@router.delete("/delete/{game_id}")
+async def delete_game(game_id: str):
+    if not await games.find_one({"_id": game_id}):
+        return HTTPException(status_code=404, detail="Game not found")
 
-@router.websocket("/{game_id}/player")
+    await games.delete_one({"_id": game_id})
+    return "OK"
+
+@router.websocket("/player/{game_id}/")
 async def handle_player(websocket: WebSocket, game_id: str):
     player_name = websocket.query_params.get("name")
     if not player_name:

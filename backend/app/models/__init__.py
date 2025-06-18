@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 class Game(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
     remaining_words: List[str]
+    deck: List[str] = Field(default_factory=list)
     words_amount: Optional[int] = None
     current_word: Optional[str] = None
     expires_at: Optional[datetime] = None
