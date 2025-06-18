@@ -104,6 +104,7 @@ async def create_game(game: Game):
         "right_answers_to_advance": game.right_answers_to_advance,
         "current_correct": 0,
         "player_attempts": {},
+        "correct_players": [],
         "time_for_guessing": game.time_for_guessing,
         "state": "pending",
     }
@@ -121,17 +122,19 @@ async def process_new_word(game_id: ObjectId, sec: int) -> dict:
 
     if not game_before_pop:
         updated_game = await games.find_one_and_update(
-        {"_id": game_id},
-        {
-            "$set": {
-                "current_word": None,
-                "expires_at": None,
-                "state": "finished",
-                "remaining_words": [],
-                "current_correct": 0,
-                "player_attempts": {},
-            }
-        }, return_document=ReturnDocument.AFTER,
+            {"_id": game_id},
+            {
+                "$set": {
+                    "current_word": None,
+                    "expires_at": None,
+                    "state": "finished",
+                    "remaining_words": [],
+                    "current_correct": 0,
+                    "player_attempts": {},
+                    "correct_players": [],
+                }
+            },
+            return_document=ReturnDocument.AFTER,
         )
 
         return updated_game
@@ -147,6 +150,7 @@ async def process_new_word(game_id: ObjectId, sec: int) -> dict:
                 "state": "in_progress",
                 "current_correct": 0,
                 "player_attempts": {},
+                "correct_players": [],
             }
         },
         return_document=ReturnDocument.AFTER,
@@ -191,7 +195,9 @@ async def handle_game(websocket: WebSocket, game_id: str):
                     expires_at - datetime.now(timezone.utc)
                 ).total_seconds()
                 if remaining_time <= 0:
-                    new_state = await process_new_word(game_id_obj, game["time_for_guessing"])
+                    new_state = await process_new_word(
+                        game_id_obj, game["time_for_guessing"]
+                    )
                     await manager.broadcast_state(game_id, new_state)
                     continue
 
@@ -205,16 +211,22 @@ async def handle_game(websocket: WebSocket, game_id: str):
 
                 action = data.get("action")
                 if action == "start" and game.get("state") == "pending":
-                    new_state = await process_new_word(game_id_obj, game["time_for_guessing"])
+                    new_state = await process_new_word(
+                        game_id_obj, game["time_for_guessing"]
+                    )
                     await manager.broadcast_state(game_id, new_state)
                 elif action == "skip" and game.get("state") == "in_progress":
                     print(f"Getting next word for {game_id}")
-                    new_state = await process_new_word(game_id_obj, game["time_for_guessing"])
+                    new_state = await process_new_word(
+                        game_id_obj, game["time_for_guessing"]
+                    )
                     await manager.broadcast_state(game_id, new_state)
 
             except TimeoutError:
                 if game.get("state") == "in_progress":
-                    new_state = await process_new_word(game_id_obj, game["time_for_guessing"])
+                    new_state = await process_new_word(
+                        game_id_obj, game["time_for_guessing"]
+                    )
                     await manager.broadcast_state(game_id, new_state)
 
         print(f"Game {game_id} finished")
@@ -270,6 +282,10 @@ async def handle_player(websocket: WebSocket, game_id: str):
 
                 tries_per_player = game.get("tries_per_player", 0)
                 attempts = game.get("player_attempts", {}).get(player_name, 0)
+
+                if player_name in game.get("correct_players", []):
+                    continue
+
                 if tries_per_player and attempts >= tries_per_player:
                     continue
 
@@ -282,26 +298,52 @@ async def handle_player(websocket: WebSocket, game_id: str):
 
                 if guess == game["current_word"].lower():
                     update = {
-                        "$inc": {
-                            f"scores.{player_name}": 1,
-                            "current_correct": 1,
-                        },
                         "$set": {f"player_attempts.{player_name}": attempts + 1},
                     }
+
+                    if player_name not in game.get("correct_players", []):
+                        update["$inc"] = {
+                            f"scores.{player_name}": 1,
+                            "current_correct": 1,
+                        }
+                        update["$addToSet"] = {"correct_players": player_name}
+
                     new_state = await games.find_one_and_update(
-                        {"_id": game_id_obj}, update, return_document=ReturnDocument.AFTER
+                        {"_id": game_id_obj},
+                        update,
+                        return_document=ReturnDocument.AFTER,
                     )
 
-                    if new_state.get("current_correct", 0) >= new_state.get("right_answers_to_advance", 1):
-                        new_state = await process_new_word(game_id_obj, game["time_for_guessing"])
+                    if new_state.get("current_correct", 0) >= new_state.get(
+                        "right_answers_to_advance", 1
+                    ):
+                        new_state = await process_new_word(
+                            game_id_obj, game["time_for_guessing"]
+                        )
 
-                    await manager.broadcast_state(game_id, new_state)
                 else:
                     await games.update_one(
                         {"_id": game_id_obj},
                         {"$set": {f"player_attempts.{player_name}": attempts + 1}},
                     )
                     new_state = await games.find_one({"_id": game_id_obj})
+
+                if new_state.get("current_correct", 0) < new_state.get(
+                    "right_answers_to_advance", 1
+                ):
+                    tries_per_player = new_state.get("tries_per_player", 0)
+                    if tries_per_player:
+                        attempts_map = new_state.get("player_attempts", {})
+                        all_spent = all(
+                            attempts_map.get(p, 0) >= tries_per_player
+                            or p in new_state.get("correct_players", [])
+                            for p in new_state.get("scores", {}).keys()
+                        )
+                        if all_spent:
+                            new_state = await process_new_word(
+                                game_id_obj,
+                                new_state.get("time_for_guessing", 0),
+                            )
 
                 await manager.broadcast_state(game_id, new_state)
 

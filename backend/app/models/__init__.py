@@ -12,9 +12,9 @@ class Game(BaseModel):
     time_for_guessing: int = 60
     tries_per_player: int = 0
     right_answers_to_advance: int = 1
+    correct_players: List[str] = Field(default_factory=list)
     state: Literal["pending", "in_progress", "finished"] = "pending"
     scores: Dict[str, int] = Field(default_factory=dict)
-
 
 
 class GameState(BaseModel):
