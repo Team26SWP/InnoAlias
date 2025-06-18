@@ -10,6 +10,8 @@ class Game(BaseModel):
     current_word: Optional[str] = None
     expires_at: Optional[datetime] = None
     time_for_guessing: int = 60
+    tries_per_player: int = 0
+    right_answers_to_advance: int = 1
     state: Literal["pending", "in_progress", "finished"] = "pending"
     scores: Dict[str, int] = Field(default_factory=dict)
 
@@ -19,6 +21,8 @@ class GameState(BaseModel):
     current_word: Optional[str]
     expires_at: Optional[datetime]
     remaining_words_count: int
+    current_correct: int = 0
+    right_answers_to_advance: int = 1
     state: Literal["pending", "in_progress", "finished"]
     scores: Dict[str, int] = Field(default_factory=dict)
 
@@ -26,6 +30,7 @@ class GameState(BaseModel):
 class PlayerGameState(BaseModel):
     expires_at: Optional[datetime]
     remaining_words_count: int
+    tries_left: Optional[int] = None
     state: Literal["pending", "in_progress", "finished"]
     scores: Dict[str, int] = Field(default_factory=dict)
 
