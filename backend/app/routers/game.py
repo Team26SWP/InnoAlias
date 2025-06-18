@@ -1,91 +1,20 @@
-from asyncio import wait_for, TimeoutError, Lock
-from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
-from pymongo import ReturnDocument
+from asyncio import wait_for, TimeoutError
+from datetime import datetime, timezone
 from random import shuffle
-from datetime import datetime, timedelta, timezone
+from pymongo import ReturnDocument
+
+from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
 
 from ..code_gen import generate_code
-from ..db import db
-from ..models import Game, GameState, PlayerGameState
+from ..models import Game
+from ..services.game_service import (
+    games,
+    manager,
+    process_new_word,
+    required_to_advance,
+)
 
 router = APIRouter(prefix="", tags=["game"])
-
-games = db.games
-
-
-class ConnectionManager:
-    def __init__(self):
-        self.hosts: dict[str, WebSocket] = {}
-        self.players: dict[str, list[tuple[WebSocket, str]]] = {}
-        self.locks: dict[str, Lock] = {}
-
-    async def connect_host(self, websocket: WebSocket, game_id: str) -> bool:
-        await websocket.accept()
-
-        if game_id in self.hosts:
-            await websocket.close(
-                code=1008, reason="Game already active and host is connected"
-            )
-            return False
-
-        self.hosts[game_id] = websocket
-        self.locks[game_id] = Lock()
-        return True
-
-    async def connect_player(
-        self, websocket: WebSocket, game_id: str, player_name: str
-    ) -> bool:
-        await websocket.accept()
-        self.players.setdefault(game_id, []).append((websocket, player_name))
-        return True
-
-    def disconnect(self, game_id: str, websocket: WebSocket = None):
-        if self.hosts.get(game_id) is websocket:
-            del self.hosts[game_id]
-            del self.locks[game_id]
-
-        else:
-            lst = self.players.get(game_id, [])
-            self.players[game_id] = [
-                (ws, name) for ws, name in lst if ws is not websocket
-            ]
-            if not self.players[game_id]:
-                del self.players[game_id]
-
-    async def broadcast_state(self, game_id: str, state: dict):
-        host_ws = self.hosts.get(game_id)
-        if host_ws:
-            host_state = GameState(
-                current_word=state.get("current_word"),
-                expires_at=state.get("expires_at"),
-                state=state.get("state"),
-                remaining_words_count=len(state.get("remaining_words", [])),
-                scores=state.get("scores", {}),
-                current_correct=state.get("current_correct", 0),
-                right_answers_to_advance=state.get("right_answers_to_advance", 1),
-            ).model_dump(mode="json")
-
-            await host_ws.send_json(host_state)
-
-            for ws, name in self.players.get(game_id, []):
-                tries_per_player = state.get("tries_per_player", 0)
-                attempts = state.get("player_attempts", {}).get(name, 0)
-                tries_left = None
-                if tries_per_player:
-                    tries_left = max(tries_per_player - attempts, 0)
-
-                pg_state = PlayerGameState(
-                    expires_at=state["expires_at"],
-                    state=state["state"],
-                    remaining_words_count=len(state.get("remaining_words", [])),
-                    scores=state.get("scores", {}),
-                    tries_left=tries_left,
-                ).model_dump(mode="json")
-
-                await ws.send_json(pg_state)
-
-
-manager = ConnectionManager()
 
 
 @router.post("/create")
@@ -94,7 +23,7 @@ async def create_game(game: Game):
     shuffle(words)
 
     amount = game.words_amount if game.words_amount is not None else len(words)
-    
+
     code = await generate_code()
     new_game = {
         "_id": code,
@@ -109,73 +38,31 @@ async def create_game(game: Game):
         "correct_players": [],
         "time_for_guessing": game.time_for_guessing,
         "state": "pending",
+        "rotate_masters": game.rotate_masters,
+        "current_master": None,
     }
 
     result = await games.insert_one(new_game)
     return {"id": str(result.inserted_id)}
 
+
 @router.get("/deck/{game_id}")
 async def get_deck(game_id: str):
     if not await games.find_one({"_id": game_id}):
-        return HTTPException(status_code=404, detail="Game not found")
+        raise HTTPException(status_code=404, detail="Game not found")
 
     game = await games.find_one({"_id": game_id})
     return game["deck"]
 
 
-async def process_new_word(game_id: str, sec: int) -> dict:
-    game_before_pop = await games.find_one_and_update(
-        {"_id": game_id, "remaining_words.0": {"$exists": True}},
-        {"$pop": {"remaining_words": 1}},
-        return_document=ReturnDocument.BEFORE,
-    )
-
-    if not game_before_pop:
-        updated_game = await games.find_one_and_update(
-            {"_id": game_id},
-            {
-                "$set": {
-                    "current_word": None,
-                    "expires_at": None,
-                    "state": "finished",
-                    "remaining_words": [],
-                    "current_correct": 0,
-                    "player_attempts": {},
-                    "correct_players": [],
-                }
-            },
-            return_document=ReturnDocument.AFTER,
-        )
-
-        return updated_game
-
-    new_word = game_before_pop["remaining_words"][-1]
-
-    updated_game = await games.find_one_and_update(
-        {"_id": game_id},
-        {
-            "$set": {
-                "current_word": new_word,
-                "expires_at": datetime.now(timezone.utc) + timedelta(seconds=sec),
-                "state": "in_progress",
-                "current_correct": 0,
-                "player_attempts": {},
-                "correct_players": [],
-            }
-        },
-        return_document=ReturnDocument.AFTER,
-    )
-
-    return updated_game
-
-
 @router.websocket("/{game_id}")
 async def handle_game(websocket: WebSocket, game_id: str):
+    host_name = websocket.query_params.get("name")
     if not await games.find_one({"_id": game_id}):
         await websocket.close(code=1011, reason="Game not found")
         return
 
-    is_connected = await manager.connect_host(websocket, game_id)
+    is_connected = await manager.connect_host(websocket, game_id, host_name)
     if not is_connected:
         return
 
@@ -245,24 +132,20 @@ async def handle_game(websocket: WebSocket, game_id: str):
 @router.get("/leaderboard/{game_id}")
 async def get_leaderboard(game_id: str):
     if not await games.find_one({"_id": game_id}):
-        return HTTPException(status_code=404, detail="Game not found")
+        raise HTTPException(status_code=404, detail="Game not found")
 
     game = await games.find_one({"_id": game_id})
-    return dict(
-        sorted(
-            game["scores"].items(),
-            key=lambda kv: kv[1],
-            reverse=True
-        )
-    )
+    return dict(sorted(game["scores"].items(), key=lambda kv: kv[1], reverse=True))
+
 
 @router.delete("/delete/{game_id}")
 async def delete_game(game_id: str):
     if not await games.find_one({"_id": game_id}):
-        return HTTPException(status_code=404, detail="Game not found")
+        raise HTTPException(status_code=404, detail="Game not found")
 
     await games.delete_one({"_id": game_id})
     return "OK"
+
 
 @router.websocket("/player/{game_id}/")
 async def handle_player(websocket: WebSocket, game_id: str):
@@ -285,12 +168,29 @@ async def handle_player(websocket: WebSocket, game_id: str):
     )
 
     try:
+
         game = await games.find_one({"_id": game_id})
         await manager.broadcast_state(game_id, game)
 
         while True:
             data = await websocket.receive_json()
-            if data["action"] != "guess":
+            action = data.get("action")
+
+            if action == "skip":
+                async with manager.locks[game_id]:
+                    game = await games.find_one({"_id": game_id})
+                    if (
+                        game.get("rotate_masters")
+                        and game.get("state") == "in_progress"
+                        and player_name == game.get("current_master")
+                    ):
+                        new_state = await process_new_word(
+                            game_id, game["time_for_guessing"]
+                        )
+                        await manager.broadcast_state(game_id, new_state)
+                continue
+
+            if action != "guess":
                 continue
 
             guess = data.get("guess", "").strip().lower()
@@ -298,6 +198,16 @@ async def handle_player(websocket: WebSocket, game_id: str):
             async with manager.locks[game_id]:
                 game = await games.find_one({"_id": game_id})
                 if game["state"] != "in_progress":
+                    continue
+
+                if game.get("rotate_masters") and player_name == game.get(
+                    "current_master"
+                ):
+                    continue
+
+                if not game.get(
+                    "rotate_masters"
+                ) and player_name == manager.host_names.get(game_id):
                     continue
 
                 tries_per_player = game.get("tries_per_player", 0)
@@ -333,14 +243,6 @@ async def handle_player(websocket: WebSocket, game_id: str):
                         update,
                         return_document=ReturnDocument.AFTER,
                     )
-
-                    if new_state.get("current_correct", 0) >= new_state.get(
-                        "right_answers_to_advance", 1
-                    ):
-                        new_state = await process_new_word(
-                            game_id, game["time_for_guessing"]
-                        )
-
                 else:
                     await games.update_one(
                         {"_id": game_id},
@@ -348,24 +250,29 @@ async def handle_player(websocket: WebSocket, game_id: str):
                     )
                     new_state = await games.find_one({"_id": game_id})
 
-                if new_state.get("current_correct", 0) < new_state.get(
-                    "right_answers_to_advance", 1
+                if new_state.get("current_correct", 0) >= required_to_advance(
+                    new_state
                 ):
-                    tries_per_player = new_state.get("tries_per_player", 0)
-                    if tries_per_player:
-                        attempts_map = new_state.get("player_attempts", {})
-                        all_spent = all(
-                            attempts_map.get(p, 0) >= tries_per_player
-                            or p in new_state.get("correct_players", [])
-                            for p in new_state.get("scores", {}).keys()
-                        )
-                        if all_spent:
-                            new_state = await process_new_word(
-                                game_id,
-                                new_state.get("time_for_guessing", 0),
-                            )
+                    new_state = await process_new_word(
+                        game_id, game["time_for_guessing"]
+                    )
 
-                await manager.broadcast_state(game_id, new_state)
+            if new_state.get("current_correct", 0) < required_to_advance(new_state):
+                tries_per_player = new_state.get("tries_per_player", 0)
+                if tries_per_player:
+                    attempts_map = new_state.get("player_attempts", {})
+                    all_spent = all(
+                        attempts_map.get(p, 0) >= tries_per_player
+                        or p in new_state.get("correct_players", [])
+                        for p in new_state.get("scores", {}).keys()
+                    )
+                    if all_spent:
+                        new_state = await process_new_word(
+                            game_id,
+                            new_state.get("time_for_guessing", 0),
+                        )
+
+            await manager.broadcast_state(game_id, new_state)
 
     except WebSocketDisconnect:
         manager.disconnect(game_id, websocket)
