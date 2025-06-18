@@ -6,6 +6,7 @@ from pymongo import ReturnDocument
 from random import shuffle
 from datetime import datetime, timedelta, timezone
 
+from ..code_generator import generate_code
 from ..db import db
 from ..models import Game, GameState, PlayerGameState
 
@@ -96,7 +97,9 @@ async def create_game(game: Game):
 
     amount = game.words_amount if game.words_amount is not None else len(words)
 
+    game_id = await generate_code()
     new_game = {
+        "_id": game_id,
         "remaining_words": words[:amount],
         "current_word": None,
         "expires_at": None,
