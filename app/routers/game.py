@@ -250,7 +250,9 @@ async def handle_player(websocket: WebSocket, game_id: str):
                     )
                     new_state = await games.find_one({"_id": game_id})
 
-                if new_state.get("current_correct", 0) >= required_to_advance(new_state):
+                if new_state.get("current_correct", 0) >= required_to_advance(
+                    new_state
+                ):
                     new_state = await process_new_word(
                         game_id, game["time_for_guessing"]
                     )
