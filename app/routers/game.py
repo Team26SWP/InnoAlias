@@ -1,7 +1,7 @@
 from asyncio import wait_for, TimeoutError, Lock
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
 from pymongo import ReturnDocument
-from random import shuffle
+from random import shuffle, choice
 from datetime import datetime, timedelta, timezone
 
 from ..code_gen import generate_code
@@ -11,6 +11,8 @@ from ..models import Game, GameState, PlayerGameState
 router = APIRouter(prefix="", tags=["game"])
 
 games = db.games
+
+HOST_NAME = "Host"
 
 
 class ConnectionManager:
@@ -63,6 +65,7 @@ class ConnectionManager:
                 scores=state.get("scores", {}),
                 current_correct=state.get("current_correct", 0),
                 right_answers_to_advance=state.get("right_answers_to_advance", 1),
+                current_master=state.get("current_master"),
             ).model_dump(mode="json")
 
             await host_ws.send_json(host_state)
@@ -74,12 +77,20 @@ class ConnectionManager:
                 if tries_per_player:
                     tries_left = max(tries_per_player - attempts, 0)
 
+                word_for_player = (
+                    state.get("current_word")
+                    if state.get("current_master") == name
+                    else None
+                )
+
                 pg_state = PlayerGameState(
                     expires_at=state["expires_at"],
                     state=state["state"],
                     remaining_words_count=len(state.get("remaining_words", [])),
                     scores=state.get("scores", {}),
                     tries_left=tries_left,
+                    current_word=word_for_player,
+                    current_master=state.get("current_master"),
                 ).model_dump(mode="json")
 
                 await ws.send_json(pg_state)
@@ -94,7 +105,7 @@ async def create_game(game: Game):
     shuffle(words)
 
     amount = game.words_amount if game.words_amount is not None else len(words)
-    
+
     code = await generate_code()
     new_game = {
         "_id": code,
@@ -109,6 +120,8 @@ async def create_game(game: Game):
         "correct_players": [],
         "time_for_guessing": game.time_for_guessing,
         "state": "pending",
+        "rotate_masters": game.rotate_masters,
+        "current_master": None,
     }
 
     result = await games.insert_one(new_game)
@@ -142,6 +155,7 @@ async def process_new_word(game_id: str, sec: int) -> dict:
                     "current_correct": 0,
                     "player_attempts": {},
                     "correct_players": [],
+                    "current_master": None,
                 }
             },
             return_document=ReturnDocument.AFTER,
@@ -150,6 +164,24 @@ async def process_new_word(game_id: str, sec: int) -> dict:
         return updated_game
 
     new_word = game_before_pop["remaining_words"][-1]
+
+    game_data = await games.find_one({"_id": game_id})
+    current_master = game_data.get("current_master")
+    if game_data.get("rotate_masters"):
+        players = list(game_data.get("scores", {}).keys())
+        if game_id in manager.hosts:
+            players.append(HOST_NAME)
+        if players:
+            current_master = choice(players)
+        else:
+            current_master = None
+
+    if game_data.get("rotate_masters"):
+        players = list(game_data.get("scores", {}).keys())
+        if players:
+            current_master = choice(players)
+        else:
+            current_master = None
 
     updated_game = await games.find_one_and_update(
         {"_id": game_id},
@@ -161,6 +193,7 @@ async def process_new_word(game_id: str, sec: int) -> dict:
                 "current_correct": 0,
                 "player_attempts": {},
                 "correct_players": [],
+                "current_master": current_master,
             }
         },
         return_document=ReturnDocument.AFTER,
@@ -300,6 +333,9 @@ async def handle_player(websocket: WebSocket, game_id: str):
                 if game["state"] != "in_progress":
                     continue
 
+                if game.get("rotate_masters") and player_name == game.get("current_master"):
+                    continue
+
                 tries_per_player = game.get("tries_per_player", 0)
                 attempts = game.get("player_attempts", {}).get(player_name, 0)
 
@@ -334,9 +370,16 @@ async def handle_player(websocket: WebSocket, game_id: str):
                         return_document=ReturnDocument.AFTER,
                     )
 
-                    if new_state.get("current_correct", 0) >= new_state.get(
-                        "right_answers_to_advance", 1
-                    ):
+                    names = set(new_state.get("scores", {}).keys())
+                    if game_id in manager.hosts and HOST_NAME not in names:
+                        names.add(HOST_NAME)
+                    names.discard(new_state.get("current_master"))
+                    players_count = len(names)
+                    required = min(
+                        new_state.get("right_answers_to_advance", 1),
+                        players_count,
+                    )
+                    if new_state.get("current_correct", 0) >= required:
                         new_state = await process_new_word(
                             game_id, game["time_for_guessing"]
                         )
@@ -348,9 +391,16 @@ async def handle_player(websocket: WebSocket, game_id: str):
                     )
                     new_state = await games.find_one({"_id": game_id})
 
-                if new_state.get("current_correct", 0) < new_state.get(
-                    "right_answers_to_advance", 1
-                ):
+                names = set(new_state.get("scores", {}).keys())
+                if game_id in manager.hosts and HOST_NAME not in names:
+                    names.add(HOST_NAME)
+                names.discard(new_state.get("current_master"))
+                players_count = len(names)
+                required = min(
+                    new_state.get("right_answers_to_advance", 1),
+                    players_count,
+                )
+                if new_state.get("current_correct", 0) < required:
                     tries_per_player = new_state.get("tries_per_player", 0)
                     if tries_per_player:
                         attempts_map = new_state.get("player_attempts", {})
