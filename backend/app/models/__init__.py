@@ -29,6 +29,7 @@ class GameState(BaseModel):
     current_master: Optional[str] = None
     state: Literal["pending", "in_progress", "finished"]
     scores: Dict[str, int] = Field(default_factory=dict)
+    players: List[str] = Field(default_factory=list)
 
 
 class PlayerGameState(BaseModel):
@@ -39,6 +40,7 @@ class PlayerGameState(BaseModel):
     current_master: Optional[str] = None
     state: Literal["pending", "in_progress", "finished"]
     scores: Dict[str, int] = Field(default_factory=dict)
+    players: List[str] = Field(default_factory=list)
 
 
 class User(BaseModel):

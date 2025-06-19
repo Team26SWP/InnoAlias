@@ -65,6 +65,7 @@ class ConnectionManager:
 
     async def broadcast_state(self, game_id: str, state: dict) -> None:
         host_ws = self.hosts.get(game_id)
+        players = list(state.get("scores", {}).keys())
         if host_ws:
             host_state = GameState(
                 current_word=state.get("current_word"),
@@ -72,6 +73,7 @@ class ConnectionManager:
                 state=state.get("state"),
                 remaining_words_count=len(state.get("remaining_words", [])),
                 scores=state.get("scores", {}),
+                players=players,
                 current_correct=state.get("current_correct", 0),
                 right_answers_to_advance=state.get("right_answers_to_advance", 1),
                 current_master=state.get("current_master"),
@@ -96,6 +98,7 @@ class ConnectionManager:
                     state=state["state"],
                     remaining_words_count=len(state.get("remaining_words", [])),
                     scores=state.get("scores", {}),
+                    players=players,
                     tries_left=tries_left,
                     current_word=word_for_player,
                     current_master=state.get("current_master"),
