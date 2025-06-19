@@ -1,80 +1,78 @@
-import React, { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import '../style/JoinGame.css'
 
 
-const API_URL = '/api';
+const WS_BASE = "ws://217.199.253.164/api/game";
 
 const JoinGame: React.FC = () => {
     const navigate = useNavigate();
-
-    const { code:urlCode } = useParams();
+    const [ searchParams ] = useSearchParams();
     
     const [playerName, setPlayerName] = useState('');
     const [manualCode, setGameCode] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [socketOpen, setSocketOpen] = useState(false);
+    const socketRef = useRef<WebSocket | null>(null);
+
     const [isLoading, setIsLoading] = useState(false);
     
-    const gameCode = urlCode?.toUpperCase() || manualCode;
+    const codeFromUrl = searchParams.get("code")?.toUpperCase();
+    const gameCode = codeFromUrl || manualCode;
     
     const validatePlayerName = (name: string): string | null => {
-        if (name.length < 2) {return 'Name must be at least 2 characters long';}
-        if (name.length > 20) {return 'Name must be less than 20 characters';}
-        if (!/^[a-zA-Z0-9\s-]+$/.test(name)) {return 'Name can only contain letters, numbers, spaces, and hyphens';}
+        // no need (max/min lenght in html)
+        /*if (name.length < 2) {return 'Name must be at least 2 characters long';}
+        if (name.length > 20) {return 'Name must be less than 20 characters';}*/
+        if (!/^[a-zA-Z\s-]+$/.test(name)) {return 'Name can only contain letters, spaces';}
         return null;
     };
 
     const validateGameCode = (code: string): string | null => {
-        if (code.length !== 6) {return 'Game code must be 6 characters long';}
+        // no need (max lenght in html)
+        // if (code.length !== 6) {return 'Game code must be 6 characters long';}
         if (!/^[A-Z0-9]+$/.test(code)) {return 'Game code can only contain uppercase letters and numbers';}
         return null;
     };
-    const isFormValid = 
-    !validatePlayerName(playerName) && !validateGameCode(gameCode);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         const nameError = validatePlayerName(playerName);
         const codeError = validateGameCode(gameCode);
         
-        if (nameError) {
-            setError(nameError);
-            return;
-        }
-
-        if (codeError) {
-            setError(codeError);
+        if (nameError || codeError) {
+            setError(nameError || codeError);
             return;
         }
 
         setIsLoading(true);
         setError(null);
+        const ws = new WebSocket(`${WS_BASE}/${gameCode}/name?=${encodeURIComponent(playerName)}`);
+        socketRef.current = ws;
 
-        try {
-            const response = await fetch(`${API_URL}/join/game`, {
-                method: 'POST',
-                headers: {
-                'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    playerName,
-                    gameCode
-                })
-            });
+        ws.onopen = () => {
+            setSocketOpen(true);
+            navigate(`/lobby/${gameCode}`, {state : { playerName, gameCode }});
+        };
 
-            if (!response.ok) {
-                throw new Error('Failed to join game');
-            }
-
-            const data = await response.json();
-            navigate(`/game/${data.id}`);
-        } catch (err) {
-            setError('Failed to join game. Please try again.');
-            console.error('Error joining game:', err);
-        } finally {
+        ws.onerror = () => {
+            setError("Failed to connect to game. Check your code and try again.");
+            setIsLoading(false);
+        };
+        ws.onclose = () => {
+            if (!socketOpen) {
+            setError("Connection closed before joining. Is the game running?");
             setIsLoading(false);
         }
+        };
     };
+
+    useEffect(() => {
+        return () => {
+            socketRef.current?.close();
+        };
+    }, []);
     
     return (
         <div className="join-game-container">
@@ -94,11 +92,12 @@ const JoinGame: React.FC = () => {
                         }}
                         required
                         disabled={isLoading}
-                        maxLength={20}
+                        minLength={2}
+                        maxLength={30}
                     />
                 </div>
                 
-                {!urlCode && (
+                {!searchParams.get('code') && (
                     <div className="form-group">
                         <label htmlFor="gameCode">Game Code</label>
                         <input
@@ -119,10 +118,10 @@ const JoinGame: React.FC = () => {
                 )}
                 <button 
                     type="submit" 
-                    className={`join-button ${isFormValid ? 'active' : 'disabled'}`}
-                    disabled={!isFormValid || isLoading}
->
-  {isLoading ? 'Joining Game...' : 'Join Game'}
+                    className={`join-button`}
+                    disabled={isLoading}
+                    >
+                    {socketOpen ? 'Joining Game...' : 'Join Game'}
                 </button>
             </form>
         </div>
