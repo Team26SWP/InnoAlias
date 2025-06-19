@@ -27,10 +27,10 @@ const Home: React.FC = () => {
         
         {/* Navigation buttons container */}
         <div className="home-options">
-          <button onClick={handleCreateGame} className="create-button">
+          <button onClick={handleCreateGame} className="create-home-button">
             Create Game
           </button>
-          <button onClick={handleJoinGame} className="join-button">
+          <button onClick={handleJoinGame} className="join-home-button">
             Join Game
           </button>
         </div>

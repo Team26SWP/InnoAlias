@@ -1,158 +1,105 @@
 .lobby-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  min-height: 100vh;
-  padding: 20px;
-  background-color: #f5f5f5;
-}
-
-.lobby-card {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 600px;
-}
-
-.lobby-card h1 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 30px;
-  font-size: 2.5rem;
-}
-
-.game-code {
-  text-align: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-}
-
-.game-code h2 {
-  color: #666;
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-}
-
-.code {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #2c3e50;
-  letter-spacing: 2px;
-  margin: 15px 0;
-  padding: 10px;
-  background-color: #e9ecef;
-  border-radius: 6px;
-  display: inline-block;
-}
-
-.game-code p {
-  color: #666;
-  font-size: 0.9rem;
+  min-height: 200vh;
+  background-color: #ffefe3;
+  color: #3171a6;
+  font-family: "ADLaM Display";
+  padding: 40px 20px;
+  box-sizing: border-box;
   margin-top: 10px;
+}
+
+.content-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 75px;
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 40px;
 }
 
 .players-section {
-  margin-bottom: 30px;
-}
-
-.players-section h2 {
-  color: #333;
-  font-size: 1.5rem;
-  margin-bottom: 15px;
+  color: #3171a6;
 }
 
 .players-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  background-color: #d9d9d9;
+  border-radius: 10px;
+  padding: 10px;
+  height: 480px;
+  width: 460px;
+  overflow-y: auto;
+  margin-top: 10px;
 }
 
 .player-item {
+  padding: 6px 0;
+  font-size: 16px;
+  color: #3171a6;
+}
+
+.right-section {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 15px;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-  transition: background-color 0.2s;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.player-item:hover {
-  background-color: #e9ecef;
+.url-box,
+.code-box {
+  background-color: #d9d9d9;
+  border-radius: 20px;
+  color: #3171a6;
+  font-size: 16px;
+  min-width: 100px;
+  word-break: break-word;
 }
 
-.player-item.host {
-  background-color: #e3f2fd;
+.url-box{
+  padding: 10px 40px;
+  min-width: 300px;
+  text-align: left;
+  white-space: nowrap;
 }
 
-.player-name {
-  font-size: 1.1rem;
-  color: #333;
-}
-
-.host-badge {
-  background-color: #2196f3;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: bold;
-}
-
-.lobby-actions {
+.code-box{
+  padding: 10px 5px;
   text-align: center;
-  margin-top: 30px;
+   min-width: 90px;  
+  max-width: 80px;
 }
 
-.start-game-button {
-    background-color: #3171a6;
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    font-size: 1.1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
+.qr-section {
+  text-align: left;
 }
 
-.start-game-button:hover:not(:disabled) {
-    background-color: #317ba6;
+.qr-section h3 {
+  color: #3171a6;
 }
 
-.start-game-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
+.qr-section img {
+  width: 310px;
+  height: 310px;
+  border-radius: 20px;
+  background-color: #d9d9d9;
 }
 
-.warning {
-  color: #f44336;
-  margin-top: 10px;
-  font-size: 0.9rem;
-}
-
-.error-message {
-  background-color: #ffebee;
-  color: #c62828;
-  padding: 15px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.back-button {
-  background-color: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
-  padding: 10px 20px;
-  border-radius: 6px;
+.create-button {
+  padding: 10px 30px;
+  background-color: #3171a6;
+  color: #fff1e8;
+  border: none;
+  border-radius: 20px;
+  font-size: 30px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  font-family: "ADLaM Display";
+  transition: background-color 0.3s;
+  width: 300px;
+  margin-top: -100px;  
+  margin-right: 30px;  
 }
-
-.back-button:hover {
-  background-color: #e0e0e0;
+.create-button:hover {
+  background-color: #317ba6;
 }

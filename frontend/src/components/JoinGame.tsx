@@ -14,7 +14,7 @@ const JoinGame: React.FC = () => {
     const [manualCode, setGameCode] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-
+    
     const gameCode = urlCode?.toUpperCase() || manualCode;
     
     const validatePlayerName = (name: string): string | null => {
@@ -29,7 +29,8 @@ const JoinGame: React.FC = () => {
         if (!/^[A-Z0-9]+$/.test(code)) {return 'Game code can only contain uppercase letters and numbers';}
         return null;
     };
-    
+    const isFormValid = 
+    !validatePlayerName(playerName) && !validateGameCode(gameCode);
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -118,10 +119,10 @@ const JoinGame: React.FC = () => {
                 )}
                 <button 
                     type="submit" 
-                    className="join-button"
-                    disabled={isLoading}
-                >
-                    {isLoading ? 'Joining Game...' : 'Join Game'}
+                    className={`join-button ${isFormValid ? 'active' : 'disabled'}`}
+                    disabled={!isFormValid || isLoading}
+>
+  {isLoading ? 'Joining Game...' : 'Join Game'}
                 </button>
             </form>
         </div>

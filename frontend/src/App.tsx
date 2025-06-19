@@ -6,8 +6,7 @@ import JoinGame from './components/JoinGame';
 import Quiz from './components/Quiz';
 import Results from './components/Results';
 import Lobby from './components/Lobby';
-
-import "./style/style.css"
+import Leaderboard from './components/Leaderboard';
 
 function App() {
   return (
@@ -19,7 +18,8 @@ function App() {
           <Route path="/join_game/:code?" element={<JoinGame />} />
           <Route path="/game/:gameId" element={<Quiz />} />
           <Route path="/results/:gameId" element={<Results />} />
-          <Route path="/lobby/:gameId" element={<Lobby />} />
+          <Route path="/lobby/" element={<Lobby />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
         </Routes>
       </div>
     </Router>
