@@ -52,7 +52,9 @@ async def get_deck(game_id: str):
         raise HTTPException(status_code=404, detail="Game not found")
 
     game = await games.find_one({"_id": game_id})
-    return game["deck"]
+    return {
+        "deck": game["deck"]
+    }
 
 
 @router.websocket("/{game_id}")
@@ -144,7 +146,9 @@ async def delete_game(game_id: str):
         raise HTTPException(status_code=404, detail="Game not found")
 
     await games.delete_one({"_id": game_id})
-    return "OK"
+    return {
+        "status": "OK",
+    }
 
 
 @router.websocket("/player/{game_id}/")
