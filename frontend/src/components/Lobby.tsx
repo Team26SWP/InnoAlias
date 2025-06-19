@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "../style/Lobby.css";
 
+
 interface Player {
   id: string;
   name: string;
@@ -8,32 +9,11 @@ interface Player {
 
 const Lobby: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
-  const gameUrl = "https://youtu.be/dQw4w9WgXcQ?si=Um0iHjJWtHbIAPk3";
-  const gameCode = "ABC123";
+  const urlParams = new URLSearchParams(window.location.search);
+  const gameCode = urlParams.get("code");
+  const gameUrl = "https://localhost:3000/join_game?code=" + gameCode;
 
-  useEffect(() => {
-    const samplePlayers = [
-      { id: "1", name: "Alice" },
-      { id: "2", name: "Bob" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" }
 
-    ];
-    setPlayers(samplePlayers);
-  }, []);
 
   return (
   <div className="lobby-container">
@@ -66,7 +46,7 @@ const Lobby: React.FC = () => {
       </div>
     </div>
 
-    <button className="create-button">Create a game</button>
+    <button className="create-button">Start game</button>
   </div>
 );
 

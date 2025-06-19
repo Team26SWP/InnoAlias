@@ -9,11 +9,15 @@ import '../style/Quiz.css';
  * @property remaining_words_count - Number of words left in the game
  * @property state - Current state of the game (in_progress or finished)
  */
+
 interface GameState {
   current_word: string | null;
   expires_at: string | null;
   remaining_words_count: number;
   state: 'in_progress' | 'finished';
+  tries_left: number;
+  current_master: string;
+  scores: {[name: string]: number};
 }
 
 // WebSocket server URL for real-time game updates
@@ -37,8 +41,9 @@ const Quiz: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const [timeStr, setTimeStr] = useState<string>("");
+  const urlParams = new URLSearchParams(window.location.search);
+  const playerName = useRef<string>(urlParams.get("name"));
   var expiresAt = useRef<string>("");
 
   /**
