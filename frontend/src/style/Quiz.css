@@ -381,3 +381,7 @@
         .word-form button:hover {
             background-color: #317ba6;
         }
+
+        .word-form button:disabled {
+            background-color: #cccccc;
+        }

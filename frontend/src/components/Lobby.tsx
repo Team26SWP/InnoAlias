@@ -30,7 +30,7 @@ const Lobby: React.FC = () => {
       ws.onmessage = (message) => {
         const data = JSON.parse(message.data);
         if (data.state === "in_progress") {
-            navigate(`/game/${gameCode}?name=${name}&host=false`);
+          navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
         }
       }
       setSocket(ws);

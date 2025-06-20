@@ -40,6 +40,7 @@ const Quiz: React.FC = () => {
   const navigate = useNavigate();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [wrong, setWrong] = useState<string | null>(null);
 
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -48,9 +49,15 @@ const Quiz: React.FC = () => {
   const isHost = useRef<boolean>(urlParams.get("host") === "true");
   const [timeStr, setTimeStr] = useState<string>("");
   var expiresAt = useRef<string>("");
+  var triesLeft = useRef<number>();
+  var [attemptsLeft, setAttemptsLeft] = useState<number>();
+  var score = useRef<number>();
+
+
+  const location = useLocation();
 
   const [enteredWords, setEnteredWords] = useState<string[]>([]);
-  const inputWord = useRef<string>('');
+  const [inputWord, setInputWord] = useState<string>('');
   const [correctCount, setCorrectCount] = useState(0);
   const totalWords = 10; 
 
@@ -88,11 +95,43 @@ const Quiz: React.FC = () => {
       setError(null);
     };
 
+    if (!isHost.current) {
+      const initialState: GameState = location.state.game_state;
+      console.log(initialState);
+      setGameState(initialState);
+      if (initialState.expires_at) {
+        expiresAt.current = initialState.expires_at;
+      }
+      score.current = initialState.scores[name.current];
+      triesLeft.current = initialState.tries_left;
+      setAttemptsLeft(triesLeft.current);
+      setCorrectCount(score.current);
+    }
+
     websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      const data: GameState = JSON.parse(event.data);
       setGameState(data);
-      setEnteredWords([]);
-      expiresAt.current = data.expires_at;
+      if (data.expires_at && data.expires_at !== expiresAt.current) {
+        expiresAt.current = data.expires_at;
+      }
+      if (name.current && score.current === data.scores[name.current] && triesLeft.current !== data.tries_left) {
+        setWrong("Wrong!");
+      } else if (name.current && score.current !== data.scores[name.current]) {
+        setWrong("Right!");
+        score.current = data.scores[name.current];
+        setEnteredWords([]);
+        setCorrectCount(score.current);
+      }
+
+      console.log("Update!")
+
+      if (name.current) {
+        console.log(score.current);
+        console.log(data.scores[name.current]);
+      }
+
+      triesLeft.current = data.tries_left;
+      setAttemptsLeft(triesLeft.current);
 
       if (data.state === 'finished') {
         navigate(`/`);
@@ -122,7 +161,6 @@ const Quiz: React.FC = () => {
     connectWebSocket();
   }, [connectWebSocket]);
 
-
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeStr(formatTimeLeft(expiresAt.current));
@@ -140,12 +178,13 @@ const Quiz: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputWord.current.trim()) return;
+    console.log(inputWord);
+    if (!inputWord.trim()) return;
 
-    setEnteredWords([...enteredWords, inputWord.current]);
-    const str = inputWord.current;
-    ws?.send(JSON.stringify({ action: 'guess', str }));
-    inputWord.current = '';
+    setEnteredWords([...enteredWords, inputWord]);
+    const str = inputWord;
+    ws?.send(JSON.stringify({ action: 'guess', guess: str }));
+    setInputWord("");
   };
 
   if (error) {
@@ -209,18 +248,21 @@ const Quiz: React.FC = () => {
       <div className="game-main">
         <div className="top-bar">
           <h2>Time left : {timeStr}</h2>
-          <div className="score">Correct : {correctCount} / {totalWords}</div>
+          <div className="score">Correct : {correctCount}</div>
         </div>
 
         <form onSubmit={handleSubmit} className="word-form">
           <input
             type="text"
             placeholder="Enter a word........"
-            value={inputWord.current}
-            onChange={(e) => inputWord.current = e.target.value}
+            value={inputWord}
+            onChange={(e) => setInputWord(e.target.value)}
+            id="guess-input"
           />
-          <button type="submit">Submit</button>
+          <button type="submit" disabled={ gameState.tries_left <= 0}>Submit</button>
         </form>
+        <span>Attempts left {attemptsLeft}</span>
+        <span>{ wrong }</span>
       </div>
     </div>
   )
