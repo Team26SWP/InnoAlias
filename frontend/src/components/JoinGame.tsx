@@ -2,8 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import '../style/JoinGame.css'
 
-
-const WS_BASE = "ws://217.199.253.164/api/game";
+import socketConfig from "./socketConfig";
 
 const JoinGame: React.FC = () => {
   const navigate = useNavigate();
@@ -48,12 +47,12 @@ const JoinGame: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
-    const ws = new WebSocket(`${WS_BASE}/${gameCode}/name?=${encodeURIComponent(playerName)}`);
+    const ws = socketConfig.connectSocketPlayer(playerName, gameCode);
     socketRef.current = ws;
 
     ws.onopen = () => {
       setSocketOpen(true);
-      navigate(`/lobby/${gameCode}`, { state: { playerName, gameCode } });
+      navigate(`/lobby?code=${gameCode}&name=${playerName}&host=false`);
     };
 
     ws.onerror = () => {

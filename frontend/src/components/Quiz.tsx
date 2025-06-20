@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import '../style/Quiz.css';
 
+import socketConfig from "./socketConfig";
+
 /**
  * Interface defining the structure of the game state
  * @property current_word - The word currently being played
@@ -39,11 +41,11 @@ const Quiz: React.FC = () => {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const location = useLocation();
-  const [ws, setWs] = useState<WebSocket>(location.state.webSocket);
+  const [ws, setWs] = useState<WebSocket | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const urlParams = new URLSearchParams(window.location.search);
-  const playerName = useRef<string>(urlParams.get("name"));
+  const name = useRef<string>(urlParams.get("name"));
+  const isHost = useRef<boolean>(urlParams.get("host") === "true");
   const [timeStr, setTimeStr] = useState<string>("");
   var expiresAt = useRef<string>("");
 
@@ -75,10 +77,10 @@ const Quiz: React.FC = () => {
    * Establishes WebSocket connection with reconnection logic
    */
   const connectWebSocket = useCallback(() => {
-    if (!gameId) return;
+    if (!gameId || !name.current) return;
 
-
-    const websocket = new WebSocket(`${API_URL}/game/${gameId}`);
+    var websocket: WebSocket;
+    isHost ? websocket = socketConfig.connectSocketHost(name.current, gameId) : websocket = socketConfig.connectSocketPlayer(name.current, gameId);
 
     websocket.onopen = () => {
       console.log('Connected to game server');
@@ -142,7 +144,7 @@ const Quiz: React.FC = () => {
     if (!inputWord.trim()) return;
 
     setEnteredWords([...enteredWords, inputWord]);
-    ws.send(JSON.stringify({ action: 'guess', inputWord }));
+    ws?.send(JSON.stringify({ action: 'guess', inputWord }));
     setInputWord('');
   };
 
@@ -165,7 +167,7 @@ const Quiz: React.FC = () => {
     return <div className="quiz-container">Loading...</div>;
   }
 
-  if (playerName.current === gameState.current_master) {
+  if (name.current === gameState.current_master) {
     return (
       <div className="quiz-container">
         <div className="question-card">

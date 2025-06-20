@@ -4,8 +4,6 @@ import "../style/Lobby.css";
 
 import socketConfig from "./socketConfig";
 
-const WS_URL = "ws://localhost:8000/api"
-
 interface Player {
   id: string;
   name: string;
@@ -30,7 +28,7 @@ const Lobby: React.FC = () => {
 
   const handleStartGame = () => {
     socket?.send(JSON.stringify({ action: "start" }));
-    navigate(`/game/${gameCode}`, { state: {webSocket: socket} });
+    navigate(`/game/${gameCode}?name=${hostName}&host=true`);
   }
 
   return (

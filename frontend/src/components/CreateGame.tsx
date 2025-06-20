@@ -4,6 +4,19 @@ import '../style/CreateGame.css';
 
 const API_URL = 'http://localhost:8000/api';
 
+class Settings {
+  time: number;
+  deckLimit: number;
+  attemptsLimit: number;
+  answersLimit: number;
+  constructor(time: number, deck: number, attempts: number, answers: number) {
+    this.time = time;
+    this.deckLimit = deck;
+    this.attemptsLimit = attempts;
+    this.answersLimit = answers;
+  }
+}
+
 const CreateGame: React.FC = () => {
   const [words, setWords] = useState<string[]>([]);
   const [currentWord, setCurrentWord] = useState('');
@@ -12,6 +25,7 @@ const CreateGame: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [hostName, setHostName] = useState<string>("");
 
+  const settings = useRef<Settings>(new Settings(60, 0, 3, 1));
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -46,7 +60,7 @@ const CreateGame: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           remaining_words: words,
-          words_amount: (settings.current.deckLimit == 0) ? words.length : settings.current.deckLimit,
+          words_amount: (settings.current.deckLimit === 0) ? words.length : settings.current.deckLimit,
           time_for_guessing: settings.current.time,
           tries_per_player: settings.current.attemptsLimit,
           right_answers_to_advance: settings.current.answersLimit
@@ -61,7 +75,7 @@ const CreateGame: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-    };
+  };
 
   const saveSettings = () => {
     const minutes = document.getElementById("minutes");
@@ -88,8 +102,8 @@ const CreateGame: React.FC = () => {
         <div className="input-container">
           <div className="left-section">
             <input type="text" className="word-input" placeholder="Enter your name"
-              value={hostName}
-              onChange={(e) => { setHostName(e.target.value); setError(null) } } />
+            value={hostName}
+            onChange={(e) => { setHostName(e.target.value); setError(null) } } />
             <input
               type="text"
               className="word-input"
@@ -144,46 +158,46 @@ const CreateGame: React.FC = () => {
       </button>
 
       {showSettings && (
-      <div className="modal-overlay">
-        <div className="modal">
-          <button className="modal-close" onClick={() => setShowSettings(false)}>
-            ✕
-          </button>
-          <div className="modal-content">
-            <div className="setting-row">
-              <label>Time:</label>
-              <div className="row-right time-group">
-                 <div className="time-unit">
-                  <input type="number" id="minutes" min="0" max="59" placeholder="1"/> <span>min</span>
+        <div className="modal-overlay">
+          <div className="modal">
+            <button className="modal-close" onClick={() => setShowSettings(false)}>
+              ✕
+            </button>
+            <div className="modal-content">
+              <div className="setting-row">
+                <label>Time:</label>
+                <div className="row-right time-group">
+                  <div className="time-unit">
+                    <input type="number" id="minutes" min="0" max="59" placeholder="1"/> <span>min</span>
+                  </div>
+                  <div className="time-unit">
+                    <input type="number" id="seconds" min="0" max="59" placeholder="0"/> <span>sec</span>
+                  </div>
                 </div>
-                <div className="time-unit">  
-                  <input type="number" id="seconds" min="0" max="59" placeholder="0"/> <span>sec</span>
-                 </div>
               </div>
-            </div>
-            <div className="setting-row">
-              <label>Deck limit:</label>
-              <div className="row-right">
-                <input type="number" id="deck-length" placeholder="max" min="1"/> <span>cards</span>
+              <div className="setting-row">
+                <label>Deck limit:</label>
+                <div className="row-right">
+                  <input type="number" id="deck-length" placeholder="max" min="1"/> <span>cards</span>
+                </div>
               </div>
-            </div>
-            <div className="setting-row">
-              <label>Limit of attempts:</label>
-              <div className="row-right">
-                <input type="number" id="attempts" placeholder="3" min="1"/> <span>tries</span>
+              <div className="setting-row">
+                <label>Limit of attempts:</label>
+                <div className="row-right">
+                  <input type="number" id="attempts" placeholder="3" min="1"/> <span>tries</span>
+                </div>
               </div>
-            </div>
-            <div className="setting-row">
-              <label>Limit of correct answers:</label>
-              <div className="row-right">
-                <input type="number" id="answers" placeholder="1" min="1"/> <span>players</span>
+              <div className="setting-row">
+                <label>Limit of correct answers:</label>
+                <div className="row-right">
+                  <input type="number" id="answers" placeholder="1" min="1"/> <span>players</span>
+                </div>
               </div>
-            </div>
 
               <button className="modal-save-button" onClick={saveSettings}>Save</button>
+            </div>
           </div>
         </div>
-      </div>      
       )}
     </div>
   );
