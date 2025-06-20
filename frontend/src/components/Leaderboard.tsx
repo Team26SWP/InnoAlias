@@ -7,7 +7,7 @@ interface Player {
 }
 
 const Leaderboard: React.FC = () => {
-  const players: Player[] = [
+  const players: Player[] = [ // sample input, should be removed
     { name: "Player 1", score: 5000 },
     { name: "Player 2", score: 5000 },
     { name: "Player 3", score: 5000 },

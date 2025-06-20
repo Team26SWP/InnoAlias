@@ -24,7 +24,8 @@ const Lobby: React.FC = () => {
       const ws = socketConfig.connectSocketHost(name, gameCode);
       setSocket(ws);
       ws.onopen = () => { console.log("host connection successful"); }
-    } else if (!isHost && gameCode && name) {
+    }
+    else if (!isHost && gameCode && name) {
       const ws = socketConfig.connectSocketPlayer(name, gameCode);
       ws.onopen = () => { console.log("player connection successful"); }
       ws.onmessage = (message) => {
@@ -35,7 +36,7 @@ const Lobby: React.FC = () => {
       }
       setSocket(ws);
     }
-  }, [gameCode, name, isHost]);
+  }, [gameCode, name, isHost, navigate]);
 
   const handleStartGame = () => {
     socket?.send(JSON.stringify({ action: "start" }));
