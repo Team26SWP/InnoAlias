@@ -87,11 +87,7 @@ class ConnectionManager:
                 if tries_per_player:
                     tries_left = max(tries_per_player - attempts, 0)
 
-                word_for_player = (
-                    state.get("current_word")
-                    if state.get("current_master") == name
-                    else None
-                )
+                word_for_player = state.get("current_word")
 
                 pg_state = PlayerGameState(
                     expires_at=state["expires_at"],
