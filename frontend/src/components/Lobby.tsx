@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../style/Lobby.css";
+
+import socketConfig from "./socketConfig";
+
+const WS_URL = "ws://localhost:8000/api"
 
 interface Player {
   id: string;
@@ -8,32 +13,25 @@ interface Player {
 
 const Lobby: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
-  const gameUrl = "https://youtu.be/dQw4w9WgXcQ?si=Um0iHjJWtHbIAPk3";
-  const gameCode = "ABC123";
+  const [socket, setSocket] = useState<WebSocket>();
+  const urlParams = new URLSearchParams(window.location.search);
+  const gameCode = urlParams.get("code");
+  const gameUrl = "https://localhost:3000/join_game?code=" + gameCode;
+  const hostName = urlParams.get("host");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const samplePlayers = [
-      { id: "1", name: "Alice" },
-      { id: "2", name: "Bob" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" },
-      { id: "3", name: "Charlie" }
+    if (hostName && gameCode) {
+      const ws = socketConfig.connectSocketHost(hostName, gameCode);
+      setSocket(ws);
+      ws.onopen = () => { console.log("connection successful"); }
+    }
+  }, [gameCode, hostName]);
 
-    ];
-    setPlayers(samplePlayers);
-  }, []);
+  const handleStartGame = () => {
+    socket?.send(JSON.stringify({ action: "start" }));
+    navigate(`/game/${gameCode}`, { state: {webSocket: socket} });
+  }
 
   return (
   <div className="lobby-container">
@@ -66,7 +64,7 @@ const Lobby: React.FC = () => {
       </div>
     </div>
 
-    <button className="create-button">Create a game</button>
+      {hostName ? <button className="create-button" onClick={handleStartGame}>Start game</button> : <div></div>}
   </div>
 );
 

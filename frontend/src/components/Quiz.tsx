@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import '../style/Quiz.css';
 
 /**
@@ -14,11 +14,14 @@ interface GameState {
   expires_at: string | null;
   remaining_words_count: number;
   state: 'in_progress' | 'finished';
+  tries_left: number;
+  current_master: string;
+  scores: { [name: string]: number };
 }
 
 // WebSocket server URL for real-time game updates
-const HOST = window.location.host;
-const API_URL = "ws://" + HOST + "/api";
+//const HOST = window.location.host;
+const API_URL = "ws://" + "localhost:8000" + "/api";
 
 /**
  * Quiz Component
@@ -35,11 +38,19 @@ const Quiz: React.FC = () => {
   const navigate = useNavigate();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [ws, setWs] = useState<WebSocket | null>(null);
+
+  const location = useLocation();
+  const [ws, setWs] = useState<WebSocket>(location.state.webSocket);
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const urlParams = new URLSearchParams(window.location.search);
+  const playerName = useRef<string>(urlParams.get("name"));
   const [timeStr, setTimeStr] = useState<string>("");
   var expiresAt = useRef<string>("");
+
+  const [enteredWords, setEnteredWords] = useState<string[]>([]);
+  const [inputWord, setInputWord] = useState('');
+  const [correctCount, setCorrectCount] = useState(0);
+  const totalWords = 10; 
 
   /**
    * Formats the remaining time in a user-friendly way
@@ -50,13 +61,13 @@ const Quiz: React.FC = () => {
     const now = new Date();
     const expires = new Date(expiresAt);
     const diff = expires.getTime() - now.getTime() - expires.getTimezoneOffset() * 60000;
-    
+
     if (diff <= 0) return 'Time\'s up!';
-    
+
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    
+
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
@@ -64,7 +75,7 @@ const Quiz: React.FC = () => {
    * Establishes WebSocket connection with reconnection logic
    */
   const connectWebSocket = useCallback(() => {
-      if (!gameId) return;
+    if (!gameId) return;
 
 
     const websocket = new WebSocket(`${API_URL}/game/${gameId}`);
@@ -73,11 +84,13 @@ const Quiz: React.FC = () => {
       console.log('Connected to game server');
       setIsReconnecting(false);
       setError(null);
+      websocket.send(JSON.stringify({ action: 'start' }));
     };
 
     websocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setGameState(data);
+      setEnteredWords([]);
       expiresAt.current = data.expires_at;
 
       if (data.state === 'finished') {
@@ -108,13 +121,13 @@ const Quiz: React.FC = () => {
     connectWebSocket();
   }, [connectWebSocket]);
 
-    
-  useEffect(() => {
-      const interval = setInterval(() => {
-          setTimeStr(formatTimeLeft(expiresAt.current));
-      }, 500)
 
-      return () => clearInterval(interval);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeStr(formatTimeLeft(expiresAt.current));
+    }, 500)
+
+    return () => clearInterval(interval);
   }, [])
 
 
@@ -122,6 +135,15 @@ const Quiz: React.FC = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ action: 'skip' }));
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputWord.trim()) return;
+
+    setEnteredWords([...enteredWords, inputWord]);
+    ws.send(JSON.stringify({ action: 'guess', inputWord }));
+    setInputWord('');
   };
 
   if (error) {
@@ -143,32 +165,63 @@ const Quiz: React.FC = () => {
     return <div className="quiz-container">Loading...</div>;
   }
 
-  return (
-    <div className="quiz-container">
-      <div className="question-card">
-        <div className="game-info">
-          <div className="remaining-words">
-            Words remaining: {gameState.remaining_words_count}
-          </div>
-          {gameState.expires_at && (
-            <div className="timer">
-              Time left: {timeStr}
+  if (playerName.current === gameState.current_master) {
+    return (
+      <div className="quiz-container">
+        <div className="question-card">
+          <div className="game-info">
+            <div className="remaining-words">
+              Words remaining: {gameState.remaining_words_count}
             </div>
-          )}
+            {gameState.expires_at && (
+              <div className="timer">
+                Time left: {timeStr}
+              </div>
+            )}
+          </div>
+
+          <h2>Current Word:</h2>
+          <div className="current-word">
+            {gameState.current_word || 'Waiting for next word...'}
+          </div>
+
+          <button onClick={handleSkip} className="skip-button">
+            Skip Word
+          </button>
         </div>
 
-        <h2>Current Word:</h2>
-        <div className="current-word">
-          {gameState.current_word || 'Waiting for next word...'}
-        </div>
-
-        <button onClick={handleSkip} className="skip-button">
-          Skip Word
-        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="game-container">
+      <div className="entered-words">
+        <h4>Entered words:</h4>
+        <ul>
+          {enteredWords.map((word, i) => (
+            <li key={i}>{word}</li>
+          ))}
+        </ul>
       </div>
 
+      <div className="game-main">
+        <div className="top-bar">
+          <h2>Time left : {timeStr}</h2>
+          <div className="score">Correct : {correctCount} / {totalWords}</div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="word-form">
+          <input
+            type="text"
+            placeholder="Enter a word........"
+            value={inputWord}
+            onChange={(e) => setInputWord(e.target.value)}
+          />
+          <button type="submit">Submit</button>
+        </form>
+      </div>
     </div>
-  );
+  )
 };
 
 export default Quiz; 

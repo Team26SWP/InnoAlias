@@ -12,16 +12,15 @@ const Leaderboard: React.FC = () => {
     { name: "Player 2", score: 5000 },
     { name: "Player 3", score: 5000 },
     { name: "Player 4", score: 5000 },
-    { name: "Player 5", score: 5000 },
-    { name: "Player 6", score: 5000 },
-     { name: "Player 6", score: 5000 },
-      { name: "Player 6", score: 5000 },
-      { name: "Player 6", score: 5000 },
-      { name: "Player 6", score: 5000 },
-      { name: "Player 6", score: 5000 },
-      { name: "Player 6", score: 5000 }
-
+    { name: "Player 5", score: 5000 }
   ];
+
+  const saveDeck = () => {
+    var words: string[]; // deck words from WS go here
+    words = [];
+    const deckName = prompt("Please, input the name of the deck");
+    if (deckName) document.cookie = deckName + "=[" + words.join(";") + "]";
+  }
 
   return (
     <div className="leaderboard-container">
@@ -38,7 +37,7 @@ const Leaderboard: React.FC = () => {
       <div className="leaderboard-buttons">
         <button className="button light">Export Leaderboard</button>
         <button className="button primary">Back to main</button>
-        <button className="button light">Save Deck</button>
+        <button className="button light" onClick={saveDeck}>Save Deck</button>
       </div>
     </div>
   );
