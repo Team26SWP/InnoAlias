@@ -4,6 +4,7 @@ import "../style/Lobby.css";
 
 import socketConfig from "./socketConfig";
 
+
 interface Player {
   id: string;
   name: string;
@@ -73,8 +74,8 @@ const Lobby: React.FC = () => {
         />
       </div>
     </div>
-
       {isHost ? <button className="create-button" onClick={handleStartGame}>Start game</button> : <div></div>}
+
   </div>
 );
 

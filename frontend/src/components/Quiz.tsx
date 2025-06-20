@@ -13,6 +13,7 @@ interface GameState {
   tries_left: number;
   current_master: string;
   scores: { [name: string]: number };
+
 }
 
 const Quiz: React.FC = () => {
@@ -37,6 +38,7 @@ const Quiz: React.FC = () => {
   const [inputWord, setInputWord] = useState<string>('');
   const [correctCount, setCorrectCount] = useState(0);
   const [ws, setWs] = useState<WebSocket | null>(null);
+
 
   // Variables to:
   const expiresAt = useRef<string>(""); // calculate time

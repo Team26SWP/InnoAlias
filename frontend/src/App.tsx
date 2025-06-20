@@ -18,7 +18,7 @@ function App() {
           <Route path="/join_game/:code?" element={<JoinGame />} />
           <Route path="/game/:gameId" element={<Quiz />} />
           <Route path="/results/:gameId" element={<Results />} />
-          <Route path="/lobby/" element={<Lobby />} />
+          <Route path="/lobby/:gameId" element={<Lobby />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
         </Routes>
       </div>
