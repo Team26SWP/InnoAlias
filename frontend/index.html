@@ -162,6 +162,7 @@ function createPlayerSection(defaultName = '', defaultId = '', autoJoin = false)
             const isMaster = data.current_master === name;
             masterArea.style.display = isMaster ? 'block' : 'none';
             masterWordEl.textContent = isMaster ? (data.current_word || '') : '';
+            container.dataset.currentWord = data.current_word || '';
             masterSkip.style.display = isMaster ? 'inline' : 'none';
             if (isMaster) {
                 disabled = true;
@@ -191,6 +192,10 @@ function createPlayerSection(defaultName = '', defaultId = '', autoJoin = false)
     sendGuess.onclick = () => {
         const guess = guessInput.value.trim();
         if (socket && guess) {
+            const currentWord = (container.dataset.currentWord || '').toLowerCase();
+            if (currentWord && guess.toLowerCase() === currentWord) {
+                logMessage('Player ' + name + ' local check: guess matches');
+            }
             socket.send(JSON.stringify({ action: 'guess', guess }));
             guessInput.value = '';
         }
