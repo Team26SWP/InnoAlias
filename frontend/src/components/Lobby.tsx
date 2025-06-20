@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../style/Lobby.css";
+
+import socketConfig from "./socketConfig";
 
 
 interface Player {
@@ -9,11 +12,37 @@ interface Player {
 
 const Lobby: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
+  const [socket, setSocket] = useState<WebSocket>();
   const urlParams = new URLSearchParams(window.location.search);
   const gameCode = urlParams.get("code");
   const gameUrl = "https://localhost:3000/join_game?code=" + gameCode;
+  const name = urlParams.get("name");
+  const isHost = urlParams.get("host") === "true";
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    if (isHost && gameCode && name) {
+      const ws = socketConfig.connectSocketHost(name, gameCode);
+      setSocket(ws);
+      ws.onopen = () => { console.log("host connection successful"); }
+    }
+    else if (!isHost && gameCode && name) {
+      const ws = socketConfig.connectSocketPlayer(name, gameCode);
+      ws.onopen = () => { console.log("player connection successful"); }
+      ws.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if (data.state === "in_progress") {
+          navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
+        }
+      }
+      setSocket(ws);
+    }
+  }, [gameCode, name, isHost, navigate]);
 
+  const handleStartGame = () => {
+    socket?.send(JSON.stringify({ action: "start" }));
+    navigate(`/game/${gameCode}?name=${name}&host=true`);
+  }
 
   return (
   <div className="lobby-container">
@@ -45,8 +74,8 @@ const Lobby: React.FC = () => {
         />
       </div>
     </div>
+      {isHost ? <button className="create-button" onClick={handleStartGame}>Start game</button> : <div></div>}
 
-    <button className="create-button">Start game</button>
   </div>
 );
 
