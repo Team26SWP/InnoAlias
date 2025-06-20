@@ -15,20 +15,29 @@ const Lobby: React.FC = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const gameCode = urlParams.get("code");
   const gameUrl = "https://localhost:3000/join_game?code=" + gameCode;
-  const hostName = urlParams.get("host");
+  const name = urlParams.get("name");
+  const isHost = urlParams.get("host") === "true";
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (hostName && gameCode) {
-      const ws = socketConfig.connectSocketHost(hostName, gameCode);
+    if (isHost && gameCode && name) {
+      const ws = socketConfig.connectSocketHost(name, gameCode);
       setSocket(ws);
-      ws.onopen = () => { console.log("connection successful"); }
+      ws.onopen = () => { console.log("host connection successful"); }
+    } else if (!isHost && gameCode && name) {
+      const ws = socketConfig.connectSocketPlayer(name, gameCode);
+      ws.onopen = () => { console.log("player connection successful"); }
+      ws.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        console.log(data.state);
+      }
+      setSocket(ws);
     }
-  }, [gameCode, hostName]);
+  }, [gameCode, name, isHost]);
 
   const handleStartGame = () => {
     socket?.send(JSON.stringify({ action: "start" }));
-    navigate(`/game/${gameCode}?name=${hostName}&host=true`);
+    navigate(`/game/${gameCode}?name=${name}&host=true`);
   }
 
   return (
@@ -62,7 +71,7 @@ const Lobby: React.FC = () => {
       </div>
     </div>
 
-      {hostName ? <button className="create-button" onClick={handleStartGame}>Start game</button> : <div></div>}
+      {isHost ? <button className="create-button" onClick={handleStartGame}>Start game</button> : <div></div>}
   </div>
 );
 

@@ -69,7 +69,7 @@ const CreateGame: React.FC = () => {
 
       if (!res.ok) throw new Error();
       const data = await res.json();
-      navigate(`/lobby?code=${data.id}&host=${hostName}`);
+      navigate(`/lobby?code=${data.id}&name=${hostName}&host=true`);
     } catch {
       setError('Failed to create game. Please try again.');
     } finally {

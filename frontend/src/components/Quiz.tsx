@@ -77,7 +77,7 @@ const Quiz: React.FC = () => {
    * Establishes WebSocket connection with reconnection logic
    */
   const connectWebSocket = useCallback(() => {
-    if (!gameId || !name.current) return;
+    if (!gameId || !name.current) { console.log("govno"); return; }
 
     var websocket: WebSocket;
     isHost ? websocket = socketConfig.connectSocketHost(name.current, gameId) : websocket = socketConfig.connectSocketPlayer(name.current, gameId);

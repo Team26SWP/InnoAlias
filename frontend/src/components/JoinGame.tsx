@@ -52,6 +52,7 @@ const JoinGame: React.FC = () => {
 
     ws.onopen = () => {
       setSocketOpen(true);
+      console.log("Player connected succesfully");
       navigate(`/lobby?code=${gameCode}&name=${playerName}&host=false`);
     };
 
