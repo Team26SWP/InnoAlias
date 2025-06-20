@@ -151,7 +151,7 @@ async def delete_game(game_id: str):
     }
 
 
-@router.websocket("/player/{game_id}/")
+@router.websocket("/player/{game_id}")
 async def handle_player(websocket: WebSocket, game_id: str):
     player_name = websocket.query_params.get("name")
     if not player_name:
