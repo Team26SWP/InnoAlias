@@ -4,13 +4,7 @@ import '../style/Quiz.css';
 
 import socketConfig from "./socketConfig";
 
-/**
- * Interface defining the structure of the game state
- * @property current_word - The word currently being played
- * @property expires_at - Timestamp when the current word expires
- * @property remaining_words_count - Number of words left in the game
- * @property state - Current state of the game (in_progress or finished)
- */
+// Gamestate returned from the server. It belongs to the player that requests it
 interface GameState {
   current_word: string | null;
   expires_at: string | null;
@@ -21,51 +15,35 @@ interface GameState {
   scores: { [name: string]: number };
 }
 
-// WebSocket server URL for real-time game updates
-//const HOST = window.location.host;
-const API_URL = "ws://" + "localhost:8000" + "/api";
-
-/**
- * Quiz Component
- * 
- * This component handles the main gameplay experience:
- * 1. Establishes WebSocket connection for real-time game updates
- * 2. Displays current word and game progress
- * 3. Handles word skipping
- * 4. Manages game state and error handling
- * 5. Navigates to results page when game is finished
- */
 const Quiz: React.FC = () => {
+  // Information retrieved from URL (optimally to be replaced by global variables of some sort)
   const { gameId } = useParams<{ gameId: string }>();
-  const navigate = useNavigate();
-  const [gameState, setGameState] = useState<GameState | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [wrong, setWrong] = useState<string | null>(null);
-
-  const [ws, setWs] = useState<WebSocket | null>(null);
-  const [isReconnecting, setIsReconnecting] = useState(false);
   const urlParams = new URLSearchParams(window.location.search);
   const name = useRef<string>(urlParams.get("name"));
   const isHost = useRef<boolean>(urlParams.get("host") === "true");
-  const [timeStr, setTimeStr] = useState<string>("");
-  var expiresAt = useRef<string>("");
-  var triesLeft = useRef<number>();
-  var [attemptsLeft, setAttemptsLeft] = useState<number>();
-  var score = useRef<number>();
 
-
+  // Router functions
+  const navigate = useNavigate();
   const location = useLocation();
 
+  // Game states. Aside from WS, do not carry any function except from being displayed on the page
+  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [wrong, setWrong] = useState<string | null>(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [timeStr, setTimeStr] = useState<string>("");
+  const [attemptsLeft, setAttemptsLeft] = useState<number>();
   const [enteredWords, setEnteredWords] = useState<string[]>([]);
   const [inputWord, setInputWord] = useState<string>('');
   const [correctCount, setCorrectCount] = useState(0);
-  const totalWords = 10; 
+  const [ws, setWs] = useState<WebSocket | null>(null);
 
-  /**
-   * Formats the remaining time in a user-friendly way
-   * @param expiresAt - The expiration timestamp
-   * @returns string - Formatted time string
-   */
+  // Variables to:
+  const expiresAt = useRef<string>(""); // calculate time
+  const triesLeft = useRef<number>(); // Keep track of wrong answers
+  const score = useRef<number>(); // Keep track of right answers
+
+  // Takes the "expires_at" field from the game state as an argument and adjusts for timezone to calculate time left for guessing
   const formatTimeLeft = (expiresAt: string): string => {
     const now = new Date();
     const expires = new Date(expiresAt);
@@ -80,12 +58,11 @@ const Quiz: React.FC = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  /**
-   * Establishes WebSocket connection with reconnection logic
-   */
+  // Connects to websocket (refers to socketConfig) and sets actions for different cases
   const connectWebSocket = useCallback(() => {
     if (!gameId || !name.current) { return; }
 
+    // Host and player have different sockets:
     var websocket: WebSocket;
     isHost.current ? websocket = socketConfig.connectSocketHost(name.current, gameId) : websocket = socketConfig.connectSocketPlayer(name.current, gameId);
 
@@ -95,9 +72,10 @@ const Quiz: React.FC = () => {
       setError(null);
     };
 
+    // When the game starts, the player gets the update first and then gets sent to this page, so the initial state transfered in
+    // said update is carried out into location
     if (!isHost.current) {
       const initialState: GameState = location.state.game_state;
-      console.log(initialState);
       setGameState(initialState);
       if (initialState.expires_at) {
         expiresAt.current = initialState.expires_at;
@@ -108,33 +86,31 @@ const Quiz: React.FC = () => {
       setCorrectCount(score.current);
     }
 
+    // Stuff kinda self-explanatory
     websocket.onmessage = (event) => {
       const data: GameState = JSON.parse(event.data);
       setGameState(data);
+
       if (data.expires_at && data.expires_at !== expiresAt.current) {
         expiresAt.current = data.expires_at;
       }
+
       if (name.current && score.current === data.scores[name.current] && triesLeft.current !== data.tries_left) {
         setWrong("Wrong!");
-      } else if (name.current && score.current !== data.scores[name.current]) {
+      }
+
+      else if (name.current && score.current !== data.scores[name.current]) {
         setWrong("Right!");
         score.current = data.scores[name.current];
         setEnteredWords([]);
         setCorrectCount(score.current);
       }
 
-      console.log("Update!")
-
-      if (name.current) {
-        console.log(score.current);
-        console.log(data.scores[name.current]);
-      }
-
       triesLeft.current = data.tries_left;
       setAttemptsLeft(triesLeft.current);
 
       if (data.state === 'finished') {
-        navigate(`/`);
+        navigate(`/`); // <= to be changed to leaderboard
       }
     };
 
@@ -157,10 +133,12 @@ const Quiz: React.FC = () => {
     setWs(websocket);
   }, [gameId, navigate]);
 
+  // useEffect with (practically, since connectWebSocket is a function that does not change) an empty list to connect once
   useEffect(() => {
     connectWebSocket();
   }, [connectWebSocket]);
 
+  // Sets a time interval to update the timer
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeStr(formatTimeLeft(expiresAt.current));
@@ -169,7 +147,7 @@ const Quiz: React.FC = () => {
     return () => clearInterval(interval);
   }, [])
 
-
+  
   const handleSkip = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ action: 'skip' }));
@@ -177,7 +155,7 @@ const Quiz: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // It is crucial, since most browsers do stupid stuff when submiting a form (e.g. reloading a page)
     console.log(inputWord);
     if (!inputWord.trim()) return;
 
@@ -206,7 +184,7 @@ const Quiz: React.FC = () => {
     return <div className="quiz-container">Loading...</div>;
   }
 
-  if (name.current === gameState.current_master) {
+  if (name.current === gameState.current_master) { // Quiz-card for the game master
     return (
       <div className="quiz-container">
         <div className="question-card">
@@ -234,7 +212,7 @@ const Quiz: React.FC = () => {
       </div>
     );
   }
-  return (
+  return ( // Playing field for the player
     <div className="game-container">
       <div className="entered-words">
         <h4>Entered words:</h4>
