@@ -47,26 +47,10 @@ const JoinGame: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
-    const ws = socketConfig.connectSocketPlayer(playerName, gameCode);
-    socketRef.current = ws;
-
-    ws.onopen = () => {
-      setSocketOpen(true);
-      console.log("Player connected succesfully");
-      navigate(`/lobby?code=${gameCode}&name=${playerName}&host=false`);
-    };
-
-    ws.onerror = () => {
-      setError("Failed to connect to game. Check your code and try again.");
-      setIsLoading(false);
-    };
-    ws.onclose = () => {
-      if (!socketOpen) {
-        setError("Connection closed before joining. Is the game running?");
-        setIsLoading(false);
-      }
-    };
-  };
+    
+    navigate(`/lobby?code=${gameCode}&name=${playerName}&host=false`);
+    
+    }
 
   useEffect(() => {
     return () => {

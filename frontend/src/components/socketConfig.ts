@@ -12,7 +12,7 @@ function connectSocketHost(hostName: string, gameCode: string) {
 }
 function connectSocketPlayer(playerName: string, gameCode: string) {
   if (!playerSocket) {
-    playerSocket = new WebSocket(`${WS_URL}/game/player/${gameCode}/?name=${playerName}`);
+    playerSocket = new WebSocket(`${WS_URL}/game/player/${gameCode}?name=${playerName}`);
     console.log("Called socket player");
   }
   return playerSocket;

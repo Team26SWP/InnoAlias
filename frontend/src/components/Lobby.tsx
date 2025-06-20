@@ -29,7 +29,9 @@ const Lobby: React.FC = () => {
       ws.onopen = () => { console.log("player connection successful"); }
       ws.onmessage = (message) => {
         const data = JSON.parse(message.data);
-        console.log(data.state);
+        if (data.state === "in_progress") {
+            navigate(`/game/${gameCode}?name=${name}&host=false`);
+        }
       }
       setSocket(ws);
     }

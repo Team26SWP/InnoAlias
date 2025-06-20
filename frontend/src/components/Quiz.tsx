@@ -50,7 +50,7 @@ const Quiz: React.FC = () => {
   var expiresAt = useRef<string>("");
 
   const [enteredWords, setEnteredWords] = useState<string[]>([]);
-  const [inputWord, setInputWord] = useState('');
+  const inputWord = useRef<string>('');
   const [correctCount, setCorrectCount] = useState(0);
   const totalWords = 10; 
 
@@ -77,16 +77,15 @@ const Quiz: React.FC = () => {
    * Establishes WebSocket connection with reconnection logic
    */
   const connectWebSocket = useCallback(() => {
-    if (!gameId || !name.current) { console.log("govno"); return; }
+    if (!gameId || !name.current) { return; }
 
     var websocket: WebSocket;
-    isHost ? websocket = socketConfig.connectSocketHost(name.current, gameId) : websocket = socketConfig.connectSocketPlayer(name.current, gameId);
+    isHost.current ? websocket = socketConfig.connectSocketHost(name.current, gameId) : websocket = socketConfig.connectSocketPlayer(name.current, gameId);
 
     websocket.onopen = () => {
       console.log('Connected to game server');
       setIsReconnecting(false);
       setError(null);
-      websocket.send(JSON.stringify({ action: 'start' }));
     };
 
     websocket.onmessage = (event) => {
@@ -141,11 +140,12 @@ const Quiz: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputWord.trim()) return;
+    if (!inputWord.current.trim()) return;
 
-    setEnteredWords([...enteredWords, inputWord]);
-    ws?.send(JSON.stringify({ action: 'guess', inputWord }));
-    setInputWord('');
+    setEnteredWords([...enteredWords, inputWord.current]);
+    const str = inputWord.current;
+    ws?.send(JSON.stringify({ action: 'guess', str }));
+    inputWord.current = '';
   };
 
   if (error) {
@@ -216,8 +216,8 @@ const Quiz: React.FC = () => {
           <input
             type="text"
             placeholder="Enter a word........"
-            value={inputWord}
-            onChange={(e) => setInputWord(e.target.value)}
+            value={inputWord.current}
+            onChange={(e) => inputWord.current = e.target.value}
           />
           <button type="submit">Submit</button>
         </form>
