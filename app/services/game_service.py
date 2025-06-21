@@ -6,8 +6,8 @@ from typing import Optional
 from fastapi import WebSocket
 from pymongo import ReturnDocument
 
-from ..db import db
-from ..models import GameState, PlayerGameState
+from backend.app.db import db
+from backend.app.models import GameState, PlayerGameState
 
 
 games = db.games
