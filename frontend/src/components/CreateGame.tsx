@@ -1,156 +1,234 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../style/CreateGame.css';
 
-const API_URL = '/api';
+import socketConfig from "./socketConfig";
+class Settings {
+  time: number;
+  deckLimit: number;
+  attemptsLimit: number;
+  answersLimit: number;
+  constructor(time: number, deck: number, attempts: number, answers: number) {
+    this.time = time;
+    this.deckLimit = deck;
+    this.attemptsLimit = attempts;
+    this.answersLimit = answers;
+  }
+}
 
-/**
- * CreateGame Component
- * 
- * This component allows users to create a new word game by:
- * 1. Adding multiple words to a list
- * 2. Submitting the words to create a new game
- * 3. Navigating to the game page once created
- */
+interface Deck {
+  name: string;
+  cards: string[];
+}
+
 const CreateGame: React.FC = () => {
-  // State to store the list of words added by the user
   const [words, setWords] = useState<string[]>([]);
-  const [fileWords, setFileWords] = useState<string[]>([]);
-  // State to manage the current word being typed in the input field
   const [currentWord, setCurrentWord] = useState('');
-  // State to handle and display error messages
   const [error, setError] = useState<string | null>(null);
-  // State to handle loading state
   const [isLoading, setIsLoading] = useState(false);
-  // Hook for programmatic navigation
+  const [showSettings, setShowSettings] = useState(false);
+  const [hostName, setHostName] = useState<string>("");
+  const [decks, setDecks] = useState<Deck[]>([]);
+
+  const settings = useRef<Settings>(new Settings(60, 0, 3, 1));
   const navigate = useNavigate();
 
-  /**
-   * Handles the form submission when adding a new word
-   * Adds the current word to the words list if it's not empty
-   * @param e - Form event object
-   */
+  useEffect(() => {
+    const cookies = document.cookie.replaceAll("[", "").replaceAll("]", "");
+    if (!cookies) return;
+    var deckStrings: string[] = cookies.split(";");
+    var supplementaryArray: Deck[] = [];
+    for (let i = 0; i < deckStrings.length; i++) {
+      const parsedString = deckStrings[i].split("=");
+      supplementaryArray.push({ name: parsedString[0], cards: parsedString[1].split(",") });
+    }
+    setDecks(supplementaryArray);
+  }, [])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmedWord = currentWord.trim();
-    
-    if (trimmedWord) {
-      setWords([...words, trimmedWord.toLowerCase()]);
+    const trimmed = currentWord.trim();
+    if (trimmed) {
+      setWords([...words, trimmed.toLowerCase()]);
       setCurrentWord('');
       setError(null);
     }
-    };
+  };
 
-    function parse(wordsString: string) {
-        const addingWords = wordsString.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
-        setWords(words.concat(addingWords));
-    }
+  const parse = (text: string) => {
+    const lines = text
+      .split(/\r?\n/)
+      .map(l => l.trim())
+      .filter(l => l.length);
+    setWords(ws => [...ws, ...lines]);
+  };
 
-    const fileSubmit = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files != null) {
-            if (event.target.files[0] != undefined) {
-                event.target.files[0].text().then(parse);
-            }
-        }
-    }
+  const fileSubmit = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) file.text().then(parse);
+  };
 
-  /**
-   * Handles the game creation process
-   * Sends the list of words to the backend to create a new game
-   * Navigates to the game page on success
-   * Displays error message if the process fails
-   */
-    const handleStartGame = async () => {
-    if (words.length === 0) {
-      setError('Please add at least one word');
-      return;
-    }
-
+  const handleStartGame = async () => {
     setIsLoading(true);
     setError(null);
-
     try {
-      const response = await fetch(`${API_URL}/create/game`, {
+      const res = await fetch(`${socketConfig.HTTP_URL}/game/create`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          remaining_words: words
-        })
+          remaining_words: words,
+          words_amount: (settings.current.deckLimit === 0) ? words.length : settings.current.deckLimit,
+          time_for_guessing: settings.current.time,
+          tries_per_player: settings.current.attemptsLimit,
+          right_answers_to_advance: settings.current.answersLimit
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create game');
-      }
-
-      const data = await response.json();
-      navigate(`/game/${data.id}`);
-    } catch (err) {
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      navigate(`/lobby?code=${data.id}&name=${hostName}&host=true`);
+    } catch {
       setError('Failed to create game. Please try again.');
-      console.error('Error creating game:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const saveSettings = () => {
+    const minutes = document.getElementById("minutes");
+    const seconds = document.getElementById("seconds");
+    const deckLimit = document.getElementById("deck-length");
+    const attemptLimit = document.getElementById("attempts");
+    const answerLimit = document.getElementById("answers");
+    if (minutes instanceof HTMLInputElement && seconds instanceof HTMLInputElement && deckLimit instanceof HTMLInputElement && attemptLimit instanceof HTMLInputElement && answerLimit instanceof HTMLInputElement) {
+      settings.current.time = parseInt((minutes.value !== "") ? minutes.value : "1") * 60 + parseInt((seconds.value !== "") ? seconds.value : "0");
+      if (settings.current.time === 0) settings.current.time = 1;
+      settings.current.deckLimit = parseInt((deckLimit.value !== "") ? deckLimit.value : "0");
+      settings.current.attemptsLimit = parseInt((attemptLimit.value !== "") ? attemptLimit.value : "3");
+      settings.current.answersLimit = parseInt((answerLimit.value !== "") ? answerLimit.value : "1");
+    }
+    setShowSettings(false);
+  }
+
+  const loadDeck = () => {
+    const selector = document.getElementById("selector");
+    if (!(selector instanceof HTMLSelectElement)) return;
+    const cards = selector.value;
+    if (cards === "") { return; }
+    setWords(words.concat(cards.split(",")));
+  }
+
   return (
     <div className="create-game-container">
-      <h1 className="create-game-title">Create Word Game</h1>
-      
-      {/* Display error message if any */}
+      <h1 className="create-game-title">Create a Game</h1>
       {error && <div className="error-message">{error}</div>}
 
-      {/* Form for adding new words */}
       <form onSubmit={handleSubmit} className="word-form">
         <div className="input-container">
-          <input
-            type="text"
-            value={currentWord}
-            onChange={(e) => {
-              setCurrentWord(e.target.value);
-              setError(null);
-            }}
-            placeholder="Enter a word"
-            className="word-input"
-            disabled={isLoading}
-          />
-          <button 
-            type="submit"
-            className="add-word-button"
-            disabled={isLoading}>
-            Add Word
-          </button>
+          <div className="left-section">
+            <input type="text" className="word-input" placeholder="Enter your name"
+            value={hostName}
+            onChange={(e) => { setHostName(e.target.value); setError(null) } } />
+            <input
+              type="text"
+              className="word-input"
+              placeholder="Enter a word"
+              value={currentWord}
+              onChange={(e) => {
+                setCurrentWord(e.target.value);
+                setError(null);
+              }}
+            />
+            <div className="words-section">
+              <h2 className="words-title">Added Words ({words.length}):</h2>
+              <ul className="words-list">
+                {words.map((w, i) => (
+                  <li key={i} className="word-tag">
+                    {w}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
 
-          <label className="custom-file-upload">
-            <input type="file" accept=".txt" id="add-words-import" onChange={fileSubmit} />
-            Upload a file
-          </label>
+          <div className="actions-container">
+            <button type="submit" className="add-word-button">Add Word</button>
+
+            <label className="custom-file-upload">
+              <input type="file" accept=".txt" onChange={fileSubmit} />
+              Import via txt
+            </label>
+
+            <button
+              type="button"
+              className="settings-button"
+              onClick={() => setShowSettings(true)}
+            >
+              Settings
+            </button>
+
+            <button type="button" className="action-button" onClick={loadDeck}>
+              Load a saved deck
+            </button>
+
+            <select className="deckSelect" id="selector">
+              <option value="">Select a deck</option>
+              {decks.map((deck, i) => (<option key={i} value={deck.cards}>{deck.name}</option> ))}
+            </select>
+          </div>
         </div>
       </form>
 
-      {/* Display section for added words */}
-      <div className="words-section">
-        <h2 className="words-title">Added Words ({words.length}):</h2>
-        <ul className="words-list">
-          {words.map((word, index) => (
-            <li 
-              key={index}
-              className="word-tag"
-            >
-              {word}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Button to start the game - disabled if no words are added */}
       <button
         onClick={handleStartGame}
-        disabled={words.length === 0 && fileWords.length === 0 || isLoading}
-        className="start-game-button">
+        disabled={words.length === 0 || isLoading || hostName === ""}
+        className="start-game-button"
+      >
         {isLoading ? 'Creating Game...' : 'Start Game'}
       </button>
+
+      {showSettings && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <button className="modal-close" onClick={() => setShowSettings(false)}>
+              ✕
+            </button>
+            <div className="modal-content">
+              <div className="setting-row">
+                <label>Time:</label>
+                <div className="row-right time-group">
+                  <div className="time-unit">
+                    <input type="number" id="minutes" min="0" max="59" placeholder="1"/> <span>min</span>
+                  </div>
+                  <div className="time-unit">
+                    <input type="number" id="seconds" min="0" max="59" placeholder="0"/> <span>sec</span>
+                  </div>
+                </div>
+              </div>
+              <div className="setting-row">
+                <label>Deck limit:</label>
+                <div className="row-right">
+                  <input type="number" id="deck-length" placeholder="max" min="1"/> <span>cards</span>
+                </div>
+              </div>
+              <div className="setting-row">
+                <label>Limit of attempts:</label>
+                <div className="row-right">
+                  <input type="number" id="attempts" placeholder="3" min="1"/> <span>tries</span>
+                </div>
+              </div>
+              <div className="setting-row">
+                <label>Limit of correct answers:</label>
+                <div className="row-right">
+                  <input type="number" id="answers" placeholder="1" min="1"/> <span>players</span>
+                </div>
+              </div>
+
+              <button className="modal-save-button" onClick={saveSettings}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

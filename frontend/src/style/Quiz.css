@@ -287,4 +287,101 @@
     flex-direction: column;
     gap: 10px;
   }
-} 
+}
+
+.game-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 60px;
+    padding: 40px;
+    background-color: #ffefe3;
+    font-family: "ADLaM Display";
+    min-height: 100vh;
+}
+
+.entered-words {
+    background-color: #d9d9d9;
+    padding: 10px;
+    font-size: 20px;
+    border-radius: 10px;
+    width: 600px;
+    min-height: 600px;
+}
+
+    .entered-words h4 {
+        margin-top: 10px;
+        color: #3171a6;
+        font-size: 32px;
+        border-bottom: 4px solid #3171a6;
+        margin-bottom: 10px;
+    }
+
+    .entered-words ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        color: #3171a6;
+        border: none;
+    }
+
+.game-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.top-bar {
+    margin-top: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 350px;
+    margin-bottom: 30px;
+    width: 100%;
+}
+
+    .top-bar h2,
+    .score {
+        color: #3171a6;
+        font-weight: bold;
+    }
+
+.word-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+    .word-form input {
+        margin-top: 30px;
+        width: 700px;
+        padding: 22px 20px;
+        border-radius: 20px;
+        border: none;
+        font-size: 16px;
+        background-color: #d9d9d9;
+        color: #3171a6;
+        font-family: "ADLaM Display";
+    }
+
+    .word-form button {
+        padding: 10px 30px;
+        background-color: #3171a6;
+        color: #fff1e8;
+        font-family: "ADLaM Display";
+        border: none;
+        border-radius: 10px;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+        .word-form button:hover {
+            background-color: #317ba6;
+        }
+
+        .word-form button:disabled {
+            background-color: #cccccc;
+        }

@@ -3,36 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import '../style/Home.css';
 import characterImg from '../assets/character.png';
 
-/**
- * Home Component
- * 
- * This is the landing page component that serves as the main entry point for the Alias game.
- * It provides two main options for users:
- * 1. Create a new game
- * 2. Join an existing game
- * 
- * The component includes a brief description of the game and a character image
- * for visual appeal.
- */
+import socketConfig from "./socketConfig";
+
 const Home: React.FC = () => {
-  // Hook for programmatic navigation between routes
   const navigate = useNavigate();
 
-  /**
-   * Handles navigation to the game creation page
-   * Triggered when user clicks the "Create Game" button
-   */
   const handleCreateGame = () => {
     navigate('/create_game');
   };
 
-  /**
-   * Handles navigation to the game joining page
-   * Triggered when user clicks the "Join Game" button
-   */
   const handleJoinGame = () => {
     navigate('/join_game');
   };
+
+  React.useEffect(() => {
+    socketConfig.closeConnection();
+  }, [])
 
   return (
     <div className="home-wrapper">
@@ -47,8 +33,11 @@ const Home: React.FC = () => {
         
         {/* Navigation buttons container */}
         <div className="home-options">
-          <button onClick={handleCreateGame} className="create-button">
+          <button onClick={handleCreateGame} className="create-home-button">
             Create Game
+          </button>
+          <button onClick={handleJoinGame} className="join-home-button">
+            Join Game
           </button>
         </div>
       </div>
