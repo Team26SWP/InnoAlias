@@ -1,8 +1,9 @@
 var hostSocket: WebSocket | null = null;
 var playerSocket: WebSocket | null = null;
 
-var WS_URL = "ws://localhost:8000/api"
-var HTTP_URL = "http://localhost:8000/api"
+const HOST = window.location.host;
+var WS_URL = "ws://" + HOST + "/api"
+var HTTP_URL = "http://" + HOST + "/api"
 
 function connectSocketHost(hostName: string, gameCode: string) {
   if (!hostSocket) {

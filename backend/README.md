@@ -1,4 +1,4 @@
-# InnoAlias
+# InnoAlias Backend
 
 This folder contains a FastAPI backend for an Alias game.
 
