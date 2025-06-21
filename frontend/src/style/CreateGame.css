@@ -1,0 +1,313 @@
+body,.create-game-container { 
+  font-family: 'ADLaM Display';
+}
+
+.left-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 10px;
+  min-width: 0;
+}
+
+.create-game-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.create-game-title {
+  color: #3171a6;
+  margin-bottom: 30px;
+}
+
+.word-form {
+  margin-bottom: 20px;
+}
+
+.input-container {
+  display: flex;
+  justify-content: flex-start;  
+  font-family: 'ADLaM Display';
+  align-items: flex-start;
+  gap: 60px;
+  margin-bottom: 20px;
+}
+
+.word-input {
+  width: 100%;  
+  min-width: 400px;
+  padding: 16px 20px;
+  font-size: 20px;
+  border: 2px solid #FFF2E1;
+  color: #3171a6;
+  font-family: 'ADLaM Display';
+  border-radius: 5px;
+  text-align: left;
+  letter-spacing: 1px;
+}
+
+
+.word-input:focus {
+  outline: none;
+  border-color: #3171a6
+}
+
+.actions-container {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+ 
+}
+
+.add-word-button,
+.custom-file-upload,
+.action-button,
+.settings-button {
+  padding: 16px 30px;
+  font-size: 18px;         
+  min-width: 160px;        
+}
+
+.add-word-button {
+  margin-top: 5px;
+  background-color: #3171a6;
+  color: #FFF2E1;
+  border: none;
+  font-family: 'ADLaM Display';
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+
+.add-word-button:hover {
+  background-color: #3171a6;
+}
+
+.custom-file-upload {
+  display: inline-block;
+  font-family: 'ADLaM Display';
+  background-color: #3171a6;
+  color: #FFF2E1;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  margin-bottom: 12px; 
+}
+
+.custom-file-upload input {
+  display: none;
+}
+
+.custom-file-upload:hover {
+  background-color: #3171a6;
+}
+
+.action-button {
+  font-family: 'ADLaM Display';
+  background-color: #3171a6;
+  color: #FFF2E1;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 8px; 
+}
+
+.action-button:hover {
+  background-color: #3171a6;
+}
+
+.settings-button {
+  background-color: #D9D9D9;
+  color: #3171a6;
+  border: none;
+  border-radius: 5px;
+  font-family: 'ADLaM Display';
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.settings-button:hover {
+  background-color: #D9D9D9 !important;
+}
+
+.words-section {
+  margin-bottom: 20px;
+}
+
+.words-title {
+  color: #3171a6;
+  margin-bottom: 0px;
+}
+
+.words-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  color: #3171a6;
+  flex-wrap: wrap;
+  font-family: 'ADLaM Display';
+  justify-content: flex-start; 
+  gap: 15px;                   
+}
+
+.word-tag {
+  background-color: #f0f0f0;
+  color: #3171a6;
+  padding: 12px 24px;   
+  border-radius: 20px;
+  font-size: 18px;      
+}
+
+.start-game-button {
+  margin-top: 40px;
+  width:50%;
+  padding: 20px 10px;
+  font-family: 'ADLaM Display';
+  background-color: #3171a6;
+  color: #FFF2E1;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-right: 40px;  
+}
+
+.start-game-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.start-game-button:not(:disabled):hover {
+  background-color: #1976D2;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+}
+
+.modal {
+  position: relative;
+  background-color: #D9D9D9;
+  padding: 30px 40px 25px;
+  border-radius: 12px;
+  font-family: 'ADLaM Display';
+  width: 600px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  left: 10px;
+  background: none;
+  border: none;
+  color: #3171a6;
+  font-size: 28px;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.modal-close:hover,
+.modal-close:focus {
+  background: none !important;
+  outline: none;
+  box-shadow: none;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  margin: 40px auto 0;
+  gap: 20px;
+  color: #3171a6;
+  font-size: 20px;
+  padding-top: 10px;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.setting-row label {
+  font-weight: bold;
+  flex: 6.5;
+  text-align: left;
+}
+
+.row-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setting-row .row-right {
+  display: flex;
+  flex: 2;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+}
+
+.setting-row .row-right input {
+  width: 60px;
+  height: 32px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 16px;
+  color: #3171a6;
+  font-family: 'ADLaM Display';
+}
+
+.row-right span {
+  font-size: 16px;
+  color: #3171a6;
+}
+
+.modal-save-button {
+  margin-top: 10px;
+  background-color: #3171a6;
+  color: #FFF2E1;
+  border: none;
+  border-radius: 6px;
+  padding: 12px;
+  width: 100%;
+  font-size: 18px;
+  font-family: 'ADLaM Display';
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.modal-save-button:hover {
+  background-color: #3171a6;
+}
+
+.time-unit {
+  display: flex;
+  align-items:  center;
+  gap: 10px;
+}
+
+.deckSelect {
+    margin-bottom: 10px;
+    width: 100%;
+    padding: 10px 10px;
+    font-family: 'ADLaM Display';
+    border: 1px solid black;
+    border-radius: 6px;
+    cursor: pointer;
+}

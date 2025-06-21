@@ -1,0 +1,387 @@
+.quiz-container {
+  max-width: 600px;
+  margin: 0 auto;
+  margin-top: 10rem;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.quiz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 10px;
+}
+
+.progress, .timer, .score {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.question-card {
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.question-card h2 {
+  color: #3171a6;
+  margin-bottom: 20px;
+}
+
+.master-view, .player-view {
+  text-align: center;
+}
+
+.game-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.remaining-words, .timer {
+  font-size: 1.1rem;
+  color: #3171a6;
+  font-weight: bold;
+}
+
+.current-word {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #3171a6;
+  margin: 30px 0;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.instructions {
+  color: #666;
+  font-size: 16px;
+  margin-top: 20px;
+}
+
+.guess-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.guess-input {
+  padding: 12px;
+  font-size: 18px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+.guess-input:focus {
+  outline: none;
+  border-color: #2196F3;
+}
+
+.guess-button {
+  padding: 12px 24px;
+  font-size: 18px;
+  background-color: #3171a6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.guess-button:hover {
+  background-color: #3171a6;
+}
+
+.message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+.message.correct {
+  background-color: #dff0d8;
+  color: #3c763d;
+}
+
+.message.incorrect {
+  background-color: #f2dede;
+  color: #a94442;
+}
+
+.words-progress {
+  margin-top: 30px;
+}
+
+.words-progress h3 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.words-list {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.word-item {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  border-radius: 50%;
+  font-weight: bold;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.word-item.current {
+  background-color: #3171a6;
+  color: white;
+  transform: scale(1.1);
+}
+
+.word-item.guessed {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.option {
+  padding: 1rem;
+  background-color: white;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.option:hover:not(:disabled) {
+  background-color: #f0f0f0;
+  border-color: #3171a6;
+}
+
+.option:disabled {
+  cursor: default;
+}
+
+.option.correct {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.option.incorrect {
+  background-color: #f44336;
+  color: white;
+  border-color: #f44336;
+}
+
+.next-button-container {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.next-button {
+  padding: 1rem 2rem;
+  background-color: #3171a6;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.next-button:hover {
+  background-color: #3171a6;
+}
+
+.skip-button {
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  background-color: #3171a6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.skip-button:hover {
+  background-color: #2c5d8f;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.back-button {
+  display: block;
+  margin: 20px auto;
+  padding: 10px 20px;
+  background-color: #3171a6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #2c5d8f;
+}
+
+@media (min-width: 768px) {
+  .options-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .quiz-container {
+    margin-top: 5rem;
+    padding: 10px;
+  }
+
+  .current-word {
+    font-size: 2rem;
+    padding: 15px;
+  }
+
+  .game-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+.game-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 60px;
+    padding: 40px;
+    background-color: #ffefe3;
+    font-family: "ADLaM Display";
+    min-height: 100vh;
+}
+
+.entered-words {
+    background-color: #d9d9d9;
+    padding: 10px;
+    font-size: 20px;
+    border-radius: 10px;
+    width: 600px;
+    min-height: 600px;
+}
+
+    .entered-words h4 {
+        margin-top: 10px;
+        color: #3171a6;
+        font-size: 32px;
+        border-bottom: 4px solid #3171a6;
+        margin-bottom: 10px;
+    }
+
+    .entered-words ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        color: #3171a6;
+        border: none;
+    }
+
+.game-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.top-bar {
+    margin-top: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 350px;
+    margin-bottom: 30px;
+    width: 100%;
+}
+
+    .top-bar h2,
+    .score {
+        color: #3171a6;
+        font-weight: bold;
+    }
+
+.word-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+    .word-form input {
+        margin-top: 30px;
+        width: 700px;
+        padding: 22px 20px;
+        border-radius: 20px;
+        border: none;
+        font-size: 16px;
+        background-color: #d9d9d9;
+        color: #3171a6;
+        font-family: "ADLaM Display";
+    }
+
+    .word-form button {
+        padding: 10px 30px;
+        background-color: #3171a6;
+        color: #fff1e8;
+        font-family: "ADLaM Display";
+        border: none;
+        border-radius: 10px;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+        .word-form button:hover {
+            background-color: #317ba6;
+        }
+
+        .word-form button:disabled {
+            background-color: #cccccc;
+        }
