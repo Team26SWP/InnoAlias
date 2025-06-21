@@ -1,6 +1,6 @@
 # InnoAlias
 
-This repository contains a FastAPI backend for an Alias game.
+This folder contains a FastAPI backend for an Alias game.
 
 ## Structure
 
