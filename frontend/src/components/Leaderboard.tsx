@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import "../style/Leaderboard.css";
 
 interface Player {
@@ -7,19 +8,59 @@ interface Player {
 }
 
 const Leaderboard: React.FC = () => {
-  const players: Player[] = [ // sample input, should be removed
-    { name: "Player 1", score: 5000 },
-    { name: "Player 2", score: 5000 },
-    { name: "Player 3", score: 5000 },
-    { name: "Player 4", score: 5000 },
-    { name: "Player 5", score: 5000 }
-  ];
+  const { gameId } = useParams<{ gameId: string }>();
+  const navigate = useNavigate();
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const saveDeck = () => {
-    var words: string[]; // deck words from WS go here
-    words = [];
-    const deckName = prompt("Please, input the name of the deck");
-    if (deckName) document.cookie = deckName + "=[" + words.join(";") + "]";
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const response = await fetch(
+          `http://217.199.253.164/api/game/leaderboard/${gameId}`
+        );
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError("Game not found.");
+          } else {
+            setError("Failed to fetch leaderboard.");
+          }
+          throw new Error("Failed to fetch leaderboard");
+        }
+        const data = await response.json();
+        const scores = data.scores;
+        const formattedPlayers: Player[] = Object.keys(scores).map((key) => ({
+            name: key,
+            score: scores[key],
+          }));
+        
+        formattedPlayers.sort((a, b) => b.score - a.score);
+
+        setPlayers(formattedPlayers);
+      } catch (err) {
+        setError("An error occurred while fetching the leaderboard.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (gameId) {
+      fetchLeaderboard();
+    }
+  }, [gameId]);
+
+  const handleBackToMain = () => {
+    navigate("/");
+  };
+
+  if (loading) {
+    return <div className="leaderboard-container">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="leaderboard-container">Error: {error}</div>;
   }
 
   return (
@@ -35,9 +76,9 @@ const Leaderboard: React.FC = () => {
         ))}
       </div>
       <div className="leaderboard-buttons">
-        <button className="button light">Export Leaderboard</button>
-        <button className="button primary">Back to main</button>
-        <button className="button light" onClick={saveDeck}>Save Deck</button>
+        <button className="button primary" onClick={handleBackToMain}>
+          Back to main
+        </button>
       </div>
     </div>
   );

@@ -112,7 +112,7 @@ const Quiz: React.FC = () => {
       setAttemptsLeft(triesLeft.current);
 
       if (data.state === 'finished') {
-        navigate(`/`); // <= to be changed to leaderboard
+        navigate(`/leaderboard/${gameId}`);
       }
     };
 

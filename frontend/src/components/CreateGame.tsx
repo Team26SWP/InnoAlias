@@ -90,21 +90,6 @@ const CreateGame: React.FC = () => {
       settings.current.attemptsLimit = parseInt((attemptLimit.value !== "") ? attemptLimit.value : "3");
       settings.current.answersLimit = parseInt((answerLimit.value !== "") ? answerLimit.value : "1");
     }
-  }
-
-  const saveSettings = () => {
-    const minutes = document.getElementById("minutes");
-    const seconds = document.getElementById("seconds");
-    const deckLimit = document.getElementById("deck-length");
-    const attemptLimit = document.getElementById("attempts");
-    const answerLimit = document.getElementById("answers");
-    if (minutes instanceof HTMLInputElement && seconds instanceof HTMLInputElement && deckLimit instanceof HTMLInputElement && attemptLimit instanceof HTMLInputElement && answerLimit instanceof HTMLInputElement) {
-      settings.current.time = parseInt((minutes.value !== "") ? minutes.value : "1") * 60 + parseInt((seconds.value !== "") ? seconds.value : "0");
-      if (settings.current.time === 0) settings.current.time = 1;
-      settings.current.deckLimit = parseInt((deckLimit.value !== "") ? deckLimit.value : "0");
-      settings.current.attemptsLimit = parseInt((attemptLimit.value !== "") ? attemptLimit.value : "3");
-      settings.current.answersLimit = parseInt((answerLimit.value !== "") ? answerLimit.value : "1");
-    }
     setShowSettings(false);
   }
 
