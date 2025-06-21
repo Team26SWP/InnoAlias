@@ -6,8 +6,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from decouple import config
 
-from ..models import User, UserInDB, Token
-from ..db import db
+from backend.app.models import User, UserInDB, Token
+from backend.app.db import db
 
 router = APIRouter(prefix="", tags=["auth"])
 

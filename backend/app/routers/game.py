@@ -4,9 +4,9 @@ from random import shuffle
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
 from pymongo import ReturnDocument
 
-from ..code_gen import generate_code
-from ..models import Game
-from ..services.game_service import (
+from backend.app.code_gen import generate_code
+from backend.app.models import Game
+from backend.app.services.game_service import (
     games,
     manager,
     process_new_word,
