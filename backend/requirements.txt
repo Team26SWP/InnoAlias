@@ -1,5 +1,6 @@
 uvicorn[standard]
 fastapi
+pymongo
 pydantic
 websockets
 python-jose
