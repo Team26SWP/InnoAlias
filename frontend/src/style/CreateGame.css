@@ -125,7 +125,7 @@ body,.create-game-container {
   border-radius: 5px;
   font-family: 'ADLaM Display';
   cursor: pointer;
-  margin-bottom: 0;
+  margin-bottom: 10px;
 }
 
 .settings-button:hover {
@@ -300,4 +300,14 @@ body,.create-game-container {
   display: flex;
   align-items:  center;
   gap: 10px;
+}
+
+.deckSelect {
+    margin-bottom: 10px;
+    width: 100%;
+    padding: 10px 10px;
+    font-family: 'ADLaM Display';
+    border: 1px solid black;
+    border-radius: 6px;
+    cursor: pointer;
 }

@@ -1,5 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../style/Leaderboard.css";
+
+import socketConfig from "./socketConfig";
+const HTTP_URL = socketConfig.HTTP_URL;
 
 interface Player {
   name: string;
@@ -7,20 +11,40 @@ interface Player {
 }
 
 const Leaderboard: React.FC = () => {
-  const players: Player[] = [ // sample input, should be removed
-    { name: "Player 1", score: 5000 },
-    { name: "Player 2", score: 5000 },
-    { name: "Player 3", score: 5000 },
-    { name: "Player 4", score: 5000 },
-    { name: "Player 5", score: 5000 }
-  ];
+  var [players, setPlayers] = useState<Player[]>([]);
 
-  const saveDeck = () => {
-    var words: string[]; // deck words from WS go here
-    words = [];
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get("code");
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+
+  useEffect(() => {
+    const scores: { [name: string]: number } = location.state.scores;
+    const playerNames: string[] = Object.keys(scores);
+    const supplementaryArray: Player[] = [];
+    for (var i = 0; i < playerNames.length; i++) {
+      supplementaryArray.push({ name: playerNames[i], score: scores[playerNames[i]] });
+    }
+    supplementaryArray.sort((a, b) => b.score - a.score);
+    setPlayers(supplementaryArray);
+  }, [location.state.scores])
+
+  const saveDeck = async () => {
+    const response = await fetch(`${HTTP_URL}/game/deck/${code}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await response.json();
+    var words: string[] = data.deck;
     const deckName = prompt("Please, input the name of the deck");
-    if (deckName) document.cookie = deckName + "=[" + words.join(";") + "]";
+    if (deckName) document.cookie = deckName + "=[" + words.join(",") + "]";
   }
+
+  const toMain = () => {
+    navigate("/");
+  } 
 
   return (
     <div className="leaderboard-container">
@@ -36,7 +60,7 @@ const Leaderboard: React.FC = () => {
       </div>
       <div className="leaderboard-buttons">
         <button className="button light">Export Leaderboard</button>
-        <button className="button primary">Back to main</button>
+        <button className="button primary" onClick={ toMain }>Back to main</button>
         <button className="button light" onClick={saveDeck}>Save Deck</button>
       </div>
     </div>

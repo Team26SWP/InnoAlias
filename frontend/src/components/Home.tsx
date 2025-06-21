@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import '../style/Home.css';
 import characterImg from '../assets/character.png';
 
+import socketConfig from "./socketConfig";
+
 const Home: React.FC = () => {
   const navigate = useNavigate();
 
@@ -13,6 +15,10 @@ const Home: React.FC = () => {
   const handleJoinGame = () => {
     navigate('/join_game');
   };
+
+  React.useEffect(() => {
+    socketConfig.closeConnection();
+  }, [])
 
   return (
     <div className="home-wrapper">

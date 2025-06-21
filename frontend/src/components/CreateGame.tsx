@@ -1,9 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../style/CreateGame.css';
 
-const API_URL = 'http://localhost:8000/api';
-
+import socketConfig from "./socketConfig";
 class Settings {
   time: number;
   deckLimit: number;
@@ -17,6 +16,11 @@ class Settings {
   }
 }
 
+interface Deck {
+  name: string;
+  cards: string[];
+}
+
 const CreateGame: React.FC = () => {
   const [words, setWords] = useState<string[]>([]);
   const [currentWord, setCurrentWord] = useState('');
@@ -24,9 +28,22 @@ const CreateGame: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [hostName, setHostName] = useState<string>("");
+  const [decks, setDecks] = useState<Deck[]>([]);
 
   const settings = useRef<Settings>(new Settings(60, 0, 3, 1));
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const cookies = document.cookie.replaceAll("[", "").replaceAll("]", "");
+    if (!cookies) return;
+    var deckStrings: string[] = cookies.split(";");
+    var supplementaryArray: Deck[] = [];
+    for (let i = 0; i < deckStrings.length; i++) {
+      const parsedString = deckStrings[i].split("=");
+      supplementaryArray.push({ name: parsedString[0], cards: parsedString[1].split(",") });
+    }
+    setDecks(supplementaryArray);
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +72,7 @@ const CreateGame: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/game/create`, {
+      const res = await fetch(`${socketConfig.HTTP_URL}/game/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -91,6 +108,14 @@ const CreateGame: React.FC = () => {
       settings.current.answersLimit = parseInt((answerLimit.value !== "") ? answerLimit.value : "1");
     }
     setShowSettings(false);
+  }
+
+  const loadDeck = () => {
+    const selector = document.getElementById("selector");
+    if (!(selector instanceof HTMLSelectElement)) return;
+    const cards = selector.value;
+    if (cards === "") { return; }
+    setWords(words.concat(cards.split(",")));
   }
 
   return (
@@ -134,10 +159,6 @@ const CreateGame: React.FC = () => {
               Import via txt
             </label>
 
-            <button type="button" className="action-button">
-              Saved Desks
-            </button>
-
             <button
               type="button"
               className="settings-button"
@@ -145,6 +166,15 @@ const CreateGame: React.FC = () => {
             >
               Settings
             </button>
+
+            <button type="button" className="action-button" onClick={loadDeck}>
+              Load a saved deck
+            </button>
+
+            <select className="deckSelect" id="selector">
+              <option value="">Select a deck</option>
+              {decks.map((deck, i) => (<option key={i} value={deck.cards}>{deck.name}</option> ))}
+            </select>
           </div>
         </div>
       </form>

@@ -2,6 +2,7 @@ var hostSocket: WebSocket | null = null;
 var playerSocket: WebSocket | null = null;
 
 var WS_URL = "ws://localhost:8000/api"
+var HTTP_URL = "http://localhost:8000/api"
 
 function connectSocketHost(hostName: string, gameCode: string) {
   if (!hostSocket) {
@@ -18,4 +19,16 @@ function connectSocketPlayer(playerName: string, gameCode: string) {
   return playerSocket;
 }
 
-export default { connectSocketHost, connectSocketPlayer };
+function closeConnection() {
+  if (hostSocket?.OPEN) {
+    hostSocket.close();
+    hostSocket = null;
+  }
+  if (playerSocket?.OPEN) {
+    playerSocket.close();
+    playerSocket = null;
+  }
+}
+
+
+  export default { connectSocketHost, connectSocketPlayer, HTTP_URL, closeConnection};
