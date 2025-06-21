@@ -1,9 +1,8 @@
 from asyncio import wait_for, TimeoutError
 from datetime import datetime, timezone
 from random import shuffle
-from pymongo import ReturnDocument
-
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
+from pymongo import ReturnDocument
 
 from ..code_gen import generate_code
 from ..models import Game
@@ -52,9 +51,7 @@ async def get_deck(game_id: str):
         raise HTTPException(status_code=404, detail="Game not found")
 
     game = await games.find_one({"_id": game_id})
-    return {
-        "deck": game["deck"]
-    }
+    return {"deck": game["deck"]}
 
 
 @router.websocket("/{game_id}")
