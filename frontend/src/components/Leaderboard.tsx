@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "../style/Leaderboard.css";
 
 import socketConfig from "./socketConfig";
@@ -16,20 +16,48 @@ const Leaderboard: React.FC = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get("code");
 
-  const location = useLocation();
+  const { gameId } = useParams<{ gameId: string }>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const navigate = useNavigate();
 
 
   useEffect(() => {
-    const scores: { [name: string]: number } = location.state.scores;
-    const playerNames: string[] = Object.keys(scores);
-    const supplementaryArray: Player[] = [];
-    for (var i = 0; i < playerNames.length; i++) {
-      supplementaryArray.push({ name: playerNames[i], score: scores[playerNames[i]] });
+    const fetchLeaderboard = async () => {
+      try {
+        const response = await fetch(
+          `${HTTP_URL}/game/leaderboard/${code}`
+        );
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError("Game not found.");
+          } else {
+            setError("Failed to fetch leaderboard.");
+          }
+          throw new Error("Failed to fetch leaderboard");
+        }
+        const scores = await response.json();
+        const formattedPlayers: Player[] = Object.keys(scores).map((key) => ({
+          name: key,
+          score: scores[key],
+        }));
+
+        formattedPlayers.sort((a, b) => b.score - a.score);
+
+        setPlayers(formattedPlayers);
+      } catch (err) {
+        setError("An error occurred while fetching the leaderboard.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (code) {
+      fetchLeaderboard();
     }
-    supplementaryArray.sort((a, b) => b.score - a.score);
-    setPlayers(supplementaryArray);
-  }, [location.state.scores])
+  }, [code]);
 
   const saveDeck = async () => {
     const response = await fetch(`${HTTP_URL}/game/deck/${code}`, {
@@ -46,6 +74,14 @@ const Leaderboard: React.FC = () => {
     navigate("/");
   } 
 
+  if (loading) {
+    return <div className="leaderboard-container">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="leaderboard-container">Error: {error}</div>;
+  }
+
   return (
     <div className="leaderboard-container">
       <h1 className="leaderboard-title">Leaderboard</h1>
@@ -59,12 +95,13 @@ const Leaderboard: React.FC = () => {
         ))}
       </div>
       <div className="leaderboard-buttons">
-        <button className="button light">Export Leaderboard</button>
         <button className="button primary" onClick={ toMain }>Back to main</button>
         <button className="button light" onClick={saveDeck}>Save Deck</button>
       </div>
     </div>
   );
 };
+
+// <button className="button light">Export Leaderboard</button>
 
 export default Leaderboard;
