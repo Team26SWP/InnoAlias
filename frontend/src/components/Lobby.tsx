@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../style/Lobby.css";
 
 import socketConfig from "./socketConfig";
+import HOST from "./socketConfig";
 
 interface Player {
   id: string;
@@ -14,7 +15,7 @@ const Lobby: React.FC = () => {
   const [socket, setSocket] = useState<WebSocket>();
   const urlParams = new URLSearchParams(window.location.search);
   const gameCode = urlParams.get("code");
-  const gameUrl = "https://localhost:3000/join_game?code=" + gameCode;
+  const gameUrl = "http://" + HOST + "/join_game?code=" + gameCode;
   const name = urlParams.get("name");
   const isHost = urlParams.get("host") === "true";
   const navigate = useNavigate();
