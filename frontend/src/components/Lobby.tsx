@@ -14,27 +14,42 @@ const Lobby: React.FC = () => {
   const [socket, setSocket] = useState<WebSocket>();
   const urlParams = new URLSearchParams(window.location.search);
   const gameCode = urlParams.get("code");
-  const gameUrl = "https://localhost:3000/join_game?code=" + gameCode;
+  const gameUrl = "http://" + window.location.host + "/join_game?code=" + gameCode;
   const name = urlParams.get("name");
   const isHost = urlParams.get("host") === "true";
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isHost && gameCode && name) {
+    if (!gameCode || !name) return;
+
+    if (isHost) {
       const ws = socketConfig.connectSocketHost(name, gameCode);
       setSocket(ws);
-      ws.onopen = () => { console.log("host connection successful"); }
-    }
-    else if (!isHost && gameCode && name) {
-      const ws = socketConfig.connectSocketPlayer(name, gameCode);
-      ws.onopen = () => { console.log("player connection successful"); }
+      ws.onopen = () => { console.log("host connection successful"); };
       ws.onmessage = (message) => {
         const data = JSON.parse(message.data);
+        if (data.players) {
+          setPlayers(data.players);
+        }
         if (data.state === "in_progress") {
           navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
         }
-      }
+      };
+    }
+    else {
+      const ws = socketConfig.connectSocketPlayer(name, gameCode);
       setSocket(ws);
+      ws.onopen = () => { console.log("player connection successful"); };
+      ws.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if (data.players) {
+          setPlayers(data.players);
+        }
+        
+        if (data.state === "in_progress") {
+          navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
+        }
+      };
     }
   }, [gameCode, name, isHost, navigate]);
 
