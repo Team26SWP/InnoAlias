@@ -2,6 +2,22 @@
 
 This folder contains a FastAPI backend for an Alias game.
 
+
+## Usage
+1. Install dependencies:
+   ```bash
+   pip install -r backend/requirements.txt
+   ```
+2. Copy `backend/sample.env` to `.env`:
+   ```bash
+   cp backend/sample.env .env
+   ```
+3. Run the server from the repository root:
+   ```bash
+   python -m uvicorn backend.app.main:app --reload
+   ```
+
+
 ## Structure
 
 ```
