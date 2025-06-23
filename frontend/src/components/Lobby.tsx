@@ -5,8 +5,8 @@ import "../style/Lobby.css";
 import socketConfig from "./socketConfig";
 
 interface Player {
-  id: string;
-  name: string;
+    name: string;
+    score: number;
 }
 
 const Lobby: React.FC = () => {
@@ -20,21 +20,38 @@ const Lobby: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isHost && gameCode && name) {
+    if (!gameCode || !name) return;
+
+    if (isHost) {
       const ws = socketConfig.connectSocketHost(name, gameCode);
       setSocket(ws);
-      ws.onopen = () => { console.log("host connection successful"); }
-    }
-    else if (!isHost && gameCode && name) {
-      const ws = socketConfig.connectSocketPlayer(name, gameCode);
-      ws.onopen = () => { console.log("player connection successful"); }
+      ws.onopen = () => { console.log("host connection successful"); };
       ws.onmessage = (message) => {
-        const data = JSON.parse(message.data);
+          const data = JSON.parse(message.data);
+          const suppArray = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
+        if (data.scores) {
+          setPlayers(suppArray);
+        }
         if (data.state === "in_progress") {
           navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
         }
-      }
+      };
+    }
+    else {
+      const ws = socketConfig.connectSocketPlayer(name, gameCode);
       setSocket(ws);
+      ws.onopen = () => { console.log("player connection successful"); };
+        ws.onmessage = (message) => {
+            const data = JSON.parse(message.data);
+            const suppArray = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
+            if (data.scores) {
+                setPlayers(suppArray);
+            }
+        
+        if (data.state === "in_progress") {
+          navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
+        }
+      };
     }
   }, [gameCode, name, isHost, navigate]);
 
@@ -46,11 +63,11 @@ const Lobby: React.FC = () => {
   return (
   <div className="lobby-container">
     <div className="content-wrapper">
-      <div className="players-section">
+      <div className="players-section"> 
         <h2>Players:</h2>
         <div className="players-list">
-          {players.map((player) => (
-            <div key={player.id} className="player-item">
+          {players.map((player, i) => (
+            <div key={i} className="player-item">
               {player.name}
             </div>
           ))}
