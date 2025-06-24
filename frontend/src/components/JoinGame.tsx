@@ -111,5 +111,3 @@ const JoinGame: React.FC = () => {
     </div>
   );
 };
-
-export default JoinGame;
