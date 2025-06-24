@@ -52,7 +52,15 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class Deck(BaseModel):
+    id: str = Field(...)
+    name: str = Field(max_length= 20)
+    words: List[str] = Field(default_factory=list)
+    owners_id: List[str] = Field(default_factory=list)
+    tag: Optional[str] = None
 
 class UserInDB(BaseModel):
+    id: str = Field(...)
     email: str
     hashed_password: str
+    decks : List[str] = Field(default_factory=list)

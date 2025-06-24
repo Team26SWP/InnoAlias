@@ -1,7 +1,7 @@
 from asyncio import wait_for, TimeoutError
 from datetime import datetime, timezone
 from random import shuffle
-from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
+from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException, Depends
 from pymongo import ReturnDocument
 
 from backend.app.code_gen import generate_code
@@ -12,6 +12,13 @@ from backend.app.services.game_service import (
     process_new_word,
     required_to_advance,
 )
+from starlette.responses import FileResponse
+from fastapi.responses import Response
+
+from InnoAlias.backend.app.code_gen import generate_deck_id
+from InnoAlias.backend.app.db import db
+from InnoAlias.backend.app.models import UserInDB
+from InnoAlias.backend.app.routers.auth import get_current_user
 
 router = APIRouter(prefix="", tags=["game"])
 
@@ -45,14 +52,64 @@ async def create_game(game: Game):
     return {"id": str(result.inserted_id)}
 
 
-@router.get("/deck/{game_id}")
-async def get_deck(game_id: str):
-    if not await games.find_one({"_id": game_id}):
+@router.get("/leaderboard/{game_id}/export")
+async def export_deck_txt(game_id: str):
+    game = await games.find_one({"_id": game_id})
+    if not game:
         raise HTTPException(status_code=404, detail="Game not found")
 
-    game = await games.find_one({"_id": game_id})
-    return {"deck": game["deck"]}
+    words = game.get("deck", [])
+    content = "\n".join(words)
+    current_local_time = datetime.now().astimezone()
+    return Response(
+        content=content,
+        media_type="text/plain",
+        headers={"Content-Disposition": f"attachment; filename=exported_deck_{current_local_time}.txt"},
+    )
 
+
+# решил расписать ибщ пришлось разделить функционал из-за ввода имени колоды юзером
+# тут просто надо собрать инфу о колоде
+@router.get("/leaderboard/{game_id}/deck-info")
+async def get_game_deck_info(game_id: str):
+    game = await games.find_one({"_id": game_id})
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+
+# дорогие фурри фронтендеры вам надо будет отправить этот словарь сразу же в эндпоинт ниже
+    return {
+        "words": game.get("deck", []),
+        "game_id": game_id
+    }
+
+# отдельный эндпоинт чтобы бро ввёл имя, ибо я хочу чтобы он сохранял колоды с определенным именем
+# к себе в профиль, а не просто колода 1 2 3 4
+@router.post("/leaderboard/{game_id}/save-deck")
+async def save_deck_into_profile(
+    deck_name: str,
+    #game_info это тот самый легендарный словарь из эндпоинта выше дада
+    game_info: dict,
+    current_user: UserInDB = Depends(get_current_user),
+    tag: str = None
+):
+    words = game_info.get("words", [])
+    deck_id = await generate_deck_id()
+    temp_deck = {
+        "_id": deck_id,
+        "name": deck_name,
+        "tag": tag,
+        "words": words,
+        "owners_id": [current_user.id]
+    }
+    if not await db.users.find_one({"_id": current_user.id}):
+        raise HTTPException(status_code=404, detail="User not found")
+    await db.decks.insert_one(temp_deck)
+    await db.users.update_one(
+        {"_id": current_user.id},
+        {"$addToSet": {"deck_ids": deck_id}}
+    )
+    return {"status": 200, "inserted_id": deck_id}
 
 @router.websocket("/{game_id}")
 async def handle_game(websocket: WebSocket, game_id: str):

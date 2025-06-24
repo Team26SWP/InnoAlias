@@ -6,8 +6,9 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from decouple import config
 
-from backend.app.models import User, UserInDB, Token
-from backend.app.db import db
+from InnoAlias.backend.app.code_gen import generate_user_id
+from InnoAlias.backend.app.models import User, UserInDB, Token
+from InnoAlias.backend.app.db import db
 
 router = APIRouter(prefix="", tags=["auth"])
 
@@ -23,7 +24,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 async def create_user(user: User):
     hashed_password = pwd_context.hash(user.password)
-    user_credentials = {"email": user.email, "hashed_password": hashed_password}
+    user_id = await generate_user_id()
+    user_credentials = {"_id": user_id,"email": user.email, "hashed_password": hashed_password}
     await users.insert_one(user_credentials)
     return user_credentials
 

@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.routers.auth import router as auth_router
-from backend.app.routers.game import router as game_router
+from InnoAlias.backend.app.routers.auth import router as auth_router
+from InnoAlias.backend.app.routers.game import router as game_router
 
 app = FastAPI()
 
