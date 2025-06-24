@@ -1,12 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import '../style/JoinGame.css'
-
-import socketConfig from "./socketConfig";
+import * as Config from './Config';
 
 const JoinGame: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const urlParams = new URLSearchParams(window.location.search);
 
   const [playerName, setPlayerName] = useState('');
   const [manualCode, setGameCode] = useState('');
@@ -16,7 +13,7 @@ const JoinGame: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const codeFromUrl = searchParams.get("code")?.toUpperCase();
+  const codeFromUrl = urlParams.get("code")?.toUpperCase();
   const gameCode = codeFromUrl || manualCode;
 
   const validatePlayerName = (name: string): string | null => {
@@ -47,9 +44,7 @@ const JoinGame: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
-    
-    navigate(`/lobby?code=${gameCode}&name=${playerName}&host=false`);
-    
+        
     }
 
   useEffect(() => {
@@ -81,7 +76,7 @@ const JoinGame: React.FC = () => {
           />
         </div>
 
-        {!searchParams.get('code') && (
+        {!urlParams.get('code') && (
           <div className="form-group">
             <label htmlFor="gameCode">Game Code</label>
             <input
@@ -111,3 +106,4 @@ const JoinGame: React.FC = () => {
     </div>
   );
 };
+export default JoinGame;

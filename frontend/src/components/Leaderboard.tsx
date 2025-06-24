@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import "../style/Leaderboard.css";
 
-import socketConfig from "./socketConfig";
-const HTTP_URL = socketConfig.HTTP_URL;
+import * as Config from './Config';
+
+const HTTP_URL = Config.HTTP_URL;
 
 interface Player {
   name: string;
@@ -16,11 +16,8 @@ const Leaderboard: React.FC = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get("code");
 
-  const { gameId } = useParams<{ gameId: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const navigate = useNavigate();
 
 
   useEffect(() => {
@@ -71,7 +68,7 @@ const Leaderboard: React.FC = () => {
   }
 
   const toMain = () => {
-    navigate("/");
+    Config.navigateTo(Config.Page.Home)
   } 
 
   if (loading) {

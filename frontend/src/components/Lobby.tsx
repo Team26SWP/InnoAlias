@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import "../style/Lobby.css";
 
-import socketConfig from "./socketConfig";
+import * as Config from './Config';
 
 interface Player {
     name: string;
@@ -17,13 +16,12 @@ const Lobby: React.FC = () => {
   const gameUrl = "http://" + window.location.host + "/join_game?code=" + gameCode;
   const name = urlParams.get("name");
   const isHost = urlParams.get("host") === "true";
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (!gameCode || !name) return;
 
     if (isHost) {
-      const ws = socketConfig.connectSocketHost(name, gameCode);
+      const ws = Config.connectSocketHost(name, gameCode);
       setSocket(ws);
       ws.onopen = () => { console.log("host connection successful"); };
       ws.onmessage = (message) => {
@@ -33,12 +31,12 @@ const Lobby: React.FC = () => {
           setPlayers(suppArray);
         }
         if (data.state === "in_progress") {
-          navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
+          //navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
         }
       };
     }
     else {
-      const ws = socketConfig.connectSocketPlayer(name, gameCode);
+      const ws = Config.connectSocketPlayer(name, gameCode);
       setSocket(ws);
       ws.onopen = () => { console.log("player connection successful"); };
         ws.onmessage = (message) => {
@@ -49,15 +47,15 @@ const Lobby: React.FC = () => {
             }
         
         if (data.state === "in_progress") {
-          navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
+          //navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
         }
       };
     }
-  }, [gameCode, name, isHost, navigate]);
+  }, [gameCode, name, isHost, /*navigate*/]);
 
   const handleStartGame = () => {
     socket?.send(JSON.stringify({ action: "start" }));
-    navigate(`/game/${gameCode}?name=${name}&host=true`);
+    //navigate(`/game/${gameCode}?name=${name}&host=true`);
   }
 
   return (

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import '../style/CreateGame.css';
 
-import socketConfig from "./socketConfig";
+import * as Config from './Config';
+
 class Settings {
   time: number;
   deckLimit: number;
@@ -31,7 +31,6 @@ const CreateGame: React.FC = () => {
   const [decks, setDecks] = useState<Deck[]>([]);
 
   const settings = useRef<Settings>(new Settings(60, 0, 3, 1));
-  const navigate = useNavigate();
 
   useEffect(() => {
     const cookies = document.cookie.replaceAll("[", "").replaceAll("]", "");
@@ -72,7 +71,7 @@ const CreateGame: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${socketConfig.HTTP_URL}/game/create`, {
+      const res = await fetch(`${Config.HTTP_URL}/game/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -86,7 +85,7 @@ const CreateGame: React.FC = () => {
 
       if (!res.ok) throw new Error();
       const data = await res.json();
-      navigate(`/lobby?code=${data.id}&name=${hostName}&host=true`);
+      Config.navigateTo(Config.Page.Lobby)
     } catch {
       setError('Failed to create game. Please try again.');
     } finally {

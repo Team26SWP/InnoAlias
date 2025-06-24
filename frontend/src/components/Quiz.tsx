@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import '../style/Quiz.css';
 
-import socketConfig from "./socketConfig";
+import * as Config from './Config';
 
 // Gamestate returned from the server. It belongs to the player that requests it
 interface GameState {
@@ -17,14 +16,13 @@ interface GameState {
 
 const Quiz: React.FC = () => {
   // Information retrieved from URL (optimally to be replaced by global variables of some sort)
-  const { gameId } = useParams<{ gameId: string }>();
   const urlParams = new URLSearchParams(window.location.search);
   const name = useRef<string>(urlParams.get("name"));
   const isHost = useRef<boolean>(urlParams.get("host") === "true");
-
+  const code = urlParams.get("code")?.toUpperCase();
   // Router functions
-  const navigate = useNavigate();
-  const location = useLocation();
+//  const navigate = useNavigate();
+//  const location = useLocation();
 
   // Game states. Aside from WS, do not carry any function except from being displayed on the page
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -60,11 +58,11 @@ const Quiz: React.FC = () => {
 
   // Connects to websocket (refers to socketConfig) and sets actions for different cases
   const connectWebSocket = useCallback(() => {
-    if (!gameId || !name.current) { return; }
+    if (!code || !name.current) { return; }
 
     // Host and player have different sockets:
     var websocket: WebSocket;
-    isHost.current ? websocket = socketConfig.connectSocketHost(name.current, gameId) : websocket = socketConfig.connectSocketPlayer(name.current, gameId);
+    isHost.current ? websocket = Config.connectSocketHost(name.current, code) : websocket = Config.connectSocketPlayer(name.current, code);
 
     websocket.onopen = () => {
       console.log('Connected to game server');
@@ -110,7 +108,8 @@ const Quiz: React.FC = () => {
       setAttemptsLeft(triesLeft.current);
 
       if (data.state === 'finished') {
-        navigate(`/leaderboard?code=${gameId}`, { state: {scores: data.scores} }); // <= to be changed to leaderboard
+        //navigate(`/leaderboard?code=${code}`, { state: {scores: data.scores} }); // <= to be changed to leaderboard
+
       }
     };
 
@@ -131,7 +130,7 @@ const Quiz: React.FC = () => {
     };
 
     setWs(websocket);
-  }, [gameId, navigate]);
+  }, [code, /*navigate*/]);
 
   // useEffect with (practically, since connectWebSocket is a function that does not change) an empty list to connect once
   useEffect(() => {
@@ -172,7 +171,7 @@ const Quiz: React.FC = () => {
         {isReconnecting ? (
           <div className="reconnecting">Reconnecting...</div>
         ) : (
-          <button onClick={() => navigate('/')} className="back-button">
+          <button /*onClick={() => /*navigate('/')}*/ className="back-button">
             Back to Home
           </button>
         )}

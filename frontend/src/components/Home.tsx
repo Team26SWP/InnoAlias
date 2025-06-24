@@ -1,25 +1,20 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
 import '../style/Home.css';
+import * as Config from './Config';
 import characterImg from '../assets/character.png';
 
-import socketConfig from "./socketConfig";
-
 const Home: React.FC = () => {
-  const navigate = useNavigate();
-
   const handleCreateGame = () => {
-    navigate('/create_game');
+    Config.navigateTo(Config.Page.Create)
   };
 
-  const handleJoinGame = () => {
-    navigate('/join_game');
-  };
+const handleJoinGame = () => {
+  Config.navigateTo(Config.Page.Join)
+};
 
   React.useEffect(() => {
-    socketConfig.closeConnection();
+    Config.closeConnection();
   }, [])
-
   return (
     <div className="home-wrapper">
       {/* Main container for the home page content */}

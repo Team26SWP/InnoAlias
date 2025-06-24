@@ -1,29 +1,41 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import Home from './components/Home';
 import CreateGame from './components/CreateGame';
 import JoinGame from './components/JoinGame';
 import Quiz from './components/Quiz';
-import Results from './components/Results';
 import Lobby from './components/Lobby';
 import Leaderboard from './components/Leaderboard';
+import * as Config from './components/Config';
 
 function App() {
-  return (
-    <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/create_game" element={<CreateGame />} />
-          <Route path="/join_game/:code?" element={<JoinGame />} />
-          <Route path="/game/:gameId" element={<Quiz />} />
-          <Route path="/results/:gameId" element={<Results />} />
-          <Route path="/lobby/" element={<Lobby />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-        </Routes>
-      </div>
-    </Router>
-  );
+  const [currentPage, setCurrentPage] = useState<Config.Page>(Config.Page.Home);
+
+  useEffect(() => {
+    Config.registerSetCurrentPage(setCurrentPage);
+  }, []);
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case Config.Page.Home:
+        return <Home />;
+      case Config.Page.Join:
+        return <JoinGame />;
+      case Config.Page.Create:
+        return <CreateGame />;
+      case Config.Page.Lobby:
+        return <Lobby />;
+      case Config.Page.Quiz:
+        return <Quiz />;
+      case Config.Page.Leaderboard:
+        return <Leaderboard />;
+      case Config.Page.Results:
+        return null;
+      default:
+        return <Home />;
+    }
+  };
+
+  return <div className="App">{renderPage()}</div>;
 }
 
 export default App;
