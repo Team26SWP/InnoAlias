@@ -25,7 +25,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 async def create_user(user: User):
     hashed_password = pwd_context.hash(user.password)
     user_id = await generate_user_id()
-    user_credentials = {"_id": user_id,"email": user.email, "hashed_password": hashed_password}
+    user_credentials = {"_id": user_id,"name": user.name, "surname": user.surname, "email": user.email, "hashed_password": hashed_password}
     await users.insert_one(user_credentials)
     return user_credentials
 

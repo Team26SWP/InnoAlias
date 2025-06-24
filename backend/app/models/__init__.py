@@ -2,6 +2,17 @@ from datetime import datetime
 from typing import Optional, List, Literal, Dict
 from pydantic import BaseModel, Field
 
+class DeckPreview(BaseModel):
+    id: str
+    name: str
+    words_count: int
+    tag: Optional[str] = None
+class ProfileResponse(BaseModel):
+    id: str
+    name: str
+    surname: str
+    email: str
+    decks: List[DeckPreview] = Field(default_factory=list)
 
 class Game(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
@@ -44,6 +55,8 @@ class PlayerGameState(BaseModel):
 
 
 class User(BaseModel):
+    name: str = Field(...)
+    surname: str = Field(...)
     email: str = Field(...)
     password: str = Field(...)
 
@@ -63,4 +76,7 @@ class UserInDB(BaseModel):
     id: str = Field(...)
     email: str
     hashed_password: str
-    decks : List[str] = Field(default_factory=list)
+    deck_ids  : List[str] = Field(default_factory=list)
+
+class DeckDetail(DeckPreview):
+    words: List[str]
