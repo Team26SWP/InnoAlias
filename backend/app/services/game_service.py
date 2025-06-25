@@ -9,8 +9,8 @@ from pymongo import ReturnDocument
 from backend.app.db import db
 from backend.app.models import GameState, PlayerGameState
 
-
 games = db.games
+decks = db.decks
 
 
 def required_to_advance(state: dict) -> int:

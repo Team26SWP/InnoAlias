@@ -43,16 +43,49 @@ class PlayerGameState(BaseModel):
     players: List[str] = Field(default_factory=list)
 
 
+class Deck(BaseModel):
+    id: str
+    name: str = Field(max_length=20)
+    words: List[str] = Field(default_factory=list)
+    owner_ids: List[str] = Field(default_factory=list)
+    tags: Optional[List[str]] = None
+
+
+class DeckPreview(BaseModel):
+    id: str
+    name: str
+    words_count: int
+    tags: Optional[List[str]] = None
+
+
+class DeckDetail(DeckPreview):
+    words: List[str]
+
+
 class User(BaseModel):
+    name: str = Field(...)
+    surname: str = Field(...)
     email: str = Field(...)
     password: str = Field(...)
+
+
+class UserInDB(BaseModel):
+    id: str
+    name: str
+    surname: str
+    email: str
+    hashed_password: str
+    deck_ids: List[str] = Field(default_factory=list)
+
+
+class ProfileResponse(BaseModel):
+    id: str
+    name: str
+    surname: str
+    email: str
+    decks: List[DeckPreview] = Field(default_factory=list)
 
 
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-
-class UserInDB(BaseModel):
-    email: str
-    hashed_password: str
