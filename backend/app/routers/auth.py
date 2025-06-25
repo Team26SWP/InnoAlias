@@ -1,9 +1,7 @@
 from fastapi import HTTPException, Depends, APIRouter
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
+from fastapi.security import OAuth2PasswordRequestForm
 
 from backend.app.models import User, Token
-from backend.app.db import db
 from backend.app.services.auth_service import (
     create_access_token,
     get_user,
@@ -13,9 +11,6 @@ from backend.app.services.auth_service import (
 
 router = APIRouter(prefix="", tags=["auth"])
 
-users = db.users
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 @router.post("/register", response_model=Token)

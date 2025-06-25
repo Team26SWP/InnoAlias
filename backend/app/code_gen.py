@@ -1,9 +1,11 @@
 from random import choice
 from string import ascii_uppercase, digits, ascii_lowercase
 
-from backend.app.routers.auth import users
+from backend.app.db import db
 from backend.app.services.game_service import decks
 from backend.app.services.game_service import games
+
+users = db.users
 
 
 async def generate_game_code():
