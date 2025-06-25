@@ -6,9 +6,9 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from decouple import config
 
-from InnoAlias.backend.app.code_gen import generate_user_id
-from InnoAlias.backend.app.models import User, UserInDB, Token
-from InnoAlias.backend.app.db import db
+from backend.app.code_gen import generate_user_id
+from backend.app.models import User, UserInDB, Token
+from backend.app.db import db
 
 router = APIRouter(prefix="", tags=["auth"])
 
