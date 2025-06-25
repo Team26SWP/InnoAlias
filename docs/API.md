@@ -123,7 +123,7 @@ Retrieve details of a specific deck.
 }
 ```
 
-### DELETE `/api/profile/deck/{deck_id}`
+### DELETE `/api/profile/deck/delete/{deck_id}`
 Delete a deck owned by the current user.
 
 ### GET `/api/profile/me`

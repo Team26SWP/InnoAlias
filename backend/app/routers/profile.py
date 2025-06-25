@@ -60,7 +60,7 @@ async def get_additional_deck_info(deck_id: str):
     )
 
 
-@router.delete("/deck/{deck_id}")
+@router.delete("/deck/delete/{deck_id}")
 async def delete_deck(deck_id: str, current_user: UserInDB = Depends(get_current_user)):
     deck = await db.decks.find_one({"_id": deck_id})
     if not deck:
