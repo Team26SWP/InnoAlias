@@ -47,7 +47,7 @@ class Deck(BaseModel):
     id: str
     name: str = Field(max_length=20)
     words: List[str] = Field(default_factory=list)
-    owner_ids: str = Field(default_factory=list)
+    owner_ids: List[str] = Field(default_factory=list)
     tags: Optional[List[str]] = None
 
 

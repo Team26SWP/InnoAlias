@@ -59,12 +59,12 @@ async def export_deck_txt(game_id: str):
 
     words = game.get("deck", [])
     content = "\n".join(words)
-    current_local_time = datetime.now().astimezone()
+    timestamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
     return Response(
         content=content,
         media_type="text/plain",
         headers={
-            "Content-Disposition": f"attachment; filename=exported_deck_{current_local_time}.txt"
+            "Content-Disposition": f"attachment; filename=exported_deck_{timestamp}.txt"
         },
     )
 
@@ -91,7 +91,7 @@ async def save_deck_into_profile(
         "name": deck_name,
         "tags": tags,
         "words": words,
-        "owners_id": [current_user.id],
+        "owner_ids": [current_user.id],
     }
     if not await db.users.find_one({"_id": current_user.id}):
         raise HTTPException(status_code=404, detail="User not found")
@@ -174,7 +174,7 @@ async def handle_game(websocket: WebSocket, game_id: str):
     except Exception as e:
         print(e)
     finally:
-        manager.disconnect(game_id)
+        manager.disconnect(game_id, websocket)
 
 
 @router.get("/leaderboard/{game_id}")

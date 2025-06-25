@@ -3,10 +3,21 @@ from typing import Optional
 from fastapi import HTTPException, Depends, status
 from jose import JWTError, jwt
 
+from fastapi.security import OAuth2PasswordBearer
+from passlib.context import CryptContext
+
 from backend.app.code_gen import generate_user_id
-from backend.app.main import SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM
+from backend.app.config import (
+    SECRET_KEY,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    ALGORITHM,
+)
 from backend.app.models import User, UserInDB
-from backend.app.routers.auth import pwd_context, users, oauth2_scheme
+from backend.app.db import db
+
+users = db.users
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 async def create_user(user: User):
