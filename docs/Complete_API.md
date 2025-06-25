@@ -1,8 +1,5 @@
 # API Reference
 
-This combined documentation merges the high-level API description from `API.md` with the example-based notes from `docs api aliasfd.html`.
-
-
 This document describes the REST and WebSocket endpoints exposed by the FastAPI backend.
 
 All endpoints are prefixed with `/api`.
