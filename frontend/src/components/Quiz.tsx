@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import '../style/Quiz.css';
-
 import * as Config from './Config';
+import Lobby from './Lobby';
 
 // Gamestate returned from the server. It belongs to the player that requests it
 interface GameState {
@@ -16,13 +16,13 @@ interface GameState {
 
 const Quiz: React.FC = () => {
   // Information retrieved from URL (optimally to be replaced by global variables of some sort)
-  const urlParams = new URLSearchParams(window.location.search);
+  /*const urlParams = new URLSearchParams(window.location.search);
   const name = useRef<string>(urlParams.get("name"));
   const isHost = useRef<boolean>(urlParams.get("host") === "true");
-  const code = urlParams.get("code")?.toUpperCase();
-  // Router functions
-//  const navigate = useNavigate();
-//  const location = useLocation();
+  const code = urlParams.get("code")?.toUpperCase();*/
+  
+  // New Sigma implementation global variable monster
+  const args = useRef<Config.Arguments>({name:'', code:'', isHost: false})
 
   // Game states. Aside from WS, do not carry any function except from being displayed on the page
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -34,12 +34,18 @@ const Quiz: React.FC = () => {
   const [enteredWords, setEnteredWords] = useState<string[]>([]);
   const [inputWord, setInputWord] = useState<string>('');
   const [correctCount, setCorrectCount] = useState(0);
-  const [ws, setWs] = useState<WebSocket | null>(null);
+  const ws = useRef<WebSocket | null>(null);
 
   // Variables to:
   const expiresAt = useRef<string>(""); // calculate time
   const triesLeft = useRef<number>(); // Keep track of wrong answers
   const score = useRef<number>(); // Keep track of right answers
+
+  useEffect(()=>{
+    const storedArgs = Config.getArgs();
+    args.current = storedArgs;
+    connectWebSocket();
+  }, []);
 
   // Takes the "expires_at" field from the game state as an argument and adjusts for timezone to calculate time left for guessing
   const formatTimeLeft = (expiresAt: string): string => {
@@ -58,11 +64,12 @@ const Quiz: React.FC = () => {
 
   // Connects to websocket (refers to socketConfig) and sets actions for different cases
   const connectWebSocket = useCallback(() => {
-    if (!code || !name.current) { return; }
+    const {name, code, isHost} = args.current;
+    if (!code || !name) return;
 
     // Host and player have different sockets:
     var websocket: WebSocket;
-    isHost.current ? websocket = Config.connectSocketHost(name.current, code) : websocket = Config.connectSocketPlayer(name.current, code);
+    isHost ? websocket = Config.connectSocketHost(name, code) : websocket = Config.connectSocketPlayer(name, code);
 
     websocket.onopen = () => {
       console.log('Connected to game server');
@@ -72,17 +79,17 @@ const Quiz: React.FC = () => {
 
     // When the game starts, the player gets the update first and then gets sent to this page, so the initial state transfered in
     // said update is carried out into location
-    if (!isHost.current) {
+    /*if (!isHost) {
       const initialState: GameState = location.state.game_state;
       setGameState(initialState);
       if (initialState.expires_at) {
         expiresAt.current = initialState.expires_at;
       }
-      score.current = initialState.scores[name.current];
+      score.current = initialState.scores[args.current.name];
       triesLeft.current = initialState.tries_left;
       setAttemptsLeft(triesLeft.current);
       setCorrectCount(score.current);
-    }
+    }*/
 
     // Stuff kinda self-explanatory
     websocket.onmessage = (event) => {
@@ -92,24 +99,25 @@ const Quiz: React.FC = () => {
       if (data.expires_at && data.expires_at !== expiresAt.current) {
         expiresAt.current = data.expires_at;
       }
-
-      if (name.current && score.current === data.scores[name.current] && triesLeft.current !== data.tries_left) {
-        setWrong("Wrong!");
-      }
-
-      else if (name.current && score.current !== data.scores[name.current]) {
+      
+      const { name } = args.current;
+      if (score.current === undefined) { // First message
+        score.current = data.scores[name] ?? 0;
+        setCorrectCount(score.current);
+      } else if (name && score.current !== data.scores[name]) { // Correct guess
         setWrong("Right!");
-        score.current = data.scores[name.current];
+        score.current = data.scores[name];
         setEnteredWords([]);
         setCorrectCount(score.current);
+      } else if (name && score.current === data.scores[name] && triesLeft.current !== data.tries_left) { // Wrong guess
+        setWrong("Wrong!");
       }
 
       triesLeft.current = data.tries_left;
       setAttemptsLeft(triesLeft.current);
 
       if (data.state === 'finished') {
-        //navigate(`/leaderboard?code=${code}`, { state: {scores: data.scores} }); // <= to be changed to leaderboard
-
+        Config.navigateTo(Config.Page.Leaderboard, args.current )
       }
     };
 
@@ -129,13 +137,8 @@ const Quiz: React.FC = () => {
       }
     };
 
-    setWs(websocket);
-  }, [code, /*navigate*/]);
-
-  // useEffect with (practically, since connectWebSocket is a function that does not change) an empty list to connect once
-  useEffect(() => {
-    connectWebSocket();
-  }, [connectWebSocket]);
+    ws.current = websocket;
+  }, []);
 
   // Sets a time interval to update the timer
   useEffect(() => {
@@ -148,8 +151,8 @@ const Quiz: React.FC = () => {
 
   
   const handleSkip = () => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ action: 'skip' }));
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({ action: 'skip' }));
     }
   };
 
@@ -160,7 +163,7 @@ const Quiz: React.FC = () => {
 
     setEnteredWords([...enteredWords, inputWord]);
     const str = inputWord;
-    ws?.send(JSON.stringify({ action: 'guess', guess: str }));
+    ws.current?.send(JSON.stringify({ action: 'guess', guess: str }));
     setInputWord("");
   };
 
@@ -171,7 +174,7 @@ const Quiz: React.FC = () => {
         {isReconnecting ? (
           <div className="reconnecting">Reconnecting...</div>
         ) : (
-          <button /*onClick={() => /*navigate('/')}*/ className="back-button">
+          <button onClick={() => Config.navigateTo(Config.Page.Home) } className="back-button">
             Back to Home
           </button>
         )}
@@ -183,7 +186,7 @@ const Quiz: React.FC = () => {
     return <div className="quiz-container">Loading...</div>;
   }
 
-  if (name.current === gameState.current_master) { // Quiz-card for the game master
+  if (args.current.name === gameState.current_master) { // Quiz-card for the game master
     return (
       <div className="quiz-container">
         <div className="question-card">

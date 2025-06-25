@@ -12,13 +12,10 @@ interface Player {
 
 const Leaderboard: React.FC = () => {
   var [players, setPlayers] = useState<Player[]>([]);
-
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get("code");
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
 
   useEffect(() => {
     const fetchLeaderboard = async () => {

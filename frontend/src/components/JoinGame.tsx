@@ -9,9 +9,9 @@ const JoinGame: React.FC = () => {
   const [manualCode, setGameCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [socketOpen, setSocketOpen] = useState(false);
-  const socketRef = useRef<WebSocket | null>(null);
-
   const [isLoading, setIsLoading] = useState(false);
+    const socketRef = useRef<WebSocket | null>(null);
+
 
   const codeFromUrl = urlParams.get("code")?.toUpperCase();
   const gameCode = codeFromUrl || manualCode;
@@ -31,7 +31,7 @@ const JoinGame: React.FC = () => {
     return null;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleJoinGame = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const nameError = validatePlayerName(playerName);
@@ -44,12 +44,35 @@ const JoinGame: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
-        
+    
+    const socket = Config.connectSocketPlayer(playerName, gameCode);
+    socketRef.current = socket;
+
+    socket.onopen = () => {
+      console.log('Player socket opened');
+      setSocketOpen(true);
+      Config.navigateTo(Config.Page.Lobby, { name: playerName, code: gameCode, isHost: false });
+    };
+
+    socket.onerror = (err) => {
+      console.error('Socket error', err);
+      setError('Failed to connect to the game. Please check the code and try again.');
+      setIsLoading(false);
+    };
+
+    socket.onclose = () => {
+      if (!socketOpen) {
+        setError('Connection closed before joining.');
+        setIsLoading(false);
+      }
+    };
+
     }
 
   useEffect(() => {
     return () => {
       socketRef.current?.close();
+      Config.closeConnection();
     };
   }, []);
 
@@ -57,7 +80,7 @@ const JoinGame: React.FC = () => {
     <div className="join-game-container">
       <h1>Join Game</h1>
       {error && <div className="error-message">{error}</div>}
-      <form onSubmit={handleSubmit} className="join-form">
+      <form onSubmit={handleJoinGame} className="join-form">
         <div className="form-group">
           <label htmlFor="playerName">Your Name</label>
           <input

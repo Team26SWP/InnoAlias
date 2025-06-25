@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import '../style/Home.css';
 import * as Config from './Config';
 import characterImg from '../assets/character.png';

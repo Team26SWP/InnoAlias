@@ -1,4 +1,3 @@
-/* components/Config.ts */
 export enum Page {
   Home = "Home",
   Join = "Join",
@@ -7,6 +6,12 @@ export enum Page {
   Lobby = "Lobby",
   Leaderboard = "Leaderboard",
   Results = "Results",
+}
+
+export interface Arguments {
+  name : string;
+  code : string;
+  isHost : boolean;
 }
 
 let hostSocket: WebSocket | null = null;
@@ -43,17 +48,25 @@ export function closeConnection() {
   }
 }
 
+let args : Arguments;
+
+export function getArgs(){
+  return args;
+}
+
 let _setCurrentPage: ((page: Page) => void) | null = null;
 
 export function registerSetCurrentPage(fn: (page: Page) => void) {
   _setCurrentPage = fn;
 }
 
-export function navigateTo(page: Page) {
+export function navigateTo(page: Page, newArgs: Arguments = {name: "", code: "", isHost: false}) {
   if (!_setCurrentPage) {
     console.error("SetCurrentPage not registered!");
     return;
   }
   _setCurrentPage(page);
+  args = newArgs;
 }
+
 

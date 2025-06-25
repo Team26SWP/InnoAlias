@@ -29,8 +29,9 @@ const CreateGame: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [hostName, setHostName] = useState<string>("");
   const [decks, setDecks] = useState<Deck[]>([]);
-
   const settings = useRef<Settings>(new Settings(60, 0, 3, 1));
+  const socketRef = useRef<WebSocket | null>(null);
+  
 
   useEffect(() => {
     const cookies = document.cookie.replaceAll("[", "").replaceAll("]", "");
@@ -67,11 +68,19 @@ const CreateGame: React.FC = () => {
     if (file) file.text().then(parse);
   };
 
+  const loadDeck = () => {
+    const selector = document.getElementById("selector");
+    if (!(selector instanceof HTMLSelectElement)) return;
+    const cards = selector.value;
+    if (!cards) return;
+    setWords(words.concat(cards.split(",")));
+  }
+
   const handleStartGame = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${Config.HTTP_URL}/game/create`, {
+      const response = await fetch(`${Config.HTTP_URL}/game/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -83,12 +92,23 @@ const CreateGame: React.FC = () => {
         }),
       });
 
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      Config.navigateTo(Config.Page.Lobby)
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      const gameCode = data.id;
+
+      const socket = Config.connectSocketHost(hostName, gameCode);
+      socketRef.current = socket;
+
+      socket.onopen = () => {
+        Config.navigateTo(Config.Page.Lobby, { name: hostName, code: gameCode, isHost: true });
+      };
+
+      socket.onerror = () => {
+        setError('Failed to connect host socket.');
+        setIsLoading(false);
+      };
     } catch {
       setError('Failed to create game. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -109,13 +129,12 @@ const CreateGame: React.FC = () => {
     setShowSettings(false);
   }
 
-  const loadDeck = () => {
-    const selector = document.getElementById("selector");
-    if (!(selector instanceof HTMLSelectElement)) return;
-    const cards = selector.value;
-    if (cards === "") { return; }
-    setWords(words.concat(cards.split(",")));
-  }
+  useEffect(() => {
+    return () => {
+      socketRef.current?.close();
+      Config.closeConnection();
+    };
+  }, []);
 
   return (
     <div className="create-game-container">

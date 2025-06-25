@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import "../style/Lobby.css";
 
 import * as Config from './Config';
@@ -9,19 +9,18 @@ interface Player {
 }
 
 const Lobby: React.FC = () => {
+  const args = useRef<Config.Arguments>({name:'', code:'', isHost: false});
   const [players, setPlayers] = useState<Player[]>([]);
   const [socket, setSocket] = useState<WebSocket>();
-  const urlParams = new URLSearchParams(window.location.search);
-  const gameCode = urlParams.get("code");
-  const gameUrl = "http://" + window.location.host + "/join_game?code=" + gameCode;
-  const name = urlParams.get("name");
-  const isHost = urlParams.get("host") === "true";
+  const {name, code, isHost} = args.current;
+  const gameUrl = "http://" + window.location.host + "?code=" + code;
+
 
   useEffect(() => {
-    if (!gameCode || !name) return;
+    if (code || name) return;
 
-    if (isHost) {
-      const ws = Config.connectSocketHost(name, gameCode);
+    if (args.current.isHost) {
+      const ws = Config.connectSocketHost(name, code);
       setSocket(ws);
       ws.onopen = () => { console.log("host connection successful"); };
       ws.onmessage = (message) => {
@@ -31,12 +30,13 @@ const Lobby: React.FC = () => {
           setPlayers(suppArray);
         }
         if (data.state === "in_progress") {
-          //navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
+          //navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });\
+          Config.navigateTo(Config.Page.Quiz, args.current)
         }
       };
     }
     else {
-      const ws = Config.connectSocketPlayer(name, gameCode);
+      const ws = Config.connectSocketPlayer(name, code);
       setSocket(ws);
       ws.onopen = () => { console.log("player connection successful"); };
         ws.onmessage = (message) => {
@@ -48,14 +48,15 @@ const Lobby: React.FC = () => {
         
         if (data.state === "in_progress") {
           //navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
+          Config.navigateTo(Config.Page.Quiz, args.current)
         }
       };
     }
-  }, [gameCode, name, isHost, /*navigate*/]);
+  }, [code, name, isHost]);
 
   const handleStartGame = () => {
     socket?.send(JSON.stringify({ action: "start" }));
-    //navigate(`/game/${gameCode}?name=${name}&host=true`);
+    Config.navigateTo(Config.Page.Quiz, args.current)
   }
 
   return (
@@ -76,7 +77,7 @@ const Lobby: React.FC = () => {
         <h3>Url:</h3>
         <div className="url-box"><strong style={{ color: "#3171a6" }}></strong> {gameUrl}</div>
         <h3>Code:</h3>
-        <div className="code-box"><strong style={{ color: "#3171a6" }}></strong> {gameCode}</div>
+        <div className="code-box"><strong style={{ color: "#3171a6" }}></strong> {code}</div>
       </div>
       <div className="qr-section">
         <h3>QR-code:</h3>
