@@ -1,10 +1,9 @@
 from random import choice
 from string import ascii_uppercase, digits, ascii_lowercase
-import db
-from InnoAlias.backend.app.routers.auth import users
-from InnoAlias.backend.app.services.game_service import decks
-from InnoAlias.backend.app.services.game_service import games
 
+from backend.app.routers.auth import users
+from backend.app.services.game_service import decks
+from backend.app.services.game_service import games
 
 
 async def generate_game_code():

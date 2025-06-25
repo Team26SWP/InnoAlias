@@ -2,17 +2,6 @@ from datetime import datetime
 from typing import Optional, List, Literal, Dict
 from pydantic import BaseModel, Field
 
-class DeckPreview(BaseModel):
-    id: str
-    name: str
-    words_count: int
-    tag: Optional[str] = None
-class ProfileResponse(BaseModel):
-    id: str
-    name: str
-    surname: str
-    email: str
-    decks: List[DeckPreview] = Field(default_factory=list)
 
 class Game(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
@@ -54,6 +43,25 @@ class PlayerGameState(BaseModel):
     players: List[str] = Field(default_factory=list)
 
 
+class Deck(BaseModel):
+    id: str
+    name: str = Field(max_length=20)
+    words: List[str] = Field(default_factory=list)
+    owner_ids: str = Field(default_factory=list)
+    tags: Optional[List[str]] = None
+
+
+class DeckPreview(BaseModel):
+    id: str
+    name: str
+    words_count: int
+    tags: Optional[List[str]] = None
+
+
+class DeckDetail(DeckPreview):
+    words: List[str]
+
+
 class User(BaseModel):
     name: str = Field(...)
     surname: str = Field(...)
@@ -61,22 +69,23 @@ class User(BaseModel):
     password: str = Field(...)
 
 
+class UserInDB(BaseModel):
+    id: str
+    name: str
+    surname: str
+    email: str
+    hashed_password: str
+    deck_ids: List[str] = Field(default_factory=list)
+
+
+class ProfileResponse(BaseModel):
+    id: str
+    name: str
+    surname: str
+    email: str
+    decks: List[DeckPreview] = Field(default_factory=list)
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-class Deck(BaseModel):
-    id: str = Field(...)
-    name: str = Field(max_length= 20)
-    words: List[str] = Field(default_factory=list)
-    owners_id: List[str] = Field(default_factory=list)
-    tag: Optional[str] = None
-
-class UserInDB(BaseModel):
-    id: str = Field(...)
-    email: str
-    hashed_password: str
-    deck_ids  : List[str] = Field(default_factory=list)
-
-class DeckDetail(DeckPreview):
-    words: List[str]
