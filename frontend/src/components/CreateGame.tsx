@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import socketConfig from "./config";
+import * as config from './config';
+
 class Settings {
   time: number;
   deckLimit: number;
@@ -27,9 +27,9 @@ const CreateGame: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [hostName, setHostName] = useState<string>("");
   const [decks, setDecks] = useState<Deck[]>([]);
-
   const settings = useRef<Settings>(new Settings(60, 0, 3, 1));
-  const navigate = useNavigate();
+  const socketRef = useRef<WebSocket | null>(null);
+  
 
   useEffect(() => {
     const cookies = document.cookie.replaceAll("[", "").replaceAll("]", "");
@@ -66,11 +66,19 @@ const CreateGame: React.FC = () => {
     if (file) file.text().then(parse);
   };
 
+  const loadDeck = () => {
+    const selector = document.getElementById("selector");
+    if (!(selector instanceof HTMLSelectElement)) return;
+    const cards = selector.value;
+    if (!cards) return;
+    setWords(words.concat(cards.split(",")));
+  }
+
   const handleStartGame = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${socketConfig.HTTP_URL}/game/create`, {
+      const response = await fetch(`${config.HTTP_URL}/game/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -82,12 +90,23 @@ const CreateGame: React.FC = () => {
         }),
       });
 
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      navigate(`/lobby?code=${data.id}&name=${hostName}&host=true`);
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      const gameCode = data.id;
+
+      const socket = config.connectSocketHost(hostName, gameCode);
+      socketRef.current = socket;
+
+      socket.onopen = () => {
+        config.navigateTo(config.Page.Lobby, { name: hostName, code: gameCode, isHost: true });
+      };
+
+      socket.onerror = () => {
+        setError('Failed to connect host socket.');
+        setIsLoading(false);
+      };
     } catch {
       setError('Failed to create game. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -106,14 +125,6 @@ const CreateGame: React.FC = () => {
       settings.current.answersLimit = parseInt((answerLimit.value !== "") ? answerLimit.value : "1");
     }
     setShowSettings(false);
-  }
-
-  const loadDeck = () => {
-    const selector = document.getElementById("selector");
-    if (!(selector instanceof HTMLSelectElement)) return;
-    const cards = selector.value;
-    if (cards === "") { return; }
-    setWords(words.concat(cards.split(",")));
   }
 
  return (
