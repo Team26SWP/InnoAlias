@@ -1,0 +1,10 @@
+uvicorn[standard]
+fastapi
+pymongo
+pydantic
+websockets
+python-jose
+passlib[bcrypt]
+python-decouple
+motor
+python-multipart
