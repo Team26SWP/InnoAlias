@@ -1,0 +1,45 @@
+module.exports = {
+  root: true,
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    project: './tsconfig.json',
+    tsconfigRootDir: __dirname,
+    ecmaVersion: 2021,
+    sourceType: 'module',
+    ecmaFeatures: { jsx: true },
+  },
+  env: {
+    browser: true,
+    es2021: true,
+    node: true,
+  },
+  plugins: [
+    '@typescript-eslint',
+    'react',
+    'react-hooks',
+    'jsx-a11y',
+  ],
+  extends: [
+    'airbnb',
+    'airbnb-typescript',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:react/recommended',
+    'plugin:jsx-a11y/recommended',
+    'plugin:react-hooks/recommended',
+  ],
+  settings: {
+    react: { version: 'detect' },
+    'import/resolver': {
+      node: { extensions: ['.js','.jsx','.ts','.tsx'] },
+    },
+  },
+  rules: {
+    'react/react-in-jsx-scope': 'off',
+    'import/extensions': [
+      'error',
+      'ignorePackages',
+      { js: 'never', jsx: 'never', ts: 'never', tsx: 'never' }
+    ],
+  },
+  ignorePatterns: ['node_modules/', 'dist/'],
+};
