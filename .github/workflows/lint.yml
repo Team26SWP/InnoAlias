@@ -5,6 +5,8 @@ permissions:
 
 on:
   push:
+    branches:
+      - main
     paths:
       - backend/**/*.py
       - frontend/src/**/*.js
@@ -12,6 +14,8 @@ on:
       - frontend/src/**/*.ts
       - frontend/src/**/*.tsx
   pull_request:
+    branches:
+      - main
     paths:
       - backend/**/*.py
       - frontend/src/**/*.js
