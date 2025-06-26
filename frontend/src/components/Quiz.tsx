@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import '../style/Quiz.css';
+
 
 import socketConfig from "./socketConfig";
 
@@ -167,80 +167,57 @@ const Quiz: React.FC = () => {
 
   if (error) {
     return (
-      <div className="quiz-container">
-        <div className="error-message">{error}</div>
-        {isReconnecting ? (
-          <div className="reconnecting">Reconnecting...</div>
-        ) : (
-          <button onClick={() => navigate('/')} className="back-button">
-            Back to Home
-          </button>
-        )}
+       <div className="flex flex-col items-center justify-center min-h-screen text-red-600 text-xl">
+        <p>{error}</p>
+        {isReconnecting ? <p>Reconnecting...</p> : <button className="mt-4 bg-blue-500 text-white px-4 py-2 rounded" onClick={() => navigate('/')}>Back to Home</button>}
       </div>
     );
   }
 
+  
+
   if (!gameState) {
-    return <div className="quiz-container">Loading...</div>;
-  }
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+}
 
   if (name.current === gameState.current_master) { // Quiz-card for the game master
     return (
-      <div className="quiz-container">
-        <div className="question-card">
-          <div className="game-info">
-            <div className="remaining-words">
-              Words remaining: {gameState.remaining_words_count}
-            </div>
-            {gameState.expires_at && (
-              <div className="timer">
-                Time left: {timeStr}
-              </div>
-            )}
-          </div>
-
-          <h2>Current Word:</h2>
-          <div className="current-word">
-            {gameState.current_word || 'Waiting for next word...'}
-          </div>
-
-          <button onClick={handleSkip} className="skip-button">
-            Skip Word
-          </button>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#ffefe3] font-adlam text-[#3171a6]">
+        <div className="text-xl mb-2">Words remaining: {gameState.remaining_words_count}</div>
+        <div className="text-xl mb-6">Time left: {timeStr}</div>
+        <div className="text-4xl font-bold bg-gray-200 px-12 py-8 rounded-xl shadow mb-4">
+          {gameState.current_word || 'Waiting for next word...'}
         </div>
-
+        <button onClick={handleSkip} className="mt-2 bg-[#3171a6] text-white px-6 py-3 rounded-lg hover:bg-[#2c5d8f]">Skip</button>
       </div>
     );
   }
+
   return ( // Playing field for the player
-    <div className="game-container">
-      <div className="entered-words">
-        <h4>Entered words:</h4>
-        <ul>
-          {enteredWords.map((word, i) => (
-            <li key={i}>{word}</li>
-          ))}
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#ffefe3] p-10 font-adlam">
+      <div className="bg-[#d9d9d9] rounded-lg p-6 w-full md:w-1/2 min-h-[400px] mb-6 md:mb-0">
+        <h2 className="text-2xl font-bold text-[#3171a6] border-b-4 border-[#3171a6] mb-4">Entered words:</h2>
+        <ul className="text-[#3171a6]">
+          {enteredWords.map((word, i) => <li key={i}>{word}</li>)}
         </ul>
       </div>
-
-      <div className="game-main">
-        <div className="top-bar">
-          <h2>Time left : {timeStr}</h2>
-          <div className="score">Correct : {correctCount}</div>
+      <div className="flex-1 flex flex-col items-center">
+        <div className="flex justify-between w-full max-w-xl mb-4 text-[#3171a6] font-bold">
+          <h2>Time left: {timeStr}</h2>
+          <div>Correct: {correctCount}</div>
         </div>
-
-        <form onSubmit={handleSubmit} className="word-form">
+        <form onSubmit={handleSubmit} className="flex flex-col items-center w-full max-w-xl">
           <input
             type="text"
             placeholder="Enter a word........"
             value={inputWord}
             onChange={(e) => setInputWord(e.target.value)}
-            id="guess-input"
+            className="w-full p-4 rounded-full bg-[#d9d9d9] text-[#3171a6] text-lg mb-4 focus:outline-none"
           />
-          <button type="submit" disabled={ gameState.tries_left <= 0}>Submit</button>
+          <button type="submit" disabled={gameState.tries_left <= 0} className="bg-[#3171a6] text-white px-8 py-2 rounded hover:bg-[#2c5d8f] disabled:opacity-50">Submit</button>
         </form>
-        <span>Attempts left {attemptsLeft}</span>
-        <span>{ wrong }</span>
+        <span className="mt-2 text-[#3171a6]">Attempts left: {attemptsLeft}</span>
+        <span className="mt-1 text-red-500 font-semibold">{wrong}</span>
       </div>
     </div>
   )

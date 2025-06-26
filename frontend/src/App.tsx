@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './components/Home';
 import CreateGame from './components/CreateGame';
@@ -7,6 +6,9 @@ import Quiz from './components/Quiz';
 import Results from './components/Results';
 import Lobby from './components/Lobby';
 import Leaderboard from './components/Leaderboard';
+import Login from './components/Login';
+import Register from './components/Register';
+import EmailConfirm from './components/EmailConfirm';
 
 function App() {
   return (
@@ -20,6 +22,10 @@ function App() {
           <Route path="/results/:gameId" element={<Results />} />
           <Route path="/lobby/" element={<Lobby />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/confirm" element={<EmailConfirm />} />
+
         </Routes>
       </div>
     </Router>

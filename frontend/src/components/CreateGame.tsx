@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../style/CreateGame.css';
-
 import socketConfig from "./socketConfig";
 class Settings {
   time: number;
@@ -118,117 +116,130 @@ const CreateGame: React.FC = () => {
     setWords(words.concat(cards.split(",")));
   }
 
-  return (
-    <div className="create-game-container">
-      <h1 className="create-game-title">Create a Game</h1>
-      {error && <div className="error-message">{error}</div>}
+ return (
+    <div className="min-h-screen bg-[#FAF6E9] text-[#1E6DB9] font-adlam flex flex-col items-center dark:bg-[#1A1A1A] pt-10 px-6">
+      <h1 className="text-4xl font-bold mb-10 text-center">Create Word Game</h1>
 
-      <form onSubmit={handleSubmit} className="word-form">
-        <div className="input-container">
-          <div className="left-section">
-            <input type="text" className="word-input" placeholder="Enter your name"
-            value={hostName}
-            onChange={(e) => { setHostName(e.target.value); setError(null) } } />
+      <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl items-start">
+        <div className="flex-1 w-full">
+          <form onSubmit={handleSubmit}>
             <input
               type="text"
-              className="word-input"
-              placeholder="Enter a word"
+              placeholder="Enter a word(-s)........"
               value={currentWord}
-              onChange={(e) => {
-                setCurrentWord(e.target.value);
-                setError(null);
-              }}
+              onChange={(e) => setCurrentWord(e.target.value)}
+              className="w-full bg-[#D9D9D9] placeholder:text-[#7d7d7d] text-[#1E6DB9] px-6 py-4 text-lg rounded-full outline-none font-adlam mb-10"
             />
-            <div className="words-section">
-              <h2 className="words-title">Added Words ({words.length}):</h2>
-              <ul className="words-list">
-                {words.map((w, i) => (
-                  <li key={i} className="word-tag">
-                    {w}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          </form>
 
-          <div className="actions-container">
-            <button type="submit" className="add-word-button">Add Word</button>
-
-            <label className="custom-file-upload">
-              <input type="file" accept=".txt" onChange={fileSubmit} />
-              Import via txt
-            </label>
-
-            <button
-              type="button"
-              className="settings-button"
-              onClick={() => setShowSettings(true)}
-            >
-              Settings
-            </button>
-
-            <button type="button" className="action-button" onClick={loadDeck}>
-              Load a saved deck
-            </button>
-
-            <select className="deckSelect" id="selector">
-              <option value="">Select a deck</option>
-              {decks.map((deck, i) => (<option key={i} value={deck.cards}>{deck.name}</option> ))}
-            </select>
+          <h2 className="text-xl font-bold mb-4">Added Words ({words.length}):</h2>
+          <div className="grid grid-cols-5 md:grid-cols-7 gap-4">
+            {words.map((word, i) => (
+              <span key={i} className="bg-[#E2E2E2] text-[#1E6DB9] px-4 py-2 rounded-full text-center text-sm font-adlam">
+                {word}
+              </span>
+            ))}
           </div>
         </div>
-      </form>
+
+        <div className="flex flex-col gap-4 min-w-[160px]">
+          <button onClick={handleSubmit} className="bg-[#1E6DB9] text-[#FAF6E9] px-4 py-5 rounded-md font-adlam">Add</button>
+          <label className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-md text-center font-adlam cursor-pointer">
+            Import via txt
+            <input type="file" className="hidden" onChange={fileSubmit} />
+          </label>
+          <button onClick={loadDeck} className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-md font-adlam">Saved Desks</button>
+          <button onClick={() => setShowSettings(true)} className="bg-[#DBD9D1] text-[#1E6DB9] px-4 py-3 rounded-md font-adlam">Settings</button>
+        </div>
+      </div>
 
       <button
         onClick={handleStartGame}
-        disabled={words.length === 0 || isLoading || hostName === ""}
-        className="start-game-button"
+        disabled={words.length === 0 || !hostName || isLoading}
+        className="mt-12 px-10 py-4 bg-[#1E6DB9] text-[#FAF6E9] rounded-lg font-adlam text-lg disabled:bg-gray-400"
       >
         {isLoading ? 'Creating Game...' : 'Start Game'}
       </button>
 
       {showSettings && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <button className="modal-close" onClick={() => setShowSettings(false)}>
-              ✕
-            </button>
-            <div className="modal-content">
-              <div className="setting-row">
-                <label>Time:</label>
-                <div className="row-right time-group">
-                  <div className="time-unit">
-                    <input type="number" id="minutes" min="0" max="59" placeholder="1"/> <span>min</span>
-                  </div>
-                  <div className="time-unit">
-                    <input type="number" id="seconds" min="0" max="59" placeholder="0"/> <span>sec</span>
-                  </div>
-                </div>
-              </div>
-              <div className="setting-row">
-                <label>Deck limit:</label>
-                <div className="row-right">
-                  <input type="number" id="deck-length" placeholder="max" min="1"/> <span>cards</span>
-                </div>
-              </div>
-              <div className="setting-row">
-                <label>Limit of attempts:</label>
-                <div className="row-right">
-                  <input type="number" id="attempts" placeholder="3" min="1"/> <span>tries</span>
-                </div>
-              </div>
-              <div className="setting-row">
-                <label>Limit of correct answers:</label>
-                <div className="row-right">
-                  <input type="number" id="answers" placeholder="1" min="1"/> <span>players</span>
-                </div>
-              </div>
+  <div className="fixed inset-0 bg-black backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-[#DBD9D1] text-[#1E6DB9] rounded-lg px-12 py-10 w-[90%] max-w-2xl relative font-adlam">
+      <button
+        onClick={() => setShowSettings(false)}
+        className="absolute top-4 left-4 text-2xl"
+      >
+        ✕
+      </button>
 
-              <button className="modal-save-button" onClick={saveSettings}>Save</button>
-            </div>
+      <div className="flex flex-col gap-4 mt-10">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-bold w-36">Time:</span>
+          <div className="flex items-center gap-2">
+            <input
+              id="minutes"
+              type="number"
+              placeholder=""
+              className="w-14 p-2 rounded-md"
+            />
+            <span className="text-sm">min</span>
+            <input
+              id="seconds"
+              type="number"
+              placeholder=""
+              className="w-14 p-2 rounded-md"
+            />
+            <span className="text-sm">sec</span>
           </div>
         </div>
-      )}
+
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-bold w-36">Deck limit:</span>
+          <div className="flex items-center gap-2">
+            <input
+              id="deck-length"
+              type="number"
+              className="w-14 p-2 rounded-md"
+            />
+            <span className="text-sm">cards</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-bold w-36">Limit of attempts:</span>
+          <div className="flex items-center gap-2">
+            <input
+              id="attempts"
+              type="number"
+              className="w-14 p-2 rounded-md"
+            />
+            <span className="text-sm">tries</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-bold w-36">Limit of correct answers:</span>
+          <div className="flex items-center gap-2">
+            <input
+              id="answers"
+              type="number"
+              className="w-14 p-2 rounded-md"
+            />
+            <span className="text-sm">players</span>
+          </div>
+        </div>
+
+        <button
+          onClick={saveSettings}
+          className="bg-[#1E6DB9] text-white py-2 mt-4 rounded-md"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 };
