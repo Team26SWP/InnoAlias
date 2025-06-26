@@ -22,7 +22,6 @@ on:
       - frontend/src/**/*.jsx
       - frontend/src/**/*.ts
       - frontend/src/**/*.tsx
-  workflow_dispatch:
 
 jobs:
   python:
