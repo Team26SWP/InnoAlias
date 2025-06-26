@@ -6,6 +6,9 @@ export enum Page {
   Lobby = "Lobby",
   Leaderboard = "Leaderboard",
   Results = "Results",
+  Login = "Login",
+  Register = "Register",
+  EmailConfirm = "EmailConfirm",
 }
 
 export interface Arguments {

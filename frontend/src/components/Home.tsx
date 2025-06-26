@@ -1,24 +1,22 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import socketConfig from "./config";
+import React from "react";
+import * as config from './config';
 
 const Home: React.FC = () => {
-  const navigate = useNavigate();
-
   const handleCreateGame = () => {
-    navigate('/create_game');
+    config.navigateTo(config.Page.Create)
   };
 
   const handleJoinGame = () => {
-    navigate('/join_game');
+    config.navigateTo(config.Page.Join)
   };
 
   const handleLogin = () => {
-  navigate('/login');
-};
+  config.navigateTo(config.Page.Login)
+  };
+
 
   React.useEffect(() => {
-    socketConfig.closeConnection();
+    config.closeConnection();
   }, [])
 
 return (

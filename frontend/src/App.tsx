@@ -31,8 +31,12 @@ function App() {
         return <Quiz />;
       case config.Page.Leaderboard:
         return <Leaderboard />;
-      case config.Page.Results:
-        return null;
+      case config.Page.Login:
+        return <Login />;
+      case config.Page.Register:
+        return <Register />;
+      case config.Page.EmailConfirm:
+        return <EmailConfirm />;
       default:
         return <Home />;
     }

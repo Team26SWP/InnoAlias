@@ -1,21 +1,16 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-
-import socketConfig from "./config";
+import * as config from './config';
 
 const JoinGame: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
+  const urlParams = new URLSearchParams(window.location.search);
   const [playerName, setPlayerName] = useState('');
   const [manualCode, setGameCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [socketOpen, setSocketOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
 
-  const [isLoading, setIsLoading] = useState(false);
-
-  const codeFromUrl = searchParams.get("code")?.toUpperCase();
+  const codeFromUrl = urlParams.get("code")?.toUpperCase();
   const gameCode = codeFromUrl || manualCode;
 
   const validatePlayerName = (name: string): string | null => {
@@ -33,7 +28,7 @@ const JoinGame: React.FC = () => {
     return null;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleJoinGame = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const nameError = validatePlayerName(playerName);
@@ -47,20 +42,35 @@ const JoinGame: React.FC = () => {
     setIsLoading(true);
     setError(null);
     
-    navigate(`/lobby?code=${gameCode}&name=${playerName}&host=false`);
-    
-    }
+    const socket = config.connectSocketPlayer(playerName, gameCode);
+    socketRef.current = socket;
 
-  useEffect(() => {
-    return () => {
-      socketRef.current?.close();
+    socket.onopen = () => {
+      console.log('Player socket opened');
+      setSocketOpen(true);
+      config.navigateTo(config.Page.Lobby, { name: playerName, code: gameCode, isHost: false });
     };
-  }, []);
+
+    socket.onerror = (err) => {
+      console.error('Socket error', err);
+      setError('Failed to connect to the game. Please check the code and try again.');
+      setIsLoading(false);
+    };
+
+    socket.onclose = () => {
+      if (!socketOpen) {
+        setError('Connection closed before joining.');
+        setIsLoading(false);
+      }
+    };
+
+  }
+
 
   return (
     <div className="min-h-screen bg-[#FAF6E9] dark:bg-[#1A1A1A] flex flex-col items-center justify-center px-6 py-12">
       <h1 className="text-5xl font-bold text-[#1E6DB9] mb-10">Join Game</h1>
-      <form onSubmit={handleSubmit} className="w-full max-w-lg flex flex-col items-center gap-6">
+      <form onSubmit={handleJoinGame} className="w-full max-w-lg flex flex-col items-center gap-6">
         <div className="w-full">
           <label className="block text-2xl font-medium text-[#1E6DB9] mb-3 ml-4">Code</label>
           <input
