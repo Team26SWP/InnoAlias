@@ -58,7 +58,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
-              cd ~/innoalias
+              cd /home/innoalias
               docker-compose pull
               docker-compose up -d
               docker image prune -f
