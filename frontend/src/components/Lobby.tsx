@@ -17,10 +17,11 @@ const Lobby: React.FC = () => {
 
 
   useEffect(() => {
-    if (code || name) return;
+    args.current = Config.getArgs();
+    if (!args.current.code || !args.current.name) return;
 
     if (args.current.isHost) {
-      const ws = Config.connectSocketHost(name, code);
+      const ws = Config.connectSocketHost(args.current.name, args.current.code);
       setSocket(ws);
       ws.onopen = () => { console.log("host connection successful"); };
       ws.onmessage = (message) => {
@@ -30,25 +31,25 @@ const Lobby: React.FC = () => {
           setPlayers(suppArray);
         }
         if (data.state === "in_progress") {
-          //navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });\
+          Config.setInitialState(data);
           Config.navigateTo(Config.Page.Quiz, args.current)
         }
       };
     }
     else {
-      const ws = Config.connectSocketPlayer(name, code);
+      const ws = Config.connectSocketPlayer(args.current.name, args.current.code);
       setSocket(ws);
-      ws.onopen = () => { console.log("player connection successful"); };
-        ws.onmessage = (message) => {
-            const data = JSON.parse(message.data);
-            const suppArray = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
-            if (data.scores) {
-                setPlayers(suppArray);
-            }
-        
+      ws.onopen = () => { console.log("player connection successful"); }
+      ws.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        const suppArray = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
+        if (data.scores) {
+          setPlayers(suppArray);
+        }
+
         if (data.state === "in_progress") {
-          //navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
-          Config.navigateTo(Config.Page.Quiz, args.current)
+          Config.setInitialState(data);
+          Config.navigateTo(Config.Page.Quiz, args.current);
         }
       };
     }

@@ -12,12 +12,11 @@ interface Player {
 
 const Leaderboard: React.FC = () => {
   var [players, setPlayers] = useState<Player[]>([]);
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get("code");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const code = Config.getArgs().code;
     const fetchLeaderboard = async () => {
       try {
         const response = await fetch(
@@ -51,9 +50,10 @@ const Leaderboard: React.FC = () => {
     if (code) {
       fetchLeaderboard();
     }
-  }, [code]);
+  }, []);
 
   const saveDeck = async () => {
+    const code = Config.getArgs().code;
     const response = await fetch(`${HTTP_URL}/game/deck/${code}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }

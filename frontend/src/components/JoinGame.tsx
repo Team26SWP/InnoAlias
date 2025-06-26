@@ -67,14 +67,8 @@ const JoinGame: React.FC = () => {
       }
     };
 
-    }
+  }
 
-  useEffect(() => {
-    return () => {
-      socketRef.current?.close();
-      Config.closeConnection();
-    };
-  }, []);
 
   return (
     <div className="join-game-container">

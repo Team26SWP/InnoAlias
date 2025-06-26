@@ -4,15 +4,7 @@ import * as Config from './Config';
 import Lobby from './Lobby';
 
 // Gamestate returned from the server. It belongs to the player that requests it
-interface GameState {
-  current_word: string | null;
-  expires_at: string | null;
-  remaining_words_count: number;
-  state: 'in_progress' | 'finished';
-  tries_left: number;
-  current_master: string;
-  scores: { [name: string]: number };
-}
+
 
 const Quiz: React.FC = () => {
   // Information retrieved from URL (optimally to be replaced by global variables of some sort)
@@ -25,7 +17,7 @@ const Quiz: React.FC = () => {
   const args = useRef<Config.Arguments>({name:'', code:'', isHost: false})
 
   // Game states. Aside from WS, do not carry any function except from being displayed on the page
-  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [gameState, setGameState] = useState<Config.GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [wrong, setWrong] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -62,7 +54,7 @@ const Quiz: React.FC = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  // Connects to websocket (refers to socketConfig) and sets actions for different cases
+  // Connects to websocket (refers to Config) and sets actions for different cases
   const connectWebSocket = useCallback(() => {
     const {name, code, isHost} = args.current;
     if (!code || !name) return;
@@ -71,50 +63,32 @@ const Quiz: React.FC = () => {
     var websocket: WebSocket;
     isHost ? websocket = Config.connectSocketHost(name, code) : websocket = Config.connectSocketPlayer(name, code);
 
-    websocket.onopen = () => {
-      console.log('Connected to game server');
-      setIsReconnecting(false);
-      setError(null);
-    };
-
-    // When the game starts, the player gets the update first and then gets sent to this page, so the initial state transfered in
-    // said update is carried out into location
-    /*if (!isHost) {
-      const initialState: GameState = location.state.game_state;
-      setGameState(initialState);
-      if (initialState.expires_at) {
-        expiresAt.current = initialState.expires_at;
-      }
-      score.current = initialState.scores[args.current.name];
-      triesLeft.current = initialState.tries_left;
-      setAttemptsLeft(triesLeft.current);
-      setCorrectCount(score.current);
-    }*/
-
     // Stuff kinda self-explanatory
     websocket.onmessage = (event) => {
-      const data: GameState = JSON.parse(event.data);
+      const data: Config.GameState = JSON.parse(event.data);
       setGameState(data);
 
       if (data.expires_at && data.expires_at !== expiresAt.current) {
         expiresAt.current = data.expires_at;
       }
-      
-      const { name } = args.current;
-      if (score.current === undefined) { // First message
-        score.current = data.scores[name] ?? 0;
-        setCorrectCount(score.current);
-      } else if (name && score.current !== data.scores[name]) { // Correct guess
-        setWrong("Right!");
-        score.current = data.scores[name];
-        setEnteredWords([]);
-        setCorrectCount(score.current);
-      } else if (name && score.current === data.scores[name] && triesLeft.current !== data.tries_left) { // Wrong guess
-        setWrong("Wrong!");
-      }
 
-      triesLeft.current = data.tries_left;
-      setAttemptsLeft(triesLeft.current);
+      if (!isHost) {
+        const { name } = args.current;
+        if (score.current === undefined) { // First message
+          score.current = data.scores[name] ?? 0;
+          setCorrectCount(score.current);
+        } else if (name && score.current !== data.scores[name]) { // Correct guess
+          setWrong("Right!");
+          score.current = data.scores[name];
+          setEnteredWords([]);
+          setCorrectCount(score.current);
+        } else if (name && score.current === data.scores[name] && triesLeft.current !== data.tries_left) { // Wrong guess
+          setWrong("Wrong!");
+        }
+
+        triesLeft.current = data.tries_left;
+        setAttemptsLeft(triesLeft.current);
+      }
 
       if (data.state === 'finished') {
         Config.navigateTo(Config.Page.Leaderboard, args.current )
@@ -138,6 +112,19 @@ const Quiz: React.FC = () => {
     };
 
     ws.current = websocket;
+
+
+    // When the game starts, the player gets the update first and then gets sent to this page, so the initial state transfered in
+    // said update is carried out into config
+
+    const initialState = Config.getInitialState();
+    setGameState(initialState);
+    if (!initialState || !initialState.expires_at || !initialState.tries_left || !initialState.scores) { return; }
+    expiresAt.current = initialState?.expires_at;
+    triesLeft.current = initialState?.tries_left;
+    score.current = initialState?.scores[args.current.name];
+    setAttemptsLeft(triesLeft.current);
+    setCorrectCount(score.current);
   }, []);
 
   // Sets a time interval to update the timer
@@ -241,7 +228,7 @@ const Quiz: React.FC = () => {
           />
           <button type="submit" disabled={ gameState.tries_left <= 0}>Submit</button>
         </form>
-        <span>Attempts left {attemptsLeft}</span>
+        <span>Attempts left: {attemptsLeft}</span>
         <span>{ wrong }</span>
       </div>
     </div>

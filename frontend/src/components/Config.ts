@@ -13,13 +13,25 @@ export interface Arguments {
   code : string;
   isHost : boolean;
 }
+export interface GameState {
+  current_word: string | null;
+  expires_at: string | null;
+  remaining_words_count: number;
+  state: 'in_progress' | 'finished';
+  tries_left: number;
+  current_master: string;
+  scores: { [name: string]: number };
+}
 
 let hostSocket: WebSocket | null = null;
 let playerSocket: WebSocket | null = null;
 
-const HOST = window.location.host;
+let initialState: GameState | null = null;
+
+const HOST = "localhost:8000";
 export const WS_URL = `ws://${HOST}/api`;
 export const HTTP_URL = `http://${HOST}/api`;
+
 
 export function connectSocketHost(hostName: string, gameCode: string) {
   if (!hostSocket) {
@@ -46,6 +58,8 @@ export function closeConnection() {
     playerSocket.close();
     playerSocket = null;
   }
+  console.log("Connection closed by the client");
+  initialState = null;
 }
 
 let args : Arguments;
@@ -68,5 +82,10 @@ export function navigateTo(page: Page, newArgs: Arguments = {name: "", code: "",
   _setCurrentPage(page);
   args = newArgs;
 }
-
+export function setInitialState(init: GameState) {
+  initialState = init;
+}
+export function getInitialState() {
+  return initialState;
+}
 

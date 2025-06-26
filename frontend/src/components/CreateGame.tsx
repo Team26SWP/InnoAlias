@@ -129,13 +129,6 @@ const CreateGame: React.FC = () => {
     setShowSettings(false);
   }
 
-  useEffect(() => {
-    return () => {
-      socketRef.current?.close();
-      Config.closeConnection();
-    };
-  }, []);
-
   return (
     <div className="create-game-container">
       <h1 className="create-game-title">Create a Game</h1>
