@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import socketConfig from "./socketConfig";
+import socketConfig from "./config";
 const HTTP_URL = socketConfig.HTTP_URL;
 
 interface Player {

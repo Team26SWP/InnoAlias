@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import socketConfig from "./socketConfig";
+import socketConfig from "./config";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();

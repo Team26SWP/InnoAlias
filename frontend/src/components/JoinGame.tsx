@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import socketConfig from "./socketConfig";
+import socketConfig from "./config";
 
 const JoinGame: React.FC = () => {
   const navigate = useNavigate();

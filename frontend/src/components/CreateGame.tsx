@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import socketConfig from "./socketConfig";
+import socketConfig from "./config";
 class Settings {
   time: number;
   deckLimit: number;

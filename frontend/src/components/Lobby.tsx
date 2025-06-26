@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import socketConfig from "./socketConfig";
+import socketConfig from "./config";
 
 interface Player {
     name: string;
