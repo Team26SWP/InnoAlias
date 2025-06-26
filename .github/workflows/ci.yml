@@ -6,6 +6,7 @@ on:
     paths:
       - 'backend/**'
       - 'frontend/**'
+      - 'nginx/**'
       - '.github/workflows/ci.yml'
 
 concurrency:
@@ -17,99 +18,125 @@ permissions:
 
 jobs:
   lint-python:
+    name: 🐍 Lint Python
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Cache Python deps
+
+      - name: Cache Python dependencies
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-      - name: Install & Lint
+
+      - name: Install Black & Flake8
         run: |
           pip install --upgrade pip
           pip install black flake8
-          black backend
+
+      - name: Check formatting & lint
+        run: |
+          black --check backend
           flake8 backend
 
   lint-js:
+    name: ⚛️ Lint JavaScript
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Cache Node modules
         uses: actions/cache@v3
         with:
           path: frontend/node_modules
           key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
-      - name: Install & Lint
+
+      - name: Install deps & run ESLint
         working-directory: frontend
         run: |
           npm ci
           npm run lint
 
   test-backend:
+    name: 🐍 Test Python
     runs-on: ubuntu-latest
     needs: lint-python
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v4
-        with: { python-version: '3.x' }
-      - name: Install & Test
+        with:
+          python-version: '3.x'
+
+      - name: Install & run pytest
         run: |
           pip install -r backend/requirements.txt
           pytest --maxfail=1 --disable-warnings -q backend/tests
 
   test-frontend:
+    name: ⚛️ Test JavaScript
     runs-on: ubuntu-latest
     needs: lint-js
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with: { node-version: '18' }
-      - name: Install & Test
+        with:
+          node-version: '18'
+
+      - name: Install deps & run Jest
         working-directory: frontend
         run: |
           npm ci
           npm test -- --watchAll=false --coverage
 
-  build-artifacts:
+  build-and-push-images:
+    name: 🔨 Build & Push Docker Images
     runs-on: ubuntu-latest
     needs: [ test-backend, test-frontend ]
-    outputs:
-      image-backend: ${{ steps.build-backend.outputs.image }}
-      image-frontend: ${{ steps.build-frontend.outputs.image }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Backend Image
+      - name: Build & push backend image
         id: build-backend
         uses: docker/build-push-action@v4
         with:
           context: backend
           file: backend/Dockerfile
-          push: false
-          outputs: type=registry
-          tags: registry.example.com/app/backend:${{ github.sha }}
+          push: true
+          tags: |
+            docker.io/${{ secrets.DOCKERHUB_USER }}/innoalias-backend:${{ github.sha }}
+            docker.io/${{ secrets.DOCKERHUB_USER }}/innoalias-backend:latest
 
-      - name: Build Frontend Image
+      - name: Build & push frontend image
         id: build-frontend
         uses: docker/build-push-action@v4
         with:
           context: frontend
           file: frontend/Dockerfile
-          push: false
-          outputs: type=registry
-          tags: registry.example.com/app/frontend:${{ github.sha }}
+          push: true
+          tags: |
+            docker.io/${{ secrets.DOCKERHUB_USER }}/innoalias-frontend:${{ github.sha }}
+            docker.io/${{ secrets.DOCKERHUB_USER }}/innoalias-frontend:latest
 
-      - name: Upload images as artifacts
-        uses: actions/upload-artifact@v3
+      - name: Build & push nginx image
+        id: build-nginx
+        uses: docker/build-push-action@v4
         with:
-          name: docker-images
-          path: |
-            # (if you’re exporting .tar files, list them here)
-            # or skip if you push directly to your registry above
+          context: nginx
+          file: nginx/Dockerfile
+          push: true
+          tags: |
+            docker.io/${{ secrets.DOCKERHUB_USER }}/innoalias-nginx:${{ github.sha }}
+            docker.io/${{ secrets.DOCKERHUB_USER }}/innoalias-nginx:latest
