@@ -1,6 +1,5 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import '../style/Results.css';
 
 /**
  * Interface defining the structure of a player's score
@@ -48,47 +47,40 @@ const Results: React.FC = () => {
     navigate('/');
   };
 
-  return (
-    <div className="results-container">
-      <h1>Game Results</h1>
-      
-      <div className="results-card">
-        {/* Top 3 players section with special styling */}
-        <div className="top-players">
-          {mockResults.slice(0, 3).map((player) => (
-            <div key={player.id} className={`player-result rank-${player.rank}`}>
-              <div className="rank">{player.rank}</div>
-              <div className="player-info">
-                <div className="player-name">{player.name}</div>
-                <div className="player-score">{player.score} points</div>
-              </div>
-            </div>
-          ))}
-        </div>
+   return (
+    <div className="bg-[#FAF6E9] dark:bg-[#1A1A1A] min-h-screen flex flex-col items-center py-10 px-4 font-[ADLaM_Display]">
+      <h1 className="text-2xl sm:text-3xl text-[#3171a6] font-bold mb-6">
+        Leaderboard
+      </h1>
 
-        {/* Complete list of all players */}
-        <div className="all-players">
-          <h2>All Players</h2>
-          <div className="players-list">
-            {mockResults.map((player) => (
-              <div key={player.id} className="player-row">
-                <span className="player-rank">#{player.rank}</span>
-                <span className="player-name">{player.name}</span>
-                <span className="player-score">{player.score} points</span>
-              </div>
-            ))}
+      <div className="w-full max-w-2xl bg-[#d9d9d9] rounded-xl p-4 flex flex-col gap-2 max-h-[400px] overflow-y-auto">
+        {mockResults.map((player) => (
+          <div
+            key={player.id}
+            className="bg-[#bfbfbf] rounded-md px-4 py-2 flex justify-between text-[#3171a6] text-[16px] font-bold"
+          >
+            <span>{player.rank}.</span>
+            <span>{player.name}</span>
+            <span>{player.score}</span>
           </div>
-        </div>
+        ))}
       </div>
 
-      {/* Action buttons section */}
-      <div className="results-actions">
-        <button className="play-again-button" onClick={handlePlayAgain}>
-          Play Again
+      <div className="mt-6 flex flex-wrap justify-center gap-4">
+        <button className="bg-[#d9d9d9] text-[#3171a6] text-xl px-5 py-2 rounded-lg font-semibold">
+          Export Leaderboard
+        </button>
+        <button
+          onClick={() => navigate("/")}
+          className="bg-[#3171a6] text-[#fff1e8] text-xl px-5 py-2 rounded-lg font-semibold"
+        >
+          Back to main
+        </button>
+        <button className="bg-[#d9d9d9] text-[#3171a6] text-xl px-5 py-2 rounded-lg font-semibold">
+          Save Deck
         </button>
       </div>
     </div>
   );
 };
-
 export default Results; 

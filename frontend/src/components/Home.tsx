@@ -1,8 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../style/Home.css';
-import characterImg from '../assets/character.png';
-
 import socketConfig from "./socketConfig";
 
 const Home: React.FC = () => {
@@ -16,38 +13,41 @@ const Home: React.FC = () => {
     navigate('/join_game');
   };
 
+  const handleLogin = () => {
+  navigate('/login');
+};
+
   React.useEffect(() => {
     socketConfig.closeConnection();
   }, [])
 
-  return (
-    <div className="home-wrapper">
-      {/* Main container for the home page content */}
-      <div className="home-container">
-        {/* Game title */}
-        <h1>ALIAS</h1>
-        
-        {/* Game description */}
-        <h2>"Alias" is the name of a popular word explanation game, often played in teams. The objective of the game is
-            to have your teammates guess words you are describing without actually saying the word itself.</h2>
-        
-        {/* Navigation buttons container */}
-        <div className="home-options">
-          <button onClick={handleCreateGame} className="create-home-button">
-            Create Game
-          </button>
-          <button onClick={handleJoinGame} className="join-home-button">
-            Join Game
-          </button>
-        </div>
-      </div>
+return (
+    <div className="min-h-screen px-6 py-10 flex flex-col items-center justify-center bg-[#FAF6E9] text-[#1E6DB9] dark:bg-[#1A1A1A] dark:text-[#FAF6E9]">
+      <button
+        onClick={handleLogin}
+        className="absolute top-4 font-adlam right-4 bg-[#1E6DB9] text-[#FAF6E9] font-semibold px-4 py-2 rounded-full hover:opacity-90 transition"
+      >
+        Log in
+      </button>
+      <h1 className="text-9xl font-bold font-adlam text-[#1E6DB9] mb-8">alias</h1>
 
-      {/* Character image section */}
-      <div className="home-image">
-        <img src={characterImg} alt="Alias character" />
+      <div className="flex flex-col sm:flex-row gap-4">
+        <button
+          onClick={handleCreateGame}
+          className="bg-[#1E6DB9] text-[#FAF6E9] font-adlam px-6 py-3 rounded-lg text-lg font-medium hover:opacity-90 transition"
+        >
+          Create game
+        </button>
+        <button
+          onClick={handleJoinGame}
+          className="bg-[#FAF6E9] dark:bg-[#1A1A1A] border border-[#1E6DB9] font-adlam text-[#1E6DB9] px-6 py-3 rounded-lg text-lg font-medium"
+        >
+          Join the game
+        </button>
       </div>
     </div>
   );
 };
+
 
 export default Home; 
