@@ -1,23 +1,56 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import * as config from './config';
 
 const Register: React.FC = () => {
-  const navigate = useNavigate();
-  const [form, setForm] = useState({
-    name: "",
-    surname: "",
-    email: "",
-    password: "",
-  });
+  const [form, setForm] = useState<config.Register>({
+  name: "",
+  surname: "",
+  email: "",
+  password: "",}
+);
+  const [error, setError] = useState <string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Register:", form);
-    navigate("/confirm", { state: { email: form.email } });
+    setError(null)
+    
+    try {
+      const response = await fetch(`${config.HTTP_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: form.name,
+          surname: form.surname,
+          email: form.email,
+          password: form.password,
+        }),
+      });
+      
+      if (!response.ok) {
+        if (response.status === 400) {
+          setError('Email already registered');
+        } else {
+          setError(`Error: ${response.status} ${response.statusText}`);
+        }
+        return;
+      }
+      const data = await response.json();
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('token_type', data.token_type);
+      console.log("Register:", form);
+      //config.navigateTo(config.Page.EmailConfirm);
+      config.navigateTo(config.Page.Home);
+
+    } catch(err) {
+      setError('An unexpected error occurred. Please try again later.')
+      console.error('Register error', err);
+    }
   };
 
   return (
@@ -73,6 +106,9 @@ const Register: React.FC = () => {
               required
             />
           </div>
+          {error && (
+            <p className="text-red-500 text-center font-semibold">{error}</p>
+          )}
           <button
             type="submit"
             className="w-full bg-[#1E6DB9] text-white font-bold py-2 rounded-full mt-4 hover:opacity-90 font-adlam"
@@ -82,7 +118,7 @@ const Register: React.FC = () => {
         </form>
         <p className="mt-4 text-center text-sm text-black font-semibold">
           Already have an account?{" "}
-          <button onClick={() => navigate("/login")} className="text-[#1E6DB9] font-semibold hover:underline">
+          <button onClick={() => config.navigateTo(config.Page.Login)} className="text-[#1E6DB9] font-semibold hover:underline">
             Sign in
           </button>
         </p>

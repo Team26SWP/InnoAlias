@@ -1,23 +1,18 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import * as config from './config';
 
 const EmailConfirm: React.FC = () => {
   const [code, setCode] = useState("");
-  const navigate = useNavigate();
-  const location = useLocation();
-
-
-  const email = location.state?.email || "example@gmail.com";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Code entered:", code);
     
-    navigate("/"); 
+    config.navigateTo(config.Page.Home)
   };
 
   const handleUpdateEmail = () => {
-    navigate("/register"); 
+    config.navigateTo(config.Page.Register)
   };
 
 
@@ -28,7 +23,7 @@ const EmailConfirm: React.FC = () => {
           Confirm your email address
         </h2>
         <p className="text-center text-gray-600 mb-6 text-sm">
-          We have sent a code to <span className="text-black font-medium">{email}</span>
+          We have sent a code to <span className="text-black font-medium">{}</span>
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

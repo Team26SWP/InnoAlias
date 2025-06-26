@@ -16,6 +16,7 @@ export interface Arguments {
   code : string;
   isHost : boolean;
 }
+
 export interface GameState {
   current_word: string | null;
   expires_at: string | null;
@@ -24,6 +25,13 @@ export interface GameState {
   tries_left: number;
   current_master: string;
   scores: { [name: string]: number };
+}
+
+export interface Register{
+  name: "",
+  surname: "",
+  email: "",
+  password: "",
 }
 
 let hostSocket: WebSocket | null = null;
@@ -69,6 +77,12 @@ let args : Arguments;
 
 export function getArgs(){
   return args;
+}
+
+let regs : Register;
+
+export function getRegs(){
+  //return regs;
 }
 
 let _setCurrentPage: ((page: Page) => void) | null = null;
