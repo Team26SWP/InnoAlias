@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import * as config from './config';
+const HTTP_URL = config.HTTP_URL;
 
-import socketConfig from "./config";
-const HTTP_URL = socketConfig.HTTP_URL;
 
 interface Player {
   name: string;
@@ -11,18 +10,11 @@ interface Player {
 
 const Leaderboard: React.FC = () => {
   var [players, setPlayers] = useState<Player[]>([]);
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get("code");
-
-  const { gameId } = useParams<{ gameId: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const navigate = useNavigate();
-
-
   useEffect(() => {
+    const code = config.getArgs().code;
     const fetchLeaderboard = async () => {
       try {
         const response = await fetch(
@@ -56,9 +48,10 @@ const Leaderboard: React.FC = () => {
     if (code) {
       fetchLeaderboard();
     }
-  }, [code]);
+  }, []);
 
   const saveDeck = async () => {
+    const code = config.getArgs().code;
     const response = await fetch(`${HTTP_URL}/game/deck/${code}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
@@ -70,7 +63,7 @@ const Leaderboard: React.FC = () => {
   }
 
   const toMain = () => {
-    navigate("/");
+    config.navigateTo(config.Page.Home)
   } 
 
   if (loading) {
