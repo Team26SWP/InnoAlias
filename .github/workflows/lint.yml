@@ -1,5 +1,8 @@
 name: Lint Backend & Frontend
 
+permissions:
+  contents: write
+
 on:
   push:
     paths:
@@ -27,25 +30,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: true
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Install Black & Flake8
         run: |
           pip install --upgrade pip
           pip install black flake8
+
       - name: Auto-format with Black
         run: black backend
+
       - name: Commit & push Black changes
-        if: matrix.python-version == '3.x'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add backend
-          git commit -m "chore: apply Black auto-formatting" || echo "No Black formatting needed"
-          git push
+          # only commit if there are changes
+          git diff --quiet || (git commit -m "chore: apply Black auto-formatting" && git push)
+
       - name: Run Flake8
         run: flake8 backend
 
@@ -55,25 +63,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: true
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
+
       - name: Auto-fix ESLint issues
         working-directory: frontend
         run: npm run lint:fix
+
       - name: Commit & push ESLint fixes
         working-directory: frontend
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "chore: apply ESLint auto-fixes" || echo "No ESLint fixes to apply"
-          git push
+          git diff --quiet || (git commit -m "chore: apply ESLint auto-fixes" && git push)
+
       - name: Run ESLint
         working-directory: frontend
         run: npm run lint
