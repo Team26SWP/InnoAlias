@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-import socketConfig from "./config";
+import React, { useEffect, useState, useRef } from "react";
+import * as config from './config';
 
 interface Player {
     name: string;
@@ -9,20 +7,19 @@ interface Player {
 }
 
 const Lobby: React.FC = () => {
+  const args = useRef<config.Arguments>({name:'', code:'', isHost: false});
   const [players, setPlayers] = useState<Player[]>([]);
   const [socket, setSocket] = useState<WebSocket>();
-  const urlParams = new URLSearchParams(window.location.search);
-  const gameCode = urlParams.get("code");
-  const gameUrl = "http://" + window.location.host + "/join_game?code=" + gameCode;
-  const name = urlParams.get("name");
-  const isHost = urlParams.get("host") === "true";
-  const navigate = useNavigate();
+  const {name, code, isHost} = args.current;
+  const gameUrl = "http://" + window.location.host + "?code=" + code;
+
 
   useEffect(() => {
-    if (!gameCode || !name) return;
+    args.current = config.getArgs();
+    if (!args.current.code || !args.current.name) return;
 
-    if (isHost) {
-      const ws = socketConfig.connectSocketHost(name, gameCode);
+    if (args.current.isHost) {
+      const ws = config.connectSocketHost(args.current.name, args.current.code);
       setSocket(ws);
       ws.onopen = () => { console.log("host connection successful"); };
       ws.onmessage = (message) => {
@@ -32,32 +29,35 @@ const Lobby: React.FC = () => {
           setPlayers(suppArray);
         }
         if (data.state === "in_progress") {
-          navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
+          config.setInitialState(data);
+          config.navigateTo(config.Page.Quiz, args.current)
         }
       };
     }
     else {
-      const ws = socketConfig.connectSocketPlayer(name, gameCode);
+      const ws = config.connectSocketPlayer(args.current.name, args.current.code);
       setSocket(ws);
-      ws.onopen = () => { console.log("player connection successful"); };
-        ws.onmessage = (message) => {
-            const data = JSON.parse(message.data);
-            const suppArray = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
-            if (data.scores) {
-                setPlayers(suppArray);
-            }
-        
+      ws.onopen = () => { console.log("player connection successful"); }
+      ws.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        const suppArray = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
+        if (data.scores) {
+          setPlayers(suppArray);
+        }
+
         if (data.state === "in_progress") {
-          navigate(`/game/${gameCode}?name=${name}&host=false`, { state: {game_state: data} });
+          config.setInitialState(data);
+          config.navigateTo(config.Page.Quiz, args.current);
         }
       };
     }
-  }, [gameCode, name, isHost, navigate]);
+  }, [code, name, isHost]);
 
   const handleStartGame = () => {
     socket?.send(JSON.stringify({ action: "start" }));
-    navigate(`/game/${gameCode}?name=${name}&host=true`);
+    config.navigateTo(config.Page.Quiz, args.current)
   }
+
 
   return (
     <div className="min-h-screen pt-32 px-9 bg-[#FAF6E9] dark:bg-[#1A1A1A] px-6 py-12 font-adlam">
@@ -83,7 +83,7 @@ const Lobby: React.FC = () => {
           <div>
             <h3 className="text-lg font-bold text-[#1E6DB9] mb-2">Code:</h3>
             <div className="bg-[#E2E2E2] rounded-full px-8 py-4 inline-block text-[#1E6DB9]">
-              {gameCode}
+              {code}
             </div>
           </div>
         </div>
