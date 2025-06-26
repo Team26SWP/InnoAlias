@@ -1,19 +1,19 @@
 import React from "react";
 import '../style/Home.css';
-import * as Config from './Config';
+import * as config from './config';
 import characterImg from '../assets/character.png';
 
 const Home: React.FC = () => {
   const handleCreateGame = () => {
-    Config.navigateTo(Config.Page.Create)
+    config.navigateTo(config.Page.Create)
   };
 
 const handleJoinGame = () => {
-  Config.navigateTo(Config.Page.Join)
+  config.navigateTo(config.Page.Join)
 };
 
   React.useEffect(() => {
-    Config.closeConnection();
+    config.closeConnection();
   }, [])
   return (
     <div className="home-wrapper">

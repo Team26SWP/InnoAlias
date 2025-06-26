@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../style/CreateGame.css';
 
-import * as Config from './Config';
+import * as config from './config';
 
 class Settings {
   time: number;
@@ -80,7 +80,7 @@ const CreateGame: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${Config.HTTP_URL}/game/create`, {
+      const response = await fetch(`${config.HTTP_URL}/game/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -96,11 +96,11 @@ const CreateGame: React.FC = () => {
       const data = await response.json();
       const gameCode = data.id;
 
-      const socket = Config.connectSocketHost(hostName, gameCode);
+      const socket = config.connectSocketHost(hostName, gameCode);
       socketRef.current = socket;
 
       socket.onopen = () => {
-        Config.navigateTo(Config.Page.Lobby, { name: hostName, code: gameCode, isHost: true });
+        config.navigateTo(config.Page.Lobby, { name: hostName, code: gameCode, isHost: true });
       };
 
       socket.onerror = () => {

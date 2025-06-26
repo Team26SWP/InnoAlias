@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import '../style/JoinGame.css'
-import * as Config from './Config';
+import * as config from './config';
 
 const JoinGame: React.FC = () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -45,13 +45,13 @@ const JoinGame: React.FC = () => {
     setIsLoading(true);
     setError(null);
     
-    const socket = Config.connectSocketPlayer(playerName, gameCode);
+    const socket = config.connectSocketPlayer(playerName, gameCode);
     socketRef.current = socket;
 
     socket.onopen = () => {
       console.log('Player socket opened');
       setSocketOpen(true);
-      Config.navigateTo(Config.Page.Lobby, { name: playerName, code: gameCode, isHost: false });
+      config.navigateTo(config.Page.Lobby, { name: playerName, code: gameCode, isHost: false });
     };
 
     socket.onerror = (err) => {

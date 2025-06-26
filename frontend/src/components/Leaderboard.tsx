@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "../style/Leaderboard.css";
 
-import * as Config from './Config';
+import * as config from './config';
 
-const HTTP_URL = Config.HTTP_URL;
+const HTTP_URL = config.HTTP_URL;
 
 interface Player {
   name: string;
@@ -16,7 +16,7 @@ const Leaderboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const code = Config.getArgs().code;
+    const code = config.getArgs().code;
     const fetchLeaderboard = async () => {
       try {
         const response = await fetch(
@@ -53,7 +53,7 @@ const Leaderboard: React.FC = () => {
   }, []);
 
   const saveDeck = async () => {
-    const code = Config.getArgs().code;
+    const code = config.getArgs().code;
     const response = await fetch(`${HTTP_URL}/game/deck/${code}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
@@ -65,7 +65,7 @@ const Leaderboard: React.FC = () => {
   }
 
   const toMain = () => {
-    Config.navigateTo(Config.Page.Home)
+    config.navigateTo(config.Page.Home)
   } 
 
   if (loading) {

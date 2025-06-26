@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import "../style/Lobby.css";
 
-import * as Config from './Config';
+import * as config from './config';
 
 interface Player {
     name: string;
@@ -9,7 +9,7 @@ interface Player {
 }
 
 const Lobby: React.FC = () => {
-  const args = useRef<Config.Arguments>({name:'', code:'', isHost: false});
+  const args = useRef<config.Arguments>({name:'', code:'', isHost: false});
   const [players, setPlayers] = useState<Player[]>([]);
   const [socket, setSocket] = useState<WebSocket>();
   const {name, code, isHost} = args.current;
@@ -17,11 +17,11 @@ const Lobby: React.FC = () => {
 
 
   useEffect(() => {
-    args.current = Config.getArgs();
+    args.current = config.getArgs();
     if (!args.current.code || !args.current.name) return;
 
     if (args.current.isHost) {
-      const ws = Config.connectSocketHost(args.current.name, args.current.code);
+      const ws = config.connectSocketHost(args.current.name, args.current.code);
       setSocket(ws);
       ws.onopen = () => { console.log("host connection successful"); };
       ws.onmessage = (message) => {
@@ -31,13 +31,13 @@ const Lobby: React.FC = () => {
           setPlayers(suppArray);
         }
         if (data.state === "in_progress") {
-          Config.setInitialState(data);
-          Config.navigateTo(Config.Page.Quiz, args.current)
+          config.setInitialState(data);
+          config.navigateTo(config.Page.Quiz, args.current)
         }
       };
     }
     else {
-      const ws = Config.connectSocketPlayer(args.current.name, args.current.code);
+      const ws = config.connectSocketPlayer(args.current.name, args.current.code);
       setSocket(ws);
       ws.onopen = () => { console.log("player connection successful"); }
       ws.onmessage = (message) => {
@@ -48,8 +48,8 @@ const Lobby: React.FC = () => {
         }
 
         if (data.state === "in_progress") {
-          Config.setInitialState(data);
-          Config.navigateTo(Config.Page.Quiz, args.current);
+          config.setInitialState(data);
+          config.navigateTo(config.Page.Quiz, args.current);
         }
       };
     }
@@ -57,7 +57,7 @@ const Lobby: React.FC = () => {
 
   const handleStartGame = () => {
     socket?.send(JSON.stringify({ action: "start" }));
-    Config.navigateTo(Config.Page.Quiz, args.current)
+    config.navigateTo(config.Page.Quiz, args.current)
   }
 
   return (

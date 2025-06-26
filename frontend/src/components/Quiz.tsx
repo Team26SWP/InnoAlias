@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import '../style/Quiz.css';
-import * as Config from './Config';
+import * as config from './config';
 import Lobby from './Lobby';
 
 // Gamestate returned from the server. It belongs to the player that requests it
@@ -14,10 +14,10 @@ const Quiz: React.FC = () => {
   const code = urlParams.get("code")?.toUpperCase();*/
   
   // New Sigma implementation global variable monster
-  const args = useRef<Config.Arguments>({name:'', code:'', isHost: false})
+  const args = useRef<config.Arguments>({name:'', code:'', isHost: false})
 
   // Game states. Aside from WS, do not carry any function except from being displayed on the page
-  const [gameState, setGameState] = useState<Config.GameState | null>(null);
+  const [gameState, setGameState] = useState<config.GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [wrong, setWrong] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -34,7 +34,7 @@ const Quiz: React.FC = () => {
   const score = useRef<number>(); // Keep track of right answers
 
   useEffect(()=>{
-    const storedArgs = Config.getArgs();
+    const storedArgs = config.getArgs();
     args.current = storedArgs;
     connectWebSocket();
   }, []);
@@ -54,18 +54,18 @@ const Quiz: React.FC = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  // Connects to websocket (refers to Config) and sets actions for different cases
+  // Connects to websocket (refers to config) and sets actions for different cases
   const connectWebSocket = useCallback(() => {
     const {name, code, isHost} = args.current;
     if (!code || !name) return;
 
     // Host and player have different sockets:
     var websocket: WebSocket;
-    isHost ? websocket = Config.connectSocketHost(name, code) : websocket = Config.connectSocketPlayer(name, code);
+    isHost ? websocket = config.connectSocketHost(name, code) : websocket = config.connectSocketPlayer(name, code);
 
     // Stuff kinda self-explanatory
     websocket.onmessage = (event) => {
-      const data: Config.GameState = JSON.parse(event.data);
+      const data: config.GameState = JSON.parse(event.data);
       setGameState(data);
 
       if (data.expires_at && data.expires_at !== expiresAt.current) {
@@ -91,7 +91,7 @@ const Quiz: React.FC = () => {
       }
 
       if (data.state === 'finished') {
-        Config.navigateTo(Config.Page.Leaderboard, args.current )
+        config.navigateTo(config.Page.Leaderboard, args.current )
       }
     };
 
@@ -117,7 +117,7 @@ const Quiz: React.FC = () => {
     // When the game starts, the player gets the update first and then gets sent to this page, so the initial state transfered in
     // said update is carried out into config
 
-    const initialState = Config.getInitialState();
+    const initialState = config.getInitialState();
     setGameState(initialState);
     if (!initialState || !initialState.expires_at || !initialState.tries_left || !initialState.scores) { return; }
     expiresAt.current = initialState?.expires_at;
@@ -161,7 +161,7 @@ const Quiz: React.FC = () => {
         {isReconnecting ? (
           <div className="reconnecting">Reconnecting...</div>
         ) : (
-          <button onClick={() => Config.navigateTo(Config.Page.Home) } className="back-button">
+          <button onClick={() => config.navigateTo(config.Page.Home) } className="back-button">
             Back to Home
           </button>
         )}

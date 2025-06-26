@@ -5,30 +5,30 @@ import JoinGame from './components/JoinGame';
 import Quiz from './components/Quiz';
 import Lobby from './components/Lobby';
 import Leaderboard from './components/Leaderboard';
-import * as Config from './components/Config';
+import * as config from './components/config';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Config.Page>(Config.Page.Home);
+  const [currentPage, setCurrentPage] = useState<config.Page>(config.Page.Home);
 
   useEffect(() => {
-    Config.registerSetCurrentPage(setCurrentPage);
+    config.registerSetCurrentPage(setCurrentPage);
   }, []);
 
   const renderPage = () => {
     switch (currentPage) {
-      case Config.Page.Home:
+      case config.Page.Home:
         return <Home />;
-      case Config.Page.Join:
+      case config.Page.Join:
         return <JoinGame />;
-      case Config.Page.Create:
+      case config.Page.Create:
         return <CreateGame />;
-      case Config.Page.Lobby:
+      case config.Page.Lobby:
         return <Lobby />;
-      case Config.Page.Quiz:
+      case config.Page.Quiz:
         return <Quiz />;
-      case Config.Page.Leaderboard:
+      case config.Page.Leaderboard:
         return <Leaderboard />;
-      case Config.Page.Results:
+      case config.Page.Results:
         return null;
       default:
         return <Home />;
