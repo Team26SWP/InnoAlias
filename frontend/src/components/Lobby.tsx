@@ -53,6 +53,8 @@ function Lobby() {
 
   const handleStartGame = () => {
     socket?.send(JSON.stringify({ action: 'start' }));
+    config.connectSocketPlayer(name, code);
+    args.current.isHost = false;
     config.navigateTo(config.Page.Quiz, args.current);
   };
 
