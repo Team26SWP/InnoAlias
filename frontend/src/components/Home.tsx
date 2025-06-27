@@ -3,10 +3,18 @@ import * as config from './config';
 
 const Home: React.FC = () => {
   const handleCreateGame = () => {
+    if (!localStorage.getItem("access_token")) {
+      config.navigateTo(config.Page.Login);
+      return;
+    }
     config.navigateTo(config.Page.Create)
   };
 
   const handleJoinGame = () => {
+    if (!localStorage.getItem("access_token")) {
+      config.navigateTo(config.Page.Login);
+      return;
+    }
     config.navigateTo(config.Page.Join)
   };
 
@@ -18,11 +26,31 @@ const Home: React.FC = () => {
   config.navigateTo(config.Page.Profile)
   };
 
-
+  const loadProfile = async () => {
+    try {
+      const response = await fetch(`${config.HTTP_URL}/profile/me`, {
+        method: "GET",
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem("access_token")}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const profile = await response.json(); 
+      if (response.ok) {
+        config.setProfile(profile);
+      } else {
+        console.log("Server response was broken, could not load");
+      }
+    } catch (error) {
+      console.log(`Profile loading error: ${error}`);
+    }
+  }
 
   React.useEffect(() => {
     config.closeConnection();
-    console.log(config.getProfile.name)
+    if (!config.getProfile() && localStorage.getItem("access_token")) {
+      loadProfile();
+    }
   }, [])
 
 return (
@@ -32,12 +60,6 @@ return (
         className="absolute top-4 font-adlam right-4 bg-[#1E6DB9] text-[#FAF6E9] font-semibold px-4 py-2 rounded-full hover:opacity-90 transition"
       >
         {localStorage.getItem('access_token')? <p>Profile</p>: <p>Log in</p> }
-      </button>
-      <button
-        onClick={localStorage.getItem('access_token')? handleLogin : handleLogin}
-        className="absolute top-4"
-      >
-        {localStorage.getItem('access_token')? <p>Log in</p>: <p>Log in</p> }
       </button>
 
       <h1 className="text-9xl font-bold font-adlam text-[#1E6DB9] mb-8">alias</h1>

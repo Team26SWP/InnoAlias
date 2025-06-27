@@ -28,6 +28,8 @@ const Login: React.FC = () => {
       if (!response.ok) {
         if (response.status === 401) {
           setError('Invalid email or password');
+        } else if (response.status === 400) {
+          setError("Wrong email or password");
         } else {
           setError(`Error: ${response.status} ${response.statusText}`);
         }
@@ -38,12 +40,12 @@ const Login: React.FC = () => {
       localStorage.setItem('token_type', data.token_type);
       console.log(localStorage.getItem('access_token'));
       config.navigateTo(config.Page.Home);
-            try {
+      try {
         const token = data.access_token;
         const profileResponse = await fetch(`${config.HTTP_URL}/profile/me`, {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
         });
         if (profileResponse.ok) {

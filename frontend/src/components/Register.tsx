@@ -38,7 +38,7 @@ const Register: React.FC = () => {
           password: form.password,
         }),
       });
-      
+
       if (!response.ok) {
         if (response.status === 400) {
           setError('Email already registered');

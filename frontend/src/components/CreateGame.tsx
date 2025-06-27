@@ -32,16 +32,8 @@ const CreateGame: React.FC = () => {
   
 
   useEffect(() => {
-    const cookies = document.cookie.replaceAll("[", "").replaceAll("]", "");
-    if (!cookies) return;
-    var deckStrings: string[] = cookies.split(";");
-    var supplementaryArray: Deck[] = [];
-    for (let i = 0; i < deckStrings.length; i++) {
-      const parsedString = deckStrings[i].split("=");
-      supplementaryArray.push({ name: parsedString[0], cards: parsedString[1].split(",") });
-    }
-    setDecks(supplementaryArray);
     const profile = config.getProfile();
+    console.log(profile);
     if (profile) {
       setHostName(profile.name);
     }
