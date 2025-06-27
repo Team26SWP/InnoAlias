@@ -10,11 +10,20 @@ class Settings {
 
   answersLimit: number;
 
-  constructor(time: number, deck: number, attempts: number, answers: number) {
+  rotateMasters: boolean;
+
+  constructor(
+    time: number,
+    deck: number,
+    attempts: number,
+    answers: number,
+    rotateMasters: boolean,
+  ) {
     this.time = time;
     this.deckLimit = deck;
     this.attemptsLimit = attempts;
     this.answersLimit = answers;
+    this.rotateMasters = rotateMasters;
   }
 }
 
@@ -24,7 +33,7 @@ export function CreateGame() {
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [hostName, setHostName] = useState<string>('');
-  const settings = useRef<Settings>(new Settings(60, 0, 3, 1));
+  const settings = useRef<Settings>(new Settings(60, 0, 3, 1, false));
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -64,7 +73,7 @@ export function CreateGame() {
     setWords(words.concat(cards.split(',')));
   };
 
-  const handleStartGame = async () => {
+  const handleCreateGame = async () => {
     setIsLoading(true);
     try {
       const response = await fetch(`${config.HTTP_URL}/game/create`, {
@@ -77,6 +86,7 @@ export function CreateGame() {
           time_for_guessing: settings.current.time,
           tries_per_player: settings.current.attemptsLimit,
           right_answers_to_advance: settings.current.answersLimit,
+          rotate_masters: settings.current.rotateMasters,
         }),
       });
 
@@ -105,15 +115,17 @@ export function CreateGame() {
     const deckLimit = document.getElementById('deck-length');
     const attemptLimit = document.getElementById('attempts');
     const answerLimit = document.getElementById('answers');
+    const rotation = document.getElementById('different-master');
     if (minutes instanceof HTMLInputElement && seconds instanceof HTMLInputElement
       && deckLimit instanceof HTMLInputElement && attemptLimit instanceof HTMLInputElement
-      && answerLimit instanceof HTMLInputElement) {
+      && answerLimit instanceof HTMLInputElement && rotation instanceof HTMLInputElement) {
       settings.current.time = parseInt((minutes.value !== '') ? minutes.value : '1', 10) * 60
         + parseInt((seconds.value !== '') ? seconds.value : '0', 10);
       if (settings.current.time === 0) settings.current.time = 1;
       settings.current.deckLimit = parseInt((deckLimit.value !== '') ? deckLimit.value : '0', 10);
       settings.current.attemptsLimit = parseInt((attemptLimit.value !== '') ? attemptLimit.value : '3', 10);
       settings.current.answersLimit = parseInt((answerLimit.value !== '') ? answerLimit.value : '1', 10);
+      settings.current.rotateMasters = rotation.checked;
     }
     setShowSettings(false);
   };
@@ -150,10 +162,10 @@ export function CreateGame() {
 
         <div className="flex flex-col gap-4 min-w-[160px]">
           <button type="button" onClick={handleSubmit} className="bg-[#1E6DB9] text-[#FAF6E9] px-4 py-5 rounded-md font-adlam">Add</button>
-          <span className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-md text-center font-adlam cursor-pointer">
+          <label htmlFor="file-submit" className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-md text-center font-adlam cursor-pointer">
             Import via txt
-            <input type="file" className="hidden" onChange={fileSubmit} />
-          </span>
+            <input type="file" className="hidden" onChange={fileSubmit} id="file-submit" accept=".txt" />
+          </label>
           <button type="button" onClick={loadDeck} className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-md font-adlam">Saved Desks</button>
           <button type="button" onClick={() => setShowSettings(true)} className="bg-[#DBD9D1] text-[#1E6DB9] px-4 py-3 rounded-md font-adlam">Settings</button>
         </div>
@@ -161,11 +173,11 @@ export function CreateGame() {
 
       <button
         type="button"
-        onClick={handleStartGame}
+        onClick={handleCreateGame}
         disabled={words.length === 0 || !hostName || isLoading}
         className="mt-12 px-10 py-4 bg-[#1E6DB9] text-[#FAF6E9] rounded-lg font-adlam text-lg disabled:bg-gray-400"
       >
-        {isLoading ? 'Creating Game...' : 'Start Game'}
+        {isLoading ? 'Creating Game...' : 'Create Game'}
       </button>
 
       {showSettings && (
@@ -234,6 +246,17 @@ export function CreateGame() {
                 />
                 <span className="text-sm">players</span>
               </div>
+            </div>
+
+            <div className="flex items-center gap-5 mt-10">
+              <label htmlFor="single-master" className="flex items-center gap-2">
+                <input type="radio" id="single-master" name="master-mode" value="single" defaultChecked />
+                <span className="font-bold w-36">Single Master</span>
+              </label>
+              <label htmlFor="different-master" className="flex items-center gap-2">
+                <input type="radio" id="different-master" name="master-mode" value="different" />
+                <span className="font-bold w-36">Different Masters</span>
+              </label>
             </div>
 
             <button
