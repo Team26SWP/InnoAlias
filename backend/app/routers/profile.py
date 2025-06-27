@@ -8,6 +8,9 @@ from backend.app.models import DeckDetail
 
 router = APIRouter(prefix="", tags=["profile"])
 
+@router.get("/me", response_model=ProfileResponse)
+async def get_my_profile(current_user: UserInDB = Depends(get_current_user)):
+    return await get_profile(current_user.id, current_user)
 
 @router.get("/{user_id}", response_model=ProfileResponse)
 async def get_profile(user_id: str, current_user: UserInDB = Depends(get_current_user)):
@@ -74,8 +77,3 @@ async def delete_deck(deck_id: str, current_user: UserInDB = Depends(get_current
     if not updated_deck or not updated_deck.get("owner_ids"):
         await db.decks.delete_one({"_id": deck_id})
     return {"status": "deleted"}
-
-
-@router.get("/me", response_model=ProfileResponse)
-async def get_my_profile(current_user: UserInDB = Depends(get_current_user)):
-    return await get_profile(current_user.id, current_user)
