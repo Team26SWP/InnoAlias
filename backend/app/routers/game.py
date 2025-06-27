@@ -2,10 +2,9 @@ from asyncio import wait_for, TimeoutError
 from datetime import datetime, timezone
 from random import shuffle
 from typing import List
-
-from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException, Depends
 from fastapi.responses import Response
 from pymongo import ReturnDocument
+from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException, Depends
 
 from backend.app.code_gen import generate_deck_id, generate_game_code
 from backend.app.db import db

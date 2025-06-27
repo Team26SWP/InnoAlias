@@ -12,7 +12,6 @@ from backend.app.services.auth_service import (
 router = APIRouter(prefix="", tags=["auth"])
 
 
-
 @router.post("/register", response_model=Token)
 async def register(user: User):
     existing_user = await get_user(user.email)

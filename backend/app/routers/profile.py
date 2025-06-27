@@ -8,9 +8,11 @@ from backend.app.models import DeckDetail
 
 router = APIRouter(prefix="", tags=["profile"])
 
+
 @router.get("/me", response_model=ProfileResponse)
 async def get_my_profile(current_user: UserInDB = Depends(get_current_user)):
     return await get_profile(current_user.id, current_user)
+
 
 @router.get("/{user_id}", response_model=ProfileResponse)
 async def get_profile(user_id: str, current_user: UserInDB = Depends(get_current_user)):
@@ -71,8 +73,12 @@ async def delete_deck(deck_id: str, current_user: UserInDB = Depends(get_current
     if current_user.id not in deck.get("owner_ids", []):
         raise HTTPException(403, "Forbidden")
 
-    await db.users.update_one({"_id": current_user.id}, {"$pull": {"deck_ids": deck_id}})
-    await db.decks.update_one({"_id": deck_id}, {"$pull": {"owner_ids": current_user.id}})
+    await db.users.update_one(
+        {"_id": current_user.id}, {"$pull": {"deck_ids": deck_id}}
+    )
+    await db.decks.update_one(
+        {"_id": deck_id}, {"$pull": {"owner_ids": current_user.id}}
+    )
     updated_deck = await db.decks.find_one({"_id": deck_id})
     if not updated_deck or not updated_deck.get("owner_ids"):
         await db.decks.delete_one({"_id": deck_id})

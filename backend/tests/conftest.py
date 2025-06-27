@@ -7,9 +7,7 @@ from httpx import AsyncClient, ASGITransport
 from fastapi.testclient import TestClient
 import mongomock_motor
 
-# Provide a fake motor module before importing the app's db module to avoid
-# importing the real Motor client (which requires pymongo features not
-# installed).
+
 motor_mock = types.ModuleType("motor")
 motor_asyncio = types.ModuleType("motor.motor_asyncio")
 motor_asyncio.AsyncIOMotorClient = mongomock_motor.AsyncMongoMockClient
@@ -21,13 +19,14 @@ os.environ.setdefault("SECRET_KEY", "test_secret")
 os.environ.setdefault("ALGORITHM", "HS256")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 
-import backend.app.db as db_module
+from backend.app.main import app as fastapi_app
 import backend.app.services.auth_service as auth_service
-import backend.app.services.game_service as game_service
 import backend.app.routers.profile as profile_router
+import backend.app.db as db_module
+import backend.app.services.game_service as game_service
 import backend.app.routers.game as game_router
 import backend.app.code_gen as code_gen
-from backend.app.main import app as fastapi_app
+
 
 @pytest_asyncio.fixture
 async def test_db(monkeypatch):
@@ -45,11 +44,13 @@ async def test_db(monkeypatch):
     monkeypatch.setattr(code_gen, "users", test_db.users)
     yield test_db
 
+
 @pytest_asyncio.fixture
 async def client(test_db):
     transport = ASGITransport(app=fastapi_app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
+
 
 @pytest.fixture
 def sync_client(test_db):
