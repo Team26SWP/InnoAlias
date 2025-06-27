@@ -5,6 +5,10 @@ pydantic
 websockets
 python-jose
 passlib[bcrypt]
+pytest_asyncio
 python-decouple
 motor
+httpx
+mongomock_motor
+pytest
 python-multipart

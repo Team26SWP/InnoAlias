@@ -3,7 +3,7 @@ import types
 import sys
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from fastapi.testclient import TestClient
 import mongomock_motor
 
@@ -47,7 +47,8 @@ async def test_db(monkeypatch):
 
 @pytest_asyncio.fixture
 async def client(test_db):
-    async with AsyncClient(app=fastapi_app, base_url="http://test") as c:
+    transport = ASGITransport(app=fastapi_app)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
 
 @pytest.fixture
