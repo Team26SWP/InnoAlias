@@ -41,7 +41,12 @@ const CreateGame: React.FC = () => {
       supplementaryArray.push({ name: parsedString[0], cards: parsedString[1].split(",") });
     }
     setDecks(supplementaryArray);
+    const profile = config.getProfile();
+    if (profile) {
+      setHostName(profile.name);
+    }
   }, [])
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

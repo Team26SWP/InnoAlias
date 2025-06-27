@@ -36,7 +36,23 @@ const Login: React.FC = () => {
       const data = await response.json();
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('token_type', data.token_type);
+      console.log(localStorage.getItem('access_token'));
       config.navigateTo(config.Page.Home);
+            try {
+        const token = data.access_token;
+        const profileResponse = await fetch(`${config.HTTP_URL}/profile/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          config.setProfile(profileData);
+        }
+      } catch (profileErr) {
+        console.error('Failed to fetch profile after login', profileErr);
+      }
     } catch (err) {
       setError('An unexpected error occurred. Please try again later.');
       console.error('Login error', err);
