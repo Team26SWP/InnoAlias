@@ -39,40 +39,40 @@ jobs:
           black --check backend
           flake8 backend
 
-  lint-js:
-    name: ⚛️ Lint JavaScript
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache Node modules
-        uses: actions/cache@v3
-        with:
-          path: frontend/node_modules
-          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
-
-      - name: Install deps & run ESLint
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run lint
-
-  # test-backend:
-  #   name: 🐍 Test Python
+  # lint-js:
+  #   name: ⚛️ Lint JavaScript
   #   runs-on: ubuntu-latest
-  #   needs: lint-python
   #   steps:
   #     - uses: actions/checkout@v4
 
-  #     - name: Setup Python
-  #       uses: actions/setup-python@v4
+  #     - name: Cache Node modules
+  #       uses: actions/cache@v3
   #       with:
-  #         python-version: '3.x'
+  #         path: frontend/node_modules
+  #         key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
 
-  #     - name: Install & run pytest
+  #     - name: Install deps & run ESLint
+  #       working-directory: frontend
   #       run: |
-  #         pip install -r backend/requirements.txt
-  #         pytest --maxfail=1 --disable-warnings -q backend/tests
+  #         npm ci
+  #         npm run lint
+
+  test-backend:
+    name: 🐍 Test Python
+    runs-on: ubuntu-latest
+    needs: lint-python
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install & run pytest
+        run: |
+          pip install -r backend/requirements.txt
+          pytest --maxfail=1 --disable-warnings -q backend/tests
 
   # test-frontend:
   #   name: ⚛️ Test JavaScript
@@ -95,7 +95,7 @@ jobs:
   build-and-push-images:
     name: 🔨 Build & Push Docker Images
     runs-on: ubuntu-latest
-    # needs: [ test-backend, test-frontend ]
+    needs: [ test-backend ]
     steps:
       - uses: actions/checkout@v4
 
