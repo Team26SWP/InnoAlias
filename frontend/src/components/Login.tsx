@@ -1,19 +1,64 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import * as config from './config';
+
+
 
 const Login: React.FC = () => {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Email:", email);
-    console.log("Password:", password);
-  };
+    setError(null);
+    try {
+      const formData = new URLSearchParams();
+      formData.append('username', email);
+      formData.append('password', password);
 
-  const handleSignUp = () => {
-    navigate('/register');
+      const response = await fetch(`${config.HTTP_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
+
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError('Invalid email or password');
+        } else if (response.status === 400) {
+          setError("Wrong email or password");
+        } else {
+          setError(`Error: ${response.status} ${response.statusText}`);
+        }
+        return;
+      }
+      const data = await response.json();
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('token_type', data.token_type);
+      console.log(localStorage.getItem('access_token'));
+      config.navigateTo(config.Page.Home);
+      try {
+        const token = data.access_token;
+        const profileResponse = await fetch(`${config.HTTP_URL}/profile/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        });
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          config.setProfile(profileData);
+        }
+      } catch (profileErr) {
+        console.error('Failed to fetch profile after login', profileErr);
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again later.');
+      console.error('Login error', err);
+    }
   };
 
   return (
@@ -57,13 +102,16 @@ const Login: React.FC = () => {
 
         <div className="text-center mt-4 text-sm text-[#1A1A1A]">
           Don’t have an account?{' '}
-          <span
-            onClick={handleSignUp}
+          <button
+            onClick={() => config.navigateTo(config.Page.Register)}
             className="text-[#1E6DB9] font-semibold cursor-pointer hover:underline"
           >
             Sign up
-          </span>
+          </button>
         </div>
+        {error && (
+          <p className="text-red-500 text-center font-semibold">{error}</p>
+        )}
       </form>
     </div>
   );

@@ -7,6 +7,7 @@ import Lobby from './components/Lobby';
 import Leaderboard from './components/Leaderboard';
 import Login from './components/Login';
 import Register from './components/Register';
+import Profile from './components/Profile';
 import EmailConfirm from './components/EmailConfirm';
 import * as config from './components/config';
 
@@ -35,6 +36,8 @@ function App() {
         return <Login />;
       case config.Page.Register:
         return <Register />;
+      case config.Page.Profile:
+        return <Profile />;        
       case config.Page.EmailConfirm:
         return <EmailConfirm />;
       default:

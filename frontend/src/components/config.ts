@@ -9,6 +9,7 @@ export enum Page {
   Login = "Login",
   Register = "Register",
   EmailConfirm = "EmailConfirm",
+  Profile = "Profile",
 }
 
 export interface Arguments {
@@ -16,6 +17,7 @@ export interface Arguments {
   code : string;
   isHost : boolean;
 }
+
 export interface GameState {
   current_word: string | null;
   expires_at: string | null;
@@ -24,6 +26,21 @@ export interface GameState {
   tries_left: number;
   current_master: string;
   scores: { [name: string]: number };
+}
+
+interface Deck {
+  id: string;
+  name: string;
+  words_count: number;
+  tags: string[];
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  surname: string;
+  email: string;
+  deck : Deck,
 }
 
 let hostSocket: WebSocket | null = null;
@@ -65,7 +82,16 @@ export function closeConnection() {
   initialState = null;
 }
 
-let args : Arguments;
+let args : Arguments ;
+let profile: UserProfile | null = null;
+
+export function setProfile(newProfile: UserProfile | null) {
+  profile = newProfile;
+}
+
+export function getProfile(): UserProfile | null {
+  return profile;
+}
 
 export function getArgs(){
   return args;
