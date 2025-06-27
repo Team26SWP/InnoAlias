@@ -1,18 +1,17 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from 'react';
 import * as config from './config';
 
 interface Player {
-    name: string;
-    score: number;
+  name: string;
+  score: number;
 }
 
-const Lobby: React.FC = () => {
-  const args = useRef<config.Arguments>({name:'', code:'', isHost: false});
+function Lobby() {
+  const args = useRef<config.Arguments>({ name: '', code: '', isHost: false });
   const [players, setPlayers] = useState<Player[]>([]);
   const [socket, setSocket] = useState<WebSocket>();
-  const {name, code, isHost} = args.current;
-  const gameUrl = "http://" + window.location.host + "?code=" + code;
-
+  const { name, code, isHost } = args.current;
+  const gameUrl = `http://${window.location.host}?code=${code}`;
 
   useEffect(() => {
     args.current = config.getArgs();
@@ -21,31 +20,30 @@ const Lobby: React.FC = () => {
     if (args.current.isHost) {
       const ws = config.connectSocketHost(args.current.name, args.current.code);
       setSocket(ws);
-      ws.onopen = () => { console.log("host connection successful"); };
-      ws.onmessage = (message) => {
-          const data = JSON.parse(message.data);
-          const suppArray = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
-        if (data.scores) {
-          setPlayers(suppArray);
-        }
-        if (data.state === "in_progress") {
-          config.setInitialState(data);
-          config.navigateTo(config.Page.Quiz, args.current)
-        }
-      };
-    }
-    else {
-      const ws = config.connectSocketPlayer(args.current.name, args.current.code);
-      setSocket(ws);
-      ws.onopen = () => { console.log("player connection successful"); }
+      ws.onopen = () => { console.log('host connection successful'); };
       ws.onmessage = (message) => {
         const data = JSON.parse(message.data);
-        const suppArray = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
+        const sup = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
         if (data.scores) {
-          setPlayers(suppArray);
+          setPlayers(sup);
+        }
+        if (data.state === 'in_progress') {
+          config.setInitialState(data);
+          config.navigateTo(config.Page.Quiz, args.current);
+        }
+      };
+    } else {
+      const ws = config.connectSocketPlayer(args.current.name, args.current.code);
+      setSocket(ws);
+      ws.onopen = () => { console.log('player connection successful'); };
+      ws.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        const sup = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
+        if (data.scores) {
+          setPlayers(sup);
         }
 
-        if (data.state === "in_progress") {
+        if (data.state === 'in_progress') {
           config.setInitialState(data);
           config.navigateTo(config.Page.Quiz, args.current);
         }
@@ -54,10 +52,9 @@ const Lobby: React.FC = () => {
   }, [code, name, isHost]);
 
   const handleStartGame = () => {
-    socket?.send(JSON.stringify({ action: "start" }));
-    config.navigateTo(config.Page.Quiz, args.current)
-  }
-
+    socket?.send(JSON.stringify({ action: 'start' }));
+    config.navigateTo(config.Page.Quiz, args.current);
+  };
 
   return (
     <div className="min-h-screen pt-32 px-9 bg-[#FAF6E9] dark:bg-[#1A1A1A] px-6 py-12 font-adlam">
@@ -65,9 +62,9 @@ const Lobby: React.FC = () => {
         <div className="w-full lg:w-1/3">
           <h2 className="text-xl font-bold text-[#1E6DB9] mb-4">Players:</h2>
           <div className="h-64 bg-[#E2E2E2] rounded-xl p-4 overflow-auto">
-            {players.map((p, i) => (
-              <div key={i} className="mb-2 text-[#1E6DB9]">
-                 {p.name}
+            {players.map((p) => (
+              <div key={p.name} className="mb-2 text-[#1E6DB9]">
+                {p.name}
               </div>
             ))}
           </div>
@@ -93,7 +90,7 @@ const Lobby: React.FC = () => {
           <div className="bg-[#E2E2E2] p-4 rounded-xl inline-block">
             <img
               src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                gameUrl
+                gameUrl,
               )}`}
               alt="QR-code"
               className="rounded-lg"
@@ -105,6 +102,7 @@ const Lobby: React.FC = () => {
       {isHost && (
         <div className="mt-12 text-center">
           <button
+            type="button"
             onClick={handleStartGame}
             className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-full text-lg font-medium hover:opacity-90 transition"
           >
@@ -114,7 +112,6 @@ const Lobby: React.FC = () => {
       )}
     </div>
   );
-};
-
+}
 
 export default Lobby;

@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from 'react';
 import * as config from './config';
 
-const JoinGame: React.FC = () => {
+export function JoinGame() {
   const urlParams = new URLSearchParams(window.location.search);
   const [playerName, setPlayerName] = useState('');
   const [manualCode, setGameCode] = useState('');
@@ -10,20 +10,20 @@ const JoinGame: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
 
-  const codeFromUrl = urlParams.get("code")?.toUpperCase();
+  const codeFromUrl = urlParams.get('code')?.toUpperCase();
   const gameCode = codeFromUrl || manualCode;
 
-  useEffect(() =>{
+  useEffect(() => {
     const profile = config.getProfile();
     if (profile) {
       setPlayerName(profile.name);
     }
-  }, [])
+  }, []);
 
   const validatePlayerName = (name: string): string | null => {
     // no need (max/min lenght in html)
-    /*if (name.length < 2) {return 'Name must be at least 2 characters long';}
-    if (name.length > 20) {return 'Name must be less than 20 characters';}*/
+    /* if (name.length < 2) {return 'Name must be at least 2 characters long';}
+    if (name.length > 20) {return 'Name must be less than 20 characters';} */
     if (!/^[a-zA-Z\s-]+$/.test(name)) { return 'Name can only contain letters, spaces'; }
     return null;
   };
@@ -48,18 +48,16 @@ const JoinGame: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
-    
+
     const socket = config.connectSocketPlayer(playerName, gameCode);
     socketRef.current = socket;
 
     socket.onopen = () => {
-      console.log('Player socket opened');
       setSocketOpen(true);
       config.navigateTo(config.Page.Lobby, { name: playerName, code: gameCode, isHost: false });
     };
 
-    socket.onerror = (err) => {
-      console.error('Socket error', err);
+    socket.onerror = () => {
       setError('Failed to connect to the game. Please check the code and try again.');
       setIsLoading(false);
     };
@@ -70,47 +68,52 @@ const JoinGame: React.FC = () => {
         setIsLoading(false);
       }
     };
-
-  }
-
+  };
 
   return (
     <div className="min-h-screen bg-[#FAF6E9] dark:bg-[#1A1A1A] flex flex-col items-center justify-center px-6 py-12">
       <h1 className="text-5xl font-bold text-[#1E6DB9] mb-10">Join Game</h1>
       <form onSubmit={handleJoinGame} className="w-full max-w-lg flex flex-col items-center gap-6">
-        {!config.getProfile() &&
+        {!config.getProfile()
+          && (
           <div className="w-full">
-            <label className="block text-2xl font-medium text-[#1E6DB9] mb-3 ml-4">Your Name</label>
+            <label htmlFor="name" className="block text-2xl font-medium text-[#1E6DB9] mb-3 ml-4">
+              Your Name
+              <input
+                type="text"
+                id="name"
+                placeholder="ENTER YOUR NAME"
+                value={playerName}
+                onChange={(e) => {
+                  setPlayerName(e.target.value);
+                  setError(null);
+                }}
+                className="w-full bg-[#D9D9D9] placeholder-[#7d7d7d] text-[#1E6DB9] px-6 py-4 rounded-full text-lg outline-none"
+                maxLength={20}
+                minLength={2}
+                required
+              />
+            </label>
+          </div>
+          )}
+        <div className="w-full">
+          <label htmlFor="code" className="block text-2xl font-medium text-[#1E6DB9] mb-3 ml-4">
+            Code
             <input
+              id="code"
               type="text"
-              placeholder="ENTER YOUR NAME"
-              value={playerName}
+              placeholder="ENTER THE CODE"
+              value={gameCode}
               onChange={(e) => {
-                setPlayerName(e.target.value);
+                setGameCode(e.target.value.toUpperCase());
                 setError(null);
               }}
+              disabled={!!codeFromUrl}
               className="w-full bg-[#D9D9D9] placeholder-[#7d7d7d] text-[#1E6DB9] px-6 py-4 rounded-full text-lg outline-none"
-              maxLength={20}
-              minLength={2}
+              maxLength={6}
               required
             />
-          </div>
-        }
-        <div className="w-full">
-          <label className="block text-2xl font-medium text-[#1E6DB9] mb-3 ml-4">Code</label>
-          <input
-            type="text"
-            placeholder="ENTER THE CODE"
-            value={gameCode}
-            onChange={(e) => {
-              setGameCode(e.target.value.toUpperCase());
-              setError(null);
-            }}
-            disabled={!!codeFromUrl}
-            className="w-full bg-[#D9D9D9] placeholder-[#7d7d7d] text-[#1E6DB9] px-6 py-4 rounded-full text-lg outline-none"
-            maxLength={6}
-            required
-          />
+          </label>
         </div>
 
         <button
@@ -118,7 +121,7 @@ const JoinGame: React.FC = () => {
           disabled={isLoading}
           className="mt-6 bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-lg text-lg font-medium hover:opacity-90 transition disabled:opacity-50"
         >
-          {isLoading ? "Connecting..." : "Connect"}
+          {isLoading ? 'Connecting...' : 'Connect'}
         </button>
 
         {/* Error Message */}
@@ -126,6 +129,6 @@ const JoinGame: React.FC = () => {
       </form>
     </div>
   );
-};
+}
 
 export default JoinGame;

@@ -1,15 +1,15 @@
 export enum Page {
-  Home = "Home",
-  Join = "Join",
-  Create = "Create",
-  Quiz = "Quiz",
-  Lobby = "Lobby",
-  Leaderboard = "Leaderboard",
-  Results = "Results",
-  Login = "Login",
-  Register = "Register",
-  EmailConfirm = "EmailConfirm",
-  Profile = "Profile",
+  Home = 'Home',
+  Join = 'Join',
+  Create = 'Create',
+  Quiz = 'Quiz',
+  Lobby = 'Lobby',
+  Leaderboard = 'Leaderboard',
+  Results = 'Results',
+  Login = 'Login',
+  Register = 'Register',
+  EmailConfirm = 'EmailConfirm',
+  Profile = 'Profile',
 }
 
 export interface Arguments {
@@ -48,15 +48,13 @@ let playerSocket: WebSocket | null = null;
 
 let initialState: GameState | null = null;
 
-const HOST = "localhost:8000";
+const HOST = 'localhost:8000';
 export const WS_URL = `ws://${HOST}/api`;
 export const HTTP_URL = `http://${HOST}/api`;
-
 
 export function connectSocketHost(hostName: string, gameCode: string) {
   if (!hostSocket) {
     hostSocket = new WebSocket(`${WS_URL}/game/${gameCode}?name=${hostName}`);
-    console.log("Called socket host");
   }
   return hostSocket;
 }
@@ -64,7 +62,6 @@ export function connectSocketHost(hostName: string, gameCode: string) {
 export function connectSocketPlayer(playerName: string, gameCode: string) {
   if (!playerSocket) {
     playerSocket = new WebSocket(`${WS_URL}/game/player/${gameCode}?name=${playerName}`);
-    console.log("Called socket player");
   }
   return playerSocket;
 }
@@ -78,11 +75,10 @@ export function closeConnection() {
     playerSocket.close();
     playerSocket = null;
   }
-  console.log("Connection closed by the client");
   initialState = null;
 }
 
-let args : Arguments ;
+let args : Arguments;
 let profile: UserProfile | null = null;
 
 export function setProfile(newProfile: UserProfile | null) {
@@ -93,22 +89,21 @@ export function getProfile(): UserProfile | null {
   return profile;
 }
 
-export function getArgs(){
+export function getArgs() {
   return args;
 }
 
-let _setCurrentPage: ((page: Page) => void) | null = null;
+let setCurrentPage: ((page: Page) => void) | null = null;
 
 export function registerSetCurrentPage(fn: (page: Page) => void) {
-  _setCurrentPage = fn;
+  setCurrentPage = fn;
 }
 
-export function navigateTo(page: Page, newArgs: Arguments = {name: "", code: "", isHost: false}) {
-  if (!_setCurrentPage) {
-    console.error("SetCurrentPage not registered!");
+export function navigateTo(page: Page, newArgs: Arguments = { name: '', code: '', isHost: false }) {
+  if (!setCurrentPage) {
     return;
   }
-  _setCurrentPage(page);
+  setCurrentPage(page);
   args = newArgs;
 }
 export function setInitialState(init: GameState) {

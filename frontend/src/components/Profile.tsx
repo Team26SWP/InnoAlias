@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import * as config from './config';
 
-const Profile: React.FC = () => {
+function Profile() {
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const collections = ["MathAnal", "SSAD", "Comparch", "I am Matvei"];
-  const tags = ["Math", "CS", "Engineering","Russian","VS code","Agla","English","UX&UI","3D", "AI", "ML", "Data", "Theory","Backend", "TCS", "GB"];
+  const collections = ['MathAnal', 'SSAD', 'Comparch', 'I am Matvei'];
+  const tags = ['Math', 'CS', 'Engineering', 'Russian', 'VS code', 'Agla', 'English', 'UX&UI', '3D', 'AI', 'ML', 'Data', 'Theory', 'Backend', 'TCS', 'GB'];
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -17,7 +17,7 @@ const Profile: React.FC = () => {
         console.log(localStorage.getItem('access_token'));
         const response = await fetch(`${config.HTTP_URL}/profile/me`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -43,7 +43,12 @@ const Profile: React.FC = () => {
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <div>
+        Error:
+        {error}
+      </div>
+    );
   }
 
   if (!profile) {
@@ -71,9 +76,10 @@ const Profile: React.FC = () => {
 
         <div className=" overflow-x-scroll whitespace-nowrap mt-3 md:mt-0">
           <div className="flex gap-2">
-            {tags.map((tag, idx) => (
+            {tags.map((tag) => (
               <button
-                key={idx}
+                type="button"
+                key={tag}
                 className="bg-[#e0e0e0] hover:bg-[#d5d5d5] text-[#1E6DB9] px-4 py-1 rounded-md text-sm font-bold transition whitespace-nowrap"
               >
                 {tag}
@@ -84,9 +90,10 @@ const Profile: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 md:grid-cols-3 gap-4 mt-8">
-        {collections.map((name, idx) => (
+        {collections.map((name) => (
           <button
-            key={idx}
+            type="button"
+            key={name}
             className="bg-[#d9d9d9] hover:bg-[#c9c9c9] text-[#1E6DB9] font-bold text-sm py-5 px-4 rounded-lg shadow-sm transition"
           >
             {name}
@@ -95,6 +102,6 @@ const Profile: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Profile;

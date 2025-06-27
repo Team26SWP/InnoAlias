@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import * as config from './config';
 
-
-
-const Login: React.FC = () => {
+function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +27,7 @@ const Login: React.FC = () => {
         if (response.status === 401) {
           setError('Invalid email or password');
         } else if (response.status === 400) {
-          setError("Wrong email or password");
+          setError('Wrong email or password');
         } else {
           setError(`Error: ${response.status} ${response.statusText}`);
         }
@@ -38,14 +36,13 @@ const Login: React.FC = () => {
       const data = await response.json();
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('token_type', data.token_type);
-      console.log(localStorage.getItem('access_token'));
       config.navigateTo(config.Page.Home);
       try {
         const token = data.access_token;
         const profileResponse = await fetch(`${config.HTTP_URL}/profile/me`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
         });
         if (profileResponse.ok) {
@@ -71,23 +68,29 @@ const Login: React.FC = () => {
           Log in to your account
         </h2>
 
-        <label className="block text-[#1E6DB9] font-semibold mb-1">Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full mb-4 px-4 py-2 border-2 text-[#1E6DB9] border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
-        />
+        <label htmlFor="email" className="block text-[#1E6DB9] font-semibold mb-1">
+          Email
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full mb-4 px-4 py-2 border-2 text-[#1E6DB9] border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
+          />
+        </label>
 
-        <label className="block text-[#1E6DB9] font-semibold mb-1">Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full mb-2 px-4 py-2 text-[#1E6DB9] border-2 border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
-        />
+        <label htmlFor="password" className="block text-[#1E6DB9] font-semibold mb-1">
+          Password
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full mb-2 px-4 py-2 text-[#1E6DB9] border-2 border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
+          />
+        </label>
 
         <div className="text-sm text-right text-[#1E6DB9] mb-6 cursor-pointer hover:underline">
           Forgot password?
@@ -101,8 +104,10 @@ const Login: React.FC = () => {
         </button>
 
         <div className="text-center mt-4 text-sm text-[#1A1A1A]">
-          Don’t have an account?{' '}
+          Don’t have an account?
+          {' '}
           <button
+            type="button"
             onClick={() => config.navigateTo(config.Page.Register)}
             className="text-[#1E6DB9] font-semibold cursor-pointer hover:underline"
           >
@@ -115,6 +120,6 @@ const Login: React.FC = () => {
       </form>
     </div>
   );
-};
+}
 
 export default Login;

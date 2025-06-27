@@ -1,20 +1,20 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import * as config from './config';
 
-export interface Register {
+export interface RegisterForm {
   name: string;
   surname: string;
   email: string;
   password: string;
 }
 
-const Register: React.FC = () => {
-  const [form, setForm] = useState<Register>({
-  name: "",
-  surname: "",
-  email: "",
-  password: "",}
-);
+function Register() {
+  const [form, setForm] = useState<RegisterForm>({
+    name: '',
+    surname: '',
+    email: '',
+    password: '',
+  });
   const [error, setError] = useState <string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,8 +23,8 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null)
-    
+    setError(null);
+
     try {
       const response = await fetch(`${config.HTTP_URL}/auth/register`, {
         method: 'POST',
@@ -51,13 +51,13 @@ const Register: React.FC = () => {
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('token_type', data.token_type);
       console.log(localStorage.getItem('access_token'));
-      console.log("Register:", form);
+      console.log('Register:', form);
 
       try {
         const token = data.access_token;
         const profileResponse = await fetch(`${config.HTTP_URL}/profile/me`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -69,11 +69,10 @@ const Register: React.FC = () => {
         console.error('Failed to fetch profile after registration', profileErr);
       }
 
-      //config.navigateTo(config.Page.EmailConfirm);
+      // config.navigateTo(config.Page.EmailConfirm);
       config.navigateTo(config.Page.Home);
-
-    } catch(err) {
-      setError('An unexpected error occurred. Please try again later.')
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again later.');
       console.error('Register error', err);
     }
   };
@@ -87,49 +86,57 @@ const Register: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">Name</label>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border-2 border-[#d9d9d9] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
-                required
-              />
+              <label htmlFor="name" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
+                Name
+                <input
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border-2 border-[#d9d9d9] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
+                  required
+                />
+              </label>
             </div>
             <div className="flex-1">
-              <label className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">Surname</label>
+              <label htmlFor="surname" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
+                Surname
+                <input
+                  type="text"
+                  name="surname"
+                  value={form.surname}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border-2 border-[#d9d9d9] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
+                  required
+                />
+              </label>
+            </div>
+          </div>
+          <div>
+            <label htmlFor="email" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
+              Your Email
               <input
-                type="text"
-                name="surname"
-                value={form.surname}
+                type="email"
+                name="email"
+                value={form.email}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border-2 border-[#d9d9d9] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
                 required
               />
-            </div>
+            </label>
           </div>
           <div>
-            <label className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">Your Email</label>
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border-2 border-[#d9d9d9] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">Password</label>
-            <input
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border-2 border-[#d9d9d9] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
-              required
-            />
+            <label htmlFor="password" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
+              Password
+              <input
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border-2 border-[#d9d9d9] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
+                required
+              />
+            </label>
           </div>
           {error && (
             <p className="text-red-500 text-center font-semibold">{error}</p>
@@ -142,14 +149,15 @@ const Register: React.FC = () => {
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-black font-semibold">
-          Already have an account?{" "}
-          <button onClick={() => config.navigateTo(config.Page.Login)} className="text-[#1E6DB9] font-semibold hover:underline">
+          Already have an account?
+          {' '}
+          <button type="button" onClick={() => config.navigateTo(config.Page.Login)} className="text-[#1E6DB9] font-semibold hover:underline">
             Sign in
           </button>
         </p>
       </div>
     </div>
   );
-};
+}
 
 export default Register;
