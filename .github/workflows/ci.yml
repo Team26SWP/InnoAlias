@@ -90,7 +90,6 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
-  #         npm test -- --watchAll=false --coverage
 
   build-and-push-images:
     name: 🔨 Build & Push Docker Images
