@@ -32,7 +32,6 @@ jobs:
           ssh -o StrictHostKeyChecking=no \
               ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             "cd /srv/InnoAlias \
-             && git pull origin main \
              && docker-compose pull \
              && docker-compose up -d \
              && docker image prune -f"
