@@ -77,10 +77,10 @@ async def get_game_deck(game_id: str):
     return {"words": game.get("deck", [])}
 
 
-@router.post("/{game_id}/deck/save")
+@router.post("/deck/save")
 async def save_deck_into_profile(
     deck_name: str,
-    words: dict,
+    words: List[str],
     current_user: UserInDB = Depends(get_current_user),
     tags: List[str] = None,
 ):
