@@ -1,28 +1,29 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import '../style/JoinGame.css'
+import React, { useEffect, useState, useRef } from 'react';
+import * as config from './config';
 
-import socketConfig from "./socketConfig";
-
-const JoinGame: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
+export function JoinGame() {
+  const urlParams = new URLSearchParams(window.location.search);
   const [playerName, setPlayerName] = useState('');
   const [manualCode, setGameCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [socketOpen, setSocketOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
 
-  const [isLoading, setIsLoading] = useState(false);
-
-  const codeFromUrl = searchParams.get("code")?.toUpperCase();
+  const codeFromUrl = urlParams.get('code')?.toUpperCase();
   const gameCode = codeFromUrl || manualCode;
+
+  useEffect(() => {
+    const profile = config.getProfile();
+    if (profile) {
+      setPlayerName(profile.name);
+    }
+  }, []);
 
   const validatePlayerName = (name: string): string | null => {
     // no need (max/min lenght in html)
-    /*if (name.length < 2) {return 'Name must be at least 2 characters long';}
-    if (name.length > 20) {return 'Name must be less than 20 characters';}*/
+    /* if (name.length < 2) {return 'Name must be at least 2 characters long';}
+    if (name.length > 20) {return 'Name must be less than 20 characters';} */
     if (!/^[a-zA-Z\s-]+$/.test(name)) { return 'Name can only contain letters, spaces'; }
     return null;
   };
@@ -34,7 +35,7 @@ const JoinGame: React.FC = () => {
     return null;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleJoinGame = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const nameError = validatePlayerName(playerName);
@@ -47,69 +48,87 @@ const JoinGame: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
-    
-    navigate(`/lobby?code=${gameCode}&name=${playerName}&host=false`);
-    
-    }
 
-  useEffect(() => {
-    return () => {
-      socketRef.current?.close();
+    const socket = config.connectSocketPlayer(playerName, gameCode);
+    socketRef.current = socket;
+
+    socket.onopen = () => {
+      setSocketOpen(true);
+      config.navigateTo(config.Page.Lobby, { name: playerName, code: gameCode, isHost: false });
     };
-  }, []);
+
+    socket.onerror = () => {
+      setError('Failed to connect to the game. Please check the code and try again.');
+      setIsLoading(false);
+    };
+
+    socket.onclose = () => {
+      if (!socketOpen) {
+        setError('Connection closed before joining.');
+        setIsLoading(false);
+      }
+    };
+  };
 
   return (
-    <div className="join-game-container">
-      <h1>Join Game</h1>
-      {error && <div className="error-message">{error}</div>}
-      <form onSubmit={handleSubmit} className="join-form">
-        <div className="form-group">
-          <label htmlFor="playerName">Your Name</label>
-          <input
-            id="playerName"
-            type="text"
-            placeholder="Enter your name"
-            value={playerName}
-            onChange={(e) => {
-              setPlayerName(e.target.value);
-              setError(null);
-            }}
-            required
-            disabled={isLoading}
-            minLength={2}
-            maxLength={30}
-          />
-        </div>
-
-        {!searchParams.get('code') && (
-          <div className="form-group">
-            <label htmlFor="gameCode">Game Code</label>
+    <div className="min-h-screen bg-[#FAF6E9] dark:bg-[#1A1A1A] flex flex-col items-center justify-center px-6 py-12">
+      <h1 className="text-5xl font-bold text-[#1E6DB9] mb-10">Join Game</h1>
+      <form onSubmit={handleJoinGame} className="w-full max-w-lg flex flex-col items-center gap-6">
+        {!config.getProfile()
+          && (
+          <div className="w-full">
+            <label htmlFor="name" className="block text-2xl font-medium text-[#1E6DB9] mb-3 ml-4">
+              Your Name
+              <input
+                type="text"
+                id="name"
+                placeholder="ENTER YOUR NAME"
+                value={playerName}
+                onChange={(e) => {
+                  setPlayerName(e.target.value);
+                  setError(null);
+                }}
+                className="w-full bg-[#D9D9D9] placeholder-[#7d7d7d] text-[#1E6DB9] px-6 py-4 rounded-full text-lg outline-none"
+                maxLength={20}
+                minLength={2}
+                required
+              />
+            </label>
+          </div>
+          )}
+        <div className="w-full">
+          <label htmlFor="code" className="block text-2xl font-medium text-[#1E6DB9] mb-3 ml-4">
+            Code
             <input
-              id="gameCode"
+              id="code"
               type="text"
-              placeholder="Enter game code"
+              placeholder="ENTER THE CODE"
               value={gameCode}
               onChange={(e) => {
                 setGameCode(e.target.value.toUpperCase());
                 setError(null);
               }}
-              required
-              disabled={isLoading}
+              disabled={!!codeFromUrl}
+              className="w-full bg-[#D9D9D9] placeholder-[#7d7d7d] text-[#1E6DB9] px-6 py-4 rounded-full text-lg outline-none"
               maxLength={6}
-              pattern="[A-Z0-9]{6}"
+              required
             />
-          </div>
-        )}
+          </label>
+        </div>
+
         <button
           type="submit"
-          className={`join-button`}
           disabled={isLoading}
+          className="mt-6 bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-lg text-lg font-medium hover:opacity-90 transition disabled:opacity-50"
         >
-          {socketOpen ? 'Joining Game...' : 'Join Game'}
+          {isLoading ? 'Connecting...' : 'Connect'}
         </button>
+
+        {/* Error Message */}
+        {error && <p className="text-red-600 mt-2">{error}</p>}
       </form>
     </div>
   );
-};
+}
 
 export default JoinGame;

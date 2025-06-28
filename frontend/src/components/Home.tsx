@@ -1,53 +1,82 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import '../style/Home.css';
-import characterImg from '../assets/character.png';
+import * as config from './config';
 
-import socketConfig from "./socketConfig";
-
-const Home: React.FC = () => {
-  const navigate = useNavigate();
-
+export function Home() {
   const handleCreateGame = () => {
-    navigate('/create_game');
+    if (!localStorage.getItem('access_token')) {
+      config.navigateTo(config.Page.Login);
+      return;
+    }
+    config.navigateTo(config.Page.Create);
   };
 
   const handleJoinGame = () => {
-    navigate('/join_game');
+    if (!localStorage.getItem('access_token')) {
+      config.navigateTo(config.Page.Login);
+      return;
+    }
+    config.navigateTo(config.Page.Join);
+  };
+
+  const handleLogin = () => {
+    config.navigateTo(config.Page.Login);
+  };
+
+  const handleProfile = () => {
+    config.navigateTo(config.Page.Profile);
+  };
+
+  const loadProfile = async () => {
+    const response = await fetch(`${config.HTTP_URL}/profile/me`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    const profile = await response.json();
+    if (response.ok) {
+      config.setProfile(profile);
+    }
   };
 
   React.useEffect(() => {
-    socketConfig.closeConnection();
-  }, [])
+    config.closeConnection();
+    if (!config.getProfile() && localStorage.getItem('access_token')) {
+      loadProfile();
+    }
+  }, []);
 
   return (
-    <div className="home-wrapper">
-      {/* Main container for the home page content */}
-      <div className="home-container">
-        {/* Game title */}
-        <h1>ALIAS</h1>
-        
-        {/* Game description */}
-        <h2>"Alias" is the name of a popular word explanation game, often played in teams. The objective of the game is
-            to have your teammates guess words you are describing without actually saying the word itself.</h2>
-        
-        {/* Navigation buttons container */}
-        <div className="home-options">
-          <button onClick={handleCreateGame} className="create-home-button">
-            Create Game
-          </button>
-          <button onClick={handleJoinGame} className="join-home-button">
-            Join Game
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen px-6 py-10 flex flex-col items-center justify-center bg-[#FAF6E9] text-[#1E6DB9] dark:bg-[#1A1A1A] dark:text-[#FAF6E9]">
+      <button
+        type="button"
+        onClick={localStorage.getItem('access_token') ? handleProfile : handleLogin}
+        className="absolute top-4 font-adlam right-4 bg-[#1E6DB9] text-[#FAF6E9] font-semibold px-4 py-2 rounded-full hover:opacity-90 transition"
+      >
+        {localStorage.getItem('access_token') ? <p>Profile</p> : <p>Log in</p> }
+      </button>
 
-      {/* Character image section */}
-      <div className="home-image">
-        <img src={characterImg} alt="Alias character" />
+      <h1 className="text-9xl font-bold font-adlam text-[#1E6DB9] mb-8">alias</h1>
+
+      <div className="flex flex-col sm:flex-row gap-4">
+        <button
+          type="button"
+          onClick={handleCreateGame}
+          className="bg-[#1E6DB9] text-[#FAF6E9] font-adlam px-6 py-3 rounded-lg text-lg font-medium hover:opacity-90 transition"
+        >
+          Create game
+        </button>
+        <button
+          type="button"
+          onClick={handleJoinGame}
+          className="bg-[#FAF6E9] dark:bg-[#1A1A1A] border border-[#1E6DB9] font-adlam text-[#1E6DB9] px-6 py-3 rounded-lg text-lg font-medium"
+        >
+          Join the game
+        </button>
       </div>
     </div>
   );
-};
+}
 
-export default Home; 
+export default Home;

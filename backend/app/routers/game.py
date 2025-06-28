@@ -1,14 +1,13 @@
 from asyncio import wait_for, TimeoutError
 from datetime import datetime, timezone
 from random import shuffle
-from typing import List
 from fastapi.responses import Response
 from pymongo import ReturnDocument
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException, Depends
 
 from backend.app.code_gen import generate_deck_id, generate_game_code
 from backend.app.db import db
-from backend.app.models import Game
+from backend.app.models import Game, DeckIn
 from backend.app.models import UserInDB
 from backend.app.services.auth_service import get_current_user
 from backend.app.services.game_service import (
@@ -77,19 +76,17 @@ async def get_game_deck(game_id: str):
     return {"words": game.get("deck", [])}
 
 
-@router.post("/{game_id}/deck/save")
+@router.post("/deck/save")
 async def save_deck_into_profile(
-    deck_name: str,
-    words: dict,
+    deck: DeckIn,
     current_user: UserInDB = Depends(get_current_user),
-    tags: List[str] = None,
 ):
     deck_id = await generate_deck_id()
     temp_deck = {
         "_id": deck_id,
-        "name": deck_name,
-        "tags": tags,
-        "words": words,
+        "name": deck.deck_name,
+        "tags": deck.tags,
+        "words": deck.words,
         "owner_ids": [current_user.id],
     }
     if not await db.users.find_one({"_id": current_user.id}):

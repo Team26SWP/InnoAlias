@@ -27,7 +27,7 @@ async def get_profile(user_id: str, current_user: UserInDB = Depends(get_current
     decks = []
 
     if deck_ids:
-        cursor = await db.decks.find(
+        cursor = db.decks.find(
             {"_id": {"$in": deck_ids}}, {"name": 1, "words": 1, "tags": 1}
         ).sort("name", DESCENDING)
 

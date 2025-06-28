@@ -51,10 +51,10 @@ async def test_deck_save_and_profile_listing(client, test_db):
     )
     token = login.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
-    words = {"w1": "one", "w2": "two"}
+    words = ["one", "two"]
     res = await client.post(
-        "/api/game/g1/deck/save?deck_name=Test&tags=foo,bar",
-        json={"words": words},
+        "/api/game/deck/save",
+        json={"deck_name": "Test", "tags": ["foo", "bar"], "words": words},
         headers=headers,
     )
     assert res.status_code == 200

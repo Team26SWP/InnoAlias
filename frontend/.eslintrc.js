@@ -40,6 +40,7 @@ module.exports = {
       'ignorePackages',
       { js: 'never', jsx: 'never', ts: 'never', tsx: 'never' }
     ],
+    'linebreak-style': 'off',
   },
   ignorePatterns: ['node_modules/', 'dist/'],
 };
