@@ -62,6 +62,12 @@ class DeckDetail(DeckPreview):
     words: List[str]
 
 
+class DeckIn(BaseModel):
+    deck_name: str
+    words: List[str]
+    tags: Optional[List[str]] = None
+
+
 class User(BaseModel):
     name: str = Field(...)
     surname: str = Field(...)
