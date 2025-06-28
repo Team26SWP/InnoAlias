@@ -23,9 +23,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install SSH key
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | sed 's/\r$//' > key
+          chmod 600 key
+          eval "$(ssh-agent -s)"
+          ssh-add key
 
       - name: SSH & deploy
         run: |
