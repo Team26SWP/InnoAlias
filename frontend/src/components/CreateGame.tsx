@@ -7,7 +7,7 @@ export function CreateGame() {
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [hostName, setHostName] = useState<string>('');
-  const settings = useRef<config.Settings>(config.loadCreationState().settings);
+  const [settings] = useState<config.Settings>(config.loadCreationState().settings);
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -40,8 +40,7 @@ export function CreateGame() {
   };
 
   const loadDeck = () => {
-    console.log('pipisa');
-    config.saveCreationState(settings.current, words);
+    config.saveCreationState(settings, words);
     config.setDeckChoice(true);
     config.navigateTo(config.Page.Profile);
   };
@@ -54,12 +53,12 @@ export function CreateGame() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           remaining_words: words,
-          words_amount: (settings.current.deckLimit === 0) ? words.length
-            : settings.current.deckLimit,
-          time_for_guessing: settings.current.time,
-          tries_per_player: settings.current.attemptsLimit,
-          right_answers_to_advance: settings.current.answersLimit,
-          rotate_masters: settings.current.rotateMasters,
+          words_amount: (settings.deckLimit === 0) ? words.length
+            : settings.deckLimit,
+          time_for_guessing: settings.time,
+          tries_per_player: settings.attemptsLimit,
+          right_answers_to_advance: settings.answersLimit,
+          rotate_masters: settings.rotateMasters,
         }),
       });
 
@@ -71,7 +70,7 @@ export function CreateGame() {
       socketRef.current = socket;
 
       socket.onopen = () => {
-        config.setRotation(settings.current.rotateMasters);
+        config.setRotation(settings.rotateMasters);
         config.navigateTo(config.Page.Lobby, { name: hostName, code: gameCode, isHost: true });
       };
 
@@ -93,13 +92,13 @@ export function CreateGame() {
     if (minutes instanceof HTMLInputElement && seconds instanceof HTMLInputElement
       && deckLimit instanceof HTMLInputElement && attemptLimit instanceof HTMLInputElement
       && answerLimit instanceof HTMLInputElement && rotation instanceof HTMLInputElement) {
-      settings.current.time = parseInt((minutes.value !== '') ? minutes.value : '1', 10) * 60
-        + parseInt((seconds.value !== '') ? seconds.value : '0', 10);
-      if (settings.current.time === 0) settings.current.time = 1;
-      settings.current.deckLimit = parseInt((deckLimit.value !== '') ? deckLimit.value : '0', 10);
-      settings.current.attemptsLimit = parseInt((attemptLimit.value !== '') ? attemptLimit.value : '3', 10);
-      settings.current.answersLimit = parseInt((answerLimit.value !== '') ? answerLimit.value : '1', 10);
-      settings.current.rotateMasters = rotation.checked;
+      settings.time = parseInt((minutes.value !== '') ? minutes.value : minutes.placeholder, 10) * 60
+        + parseInt((seconds.value !== '') ? seconds.value : seconds.placeholder, 10);
+      if (settings.time === 0) settings.time = 1;
+      settings.deckLimit = parseInt((deckLimit.value !== '') ? deckLimit.value : deckLimit.placeholder, 10);
+      settings.attemptsLimit = parseInt((attemptLimit.value !== '') ? attemptLimit.value : attemptLimit.placeholder, 10);
+      settings.answersLimit = parseInt((answerLimit.value !== '') ? answerLimit.value : answerLimit.placeholder, 10);
+      settings.rotateMasters = rotation.checked;
     }
     setShowSettings(false);
   };
@@ -172,14 +171,14 @@ export function CreateGame() {
                 <input
                   id="minutes"
                   type="number"
-                  placeholder=""
+                  placeholder={Math.floor(settings.time / 60).toString()}
                   className="w-14 p-2 rounded-md"
                 />
                 <span className="text-sm">min</span>
                 <input
                   id="seconds"
                   type="number"
-                  placeholder=""
+                  placeholder={(settings.time % 60).toString()}
                   className="w-14 p-2 rounded-md"
                 />
                 <span className="text-sm">sec</span>
@@ -192,6 +191,7 @@ export function CreateGame() {
                 <input
                   id="deck-length"
                   type="number"
+                  placeholder={settings.deckLimit.toString()}
                   className="w-14 p-2 rounded-md"
                 />
                 <span className="text-sm">cards</span>
@@ -204,6 +204,7 @@ export function CreateGame() {
                 <input
                   id="attempts"
                   type="number"
+                  placeholder={settings.attemptsLimit.toString()}
                   className="w-14 p-2 rounded-md"
                 />
                 <span className="text-sm">tries</span>
@@ -216,6 +217,7 @@ export function CreateGame() {
                 <input
                   id="answers"
                   type="number"
+                  placeholder={settings.answersLimit.toString()}
                   className="w-14 p-2 rounded-md"
                 />
                 <span className="text-sm">players</span>
@@ -224,11 +226,11 @@ export function CreateGame() {
 
             <div className="flex items-center gap-5 mt-10">
               <label htmlFor="single-master" className="flex items-center gap-2">
-                <input type="radio" id="single-master" name="master-mode" value="single" defaultChecked />
+                <input type="radio" id="single-master" name="master-mode" value="single" defaultChecked={!settings.rotateMasters} />
                 <span className="font-bold w-36">Single Master</span>
               </label>
               <label htmlFor="different-master" className="flex items-center gap-2">
-                <input type="radio" id="different-master" name="master-mode" value="different" />
+                <input type="radio" id="different-master" name="master-mode" value="different" defaultChecked={settings.rotateMasters} />
                 <span className="font-bold w-36">Different Masters</span>
               </label>
             </div>

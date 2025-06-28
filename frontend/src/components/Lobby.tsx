@@ -17,38 +17,25 @@ function Lobby() {
     args.current = config.getArgs();
     if (!args.current.code || !args.current.name) return;
 
+    let ws: WebSocket;
     if (args.current.isHost) {
-      const ws = config.connectSocketHost(args.current.name, args.current.code);
-      setSocket(ws);
-      ws.onopen = () => { console.log('host connection successful'); };
-      ws.onmessage = (message) => {
-        const data = JSON.parse(message.data);
-        const sup = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
-        if (data.scores) {
-          setPlayers(sup);
-        }
-        if (data.state === 'in_progress') {
-          config.setInitialState(data);
-          config.navigateTo(config.Page.Quiz, args.current);
-        }
-      };
+      ws = config.connectSocketHost(args.current.name, args.current.code);
     } else {
-      const ws = config.connectSocketPlayer(args.current.name, args.current.code);
-      setSocket(ws);
-      ws.onopen = () => { console.log('player connection successful'); };
-      ws.onmessage = (message) => {
-        const data = JSON.parse(message.data);
-        const sup = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
-        if (data.scores) {
-          setPlayers(sup);
-        }
-
-        if (data.state === 'in_progress') {
-          config.setInitialState(data);
-          config.navigateTo(config.Page.Quiz, args.current);
-        }
-      };
+      ws = config.connectSocketPlayer(args.current.name, args.current.code);
     }
+    setSocket(ws);
+    ws.onopen = () => {};
+    ws.onmessage = (message) => {
+      const data = JSON.parse(message.data);
+      const sup = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
+      if (data.scores) {
+        setPlayers(sup);
+      }
+      if (data.state === 'in_progress') {
+        config.setInitialState(data);
+        config.navigateTo(config.Page.Quiz, args.current);
+      }
+    };
   }, [code, name, isHost]);
 
   const handleStartGame = () => {

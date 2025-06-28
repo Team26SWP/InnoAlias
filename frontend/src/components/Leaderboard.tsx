@@ -51,14 +51,26 @@ export function Leaderboard() {
 
   const saveDeck = async () => {
     const { code } = config.getArgs();
-    const response = await fetch(`${HTTP_URL}/game/deck/${code}`, {
+    const response = await fetch(`${HTTP_URL}/game/${code}/deck`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });
     const data = await response.json();
-    const words: string[] = data.deck;
     const deckName = prompt('Please, input the name of the deck');
-    if (deckName) document.cookie = `${deckName}=[${words.join(',')}]`;
+    if (!deckName) { return; }
+    const tags = prompt('Please, input tags separated by commas')?.split(',');
+    await fetch(`${HTTP_URL}/game/deck/save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+      },
+      body: JSON.stringify({
+        deck_name: deckName,
+        tags: tags || [],
+        words: data.words,
+      }),
+    });
   };
 
   const exportDeck = async () => { // Stolen from stack overflow

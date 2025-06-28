@@ -1,24 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import * as config from './config';
 
-interface Deck {
-  id: string;
-  name: string;
-  words_count: number;
-  tags: string[];
-  words: string[];
-}
 function Profile() {
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [decks, setDecks] = useState<Deck[]>([
+  const [decks, setDecks] = useState<config.Deck[]>([
     {
       id: 'Aboba',
       name: 'Abobny',
       words_count: 10,
       tags: [],
-      words: ['lol', 'amogus', 'bebra', 'chmo', 'ahahaha', 'test69', 'livesey', 'billie bones', 'gandon', 'urod'],
     },
   ]);
   const [tags, setTags] = useState<string[]>([]);
@@ -26,16 +18,13 @@ function Profile() {
   const [searchString, setSearchString] = useState<string | null>(null);
 
   useEffect(() => {
-    // THESE TWO ARE HERE TO SUPPRESS LINTER WARNINGS
-    // REMOVE ON ADDITION OF DECK SAVING
-    setDecks([]);
-    setTags([]);
     const fetchProfile = async () => {
       setLoading(true);
       setError(null);
       try {
         const token = localStorage.getItem('access_token');
         const response = await fetch(`${config.HTTP_URL}/profile/me`, {
+          method: 'GET',
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -46,9 +35,15 @@ function Profile() {
           setLoading(false);
           return;
         }
-        const data = await response.json();
+        const data: config.UserProfile = await response.json();
         setProfile(data);
         config.setProfile(data);
+        setDecks(data.decks);
+        let supp: string[] = [];
+        data.decks.forEach((deck) => {
+          supp = supp.concat(deck.tags);
+        });
+        setTags(supp);
       } catch (err) {
         setError('An unexpected error occurred.');
       } finally {
@@ -60,6 +55,10 @@ function Profile() {
 
   const selectTag = (event: React.MouseEvent) => {
     if (!(event.target instanceof HTMLButtonElement)) { return; }
+    if (event.target.textContent === selectedTag) {
+      setSelectedTag(null);
+      return;
+    }
     setSelectedTag(event.target.textContent);
   };
 
@@ -68,16 +67,23 @@ function Profile() {
     setSearchString(event.target.value);
   };
 
-  const selectDeck = (event: React.MouseEvent) => {
+  const selectDeck = async (event: React.MouseEvent) => {
     if (!(event.target instanceof HTMLButtonElement)) { return; }
     const deckId = event.target.id;
+    const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    const data = await response.json();
     config.saveCreationState(config.loadCreationState().settings, config.loadCreationState().words
-      .concat(decks.filter((deck) => (deck.id === deckId))[0].words));
+      .concat(data.words));
     config.setDeckChoice(false);
     config.navigateTo(config.Page.Create);
   };
 
-  function checkDeck(deck: Deck) {
+  function checkDeck(deck: config.Deck) {
     return ((!selectedTag) || deck.tags.indexOf(selectedTag) !== -1)
       && ((!searchString) || deck.name.includes(searchString));
   }
