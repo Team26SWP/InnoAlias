@@ -31,7 +31,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no \
               ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "cd /home/innoalias \
+            "cd /srv/InnoAlias \
              && git pull origin main \
              && docker-compose pull \
              && docker-compose up -d \
