@@ -30,10 +30,9 @@ jobs:
       - name: SSH & deploy
         run: |
           ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
-              cd /home/innoalias
-              git pull origin main
-              docker-compose pull
-              docker-compose up -d
-              docker image prune -f
-            EOF
+              ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "cd /home/innoalias \
+             && git pull origin main \
+             && docker-compose pull \
+             && docker-compose up -d \
+             && docker image prune -f"
