@@ -6,7 +6,6 @@ function EmailConfirm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Code entered:', code);
 
     config.navigateTo(config.Page.Home);
   };

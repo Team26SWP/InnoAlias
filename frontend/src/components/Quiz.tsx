@@ -84,8 +84,7 @@ function Quiz() {
       }
     };
 
-    websocket.onerror = (err) => {
-      console.error('WebSocket error:', err);
+    websocket.onerror = () => {
       setError('Connection error. Please try again.');
     };
 
@@ -120,7 +119,7 @@ function Quiz() {
     const storedArgs = config.getArgs();
     args.current = storedArgs;
     connectWebSocket();
-  }, []);
+  }, [connectWebSocket]);
 
   // Sets a time interval to update the timer
   useEffect(() => {
@@ -140,7 +139,6 @@ function Quiz() {
   const handleSubmit = async (e: React.FormEvent) => {
     // Crucial, since most browsers do stupid stuff when submiting a form (e.g. reloading a page)
     e.preventDefault();
-    console.log(inputWord);
     if (!inputWord.trim()) return;
 
     setEnteredWords([...enteredWords, inputWord]);

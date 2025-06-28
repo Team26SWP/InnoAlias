@@ -50,8 +50,6 @@ function Register() {
       const data = await response.json();
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('token_type', data.token_type);
-      console.log(localStorage.getItem('access_token'));
-      console.log('Register:', form);
 
       try {
         const token = data.access_token;
@@ -66,14 +64,13 @@ function Register() {
           config.setProfile(profileData);
         }
       } catch (profileErr) {
-        console.error('Failed to fetch profile after registration', profileErr);
+        setError('Failed to fetch profile after registration');
       }
 
       // config.navigateTo(config.Page.EmailConfirm);
       config.navigateTo(config.Page.Home);
     } catch (err) {
       setError('An unexpected error occurred. Please try again later.');
-      console.error('Register error', err);
     }
   };
 

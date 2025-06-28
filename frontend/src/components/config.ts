@@ -27,8 +27,7 @@ export interface GameState {
   current_master: string;
   scores: { [name: string]: number };
 }
-
-interface Deck {
+export interface Deck {
   id: string;
   name: string;
   words_count: number;
@@ -39,7 +38,7 @@ export interface UserProfile {
   name: string;
   surname: string;
   email: string;
-  deck: Deck,
+  decks: Deck[],
 }
 export class Settings {
   time: number;

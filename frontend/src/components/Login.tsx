@@ -50,11 +50,10 @@ function Login() {
           config.setProfile(profileData);
         }
       } catch (profileErr) {
-        console.error('Failed to fetch profile after login', profileErr);
+        setError('Failed to fetch profile after login');
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again later.');
-      console.error('Login error', err);
     }
   };
 
