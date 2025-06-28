@@ -61,6 +61,7 @@ class DeckPreview(BaseModel):
 class DeckDetail(DeckPreview):
     words: List[str]
 
+
 class DeckIn(BaseModel):
     deck_name: str
     words: List[str]
