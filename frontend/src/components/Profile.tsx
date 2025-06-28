@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import * as config from './config';
 
+interface Deck {
+  name: string;
+  words_count: number;
+  tags: string[];
+  words: string[];
+}
 function Profile() {
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const collections = ['MathAnal', 'SSAD', 'Comparch', 'I am Matvei'];
-  const tags = ['Math', 'CS', 'Engineering', 'Russian', 'VS code', 'Agla', 'English', 'UX&UI', '3D', 'AI', 'ML', 'Data', 'Theory', 'Backend', 'TCS', 'GB'];
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [searchString, setSearchString] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -14,7 +22,6 @@ function Profile() {
       setError(null);
       try {
         const token = localStorage.getItem('access_token');
-        console.log(localStorage.getItem('access_token'));
         const response = await fetch(`${config.HTTP_URL}/profile/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -37,6 +44,20 @@ function Profile() {
     };
     fetchProfile();
   }, []);
+
+  const selectTag = (event: React.MouseEvent) => {
+    if (!(event.target instanceof HTMLButtonElement)) { return; }
+    setSelectedTag(event.target.textContent);
+  };
+
+  const searchInput = (event: React.ChangeEvent) => {
+    if (!(event.target instanceof HTMLInputElement)) { return; }
+    setSearchString(event.target.value);
+  };
+  function checkDeck(deck: Deck) {
+    return ((!selectedTag) || deck.tags.indexOf(selectedTag) !== -1)
+      && ((!searchString) || deck.name.includes(searchString));
+  }
 
   if (loading) {
     return <div>Loading...</div>;
@@ -69,6 +90,7 @@ function Profile() {
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <input
+          onChange={searchInput}
           type="text"
           placeholder="Search desks or tags"
           className="w-full md:max-w-md p-3 rounded-full border border-gray-300 shadow-sm placeholder:text-[#1E6DB9] text-[#1E6DB9] font-semibold"
@@ -81,6 +103,7 @@ function Profile() {
                 type="button"
                 key={tag}
                 className="bg-[#e0e0e0] hover:bg-[#d5d5d5] text-[#1E6DB9] px-4 py-1 rounded-md text-sm font-bold transition whitespace-nowrap"
+                onClick={selectTag}
               >
                 {tag}
               </button>
@@ -90,13 +113,13 @@ function Profile() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 md:grid-cols-3 gap-4 mt-8">
-        {collections.map((name) => (
+        {decks.filter((deck) => checkDeck(deck)).map((deck) => (
           <button
             type="button"
-            key={name}
+            key={deck.name}
             className="bg-[#d9d9d9] hover:bg-[#c9c9c9] text-[#1E6DB9] font-bold text-sm py-5 px-4 rounded-lg shadow-sm transition"
           >
-            {name}
+            {deck.name}
           </button>
         ))}
       </div>
