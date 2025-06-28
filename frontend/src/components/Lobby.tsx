@@ -53,8 +53,10 @@ function Lobby() {
 
   const handleStartGame = () => {
     socket?.send(JSON.stringify({ action: 'start' }));
-    config.connectSocketPlayer(name, code);
-    args.current.isHost = false;
+    if (config.getRotation()) {
+      config.connectSocketPlayer(name, code);
+      args.current.isHost = false;
+    }
     config.navigateTo(config.Page.Quiz, args.current);
   };
 
@@ -108,7 +110,7 @@ function Lobby() {
             onClick={handleStartGame}
             className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-full text-lg font-medium hover:opacity-90 transition"
           >
-            Create teams
+            Start game
           </button>
         </div>
       )}

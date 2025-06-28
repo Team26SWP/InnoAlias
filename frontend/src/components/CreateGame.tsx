@@ -98,6 +98,7 @@ export function CreateGame() {
       socketRef.current = socket;
 
       socket.onopen = () => {
+        config.setRotation(settings.current.rotateMasters);
         config.navigateTo(config.Page.Lobby, { name: hostName, code: gameCode, isHost: true });
       };
 

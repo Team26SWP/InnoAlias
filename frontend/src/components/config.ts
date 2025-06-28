@@ -47,6 +47,7 @@ let hostSocket: WebSocket | null = null;
 let playerSocket: WebSocket | null = null;
 
 let initialState: GameState | null = null;
+let rotation = false;
 
 const HOST = 'localhost:8000';
 export const WS_URL = `ws://${HOST}/api`;
@@ -111,4 +112,10 @@ export function setInitialState(init: GameState) {
 }
 export function getInitialState() {
   return initialState;
+}
+export function setRotation(newRotation: boolean) {
+  rotation = newRotation;
+}
+export function getRotation() {
+  return rotation;
 }
