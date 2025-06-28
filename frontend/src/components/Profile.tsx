@@ -12,7 +12,9 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [decks, setDecks] = useState<Deck[]>([]);
+  setDecks([]);
   const [tags, setTags] = useState<string[]>([]);
+  setTags([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchString, setSearchString] = useState<string | null>(null);
 
