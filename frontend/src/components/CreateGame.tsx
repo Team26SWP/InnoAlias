@@ -1,39 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as config from './config';
 
-class Settings {
-  time: number;
-
-  deckLimit: number;
-
-  attemptsLimit: number;
-
-  answersLimit: number;
-
-  rotateMasters: boolean;
-
-  constructor(
-    time: number,
-    deck: number,
-    attempts: number,
-    answers: number,
-    rotateMasters: boolean,
-  ) {
-    this.time = time;
-    this.deckLimit = deck;
-    this.attemptsLimit = attempts;
-    this.answersLimit = answers;
-    this.rotateMasters = rotateMasters;
-  }
-}
-
 export function CreateGame() {
-  const [words, setWords] = useState<string[]>([]);
+  const [words, setWords] = useState<string[]>(config.loadCreationState().words);
   const [currentWord, setCurrentWord] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [hostName, setHostName] = useState<string>('');
-  const settings = useRef<Settings>(new Settings(60, 0, 3, 1, false));
+  const settings = useRef<config.Settings>(config.loadCreationState().settings);
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -66,11 +40,10 @@ export function CreateGame() {
   };
 
   const loadDeck = () => {
-    const selector = document.getElementById('selector');
-    if (!(selector instanceof HTMLSelectElement)) return;
-    const cards = selector.value;
-    if (!cards) return;
-    setWords(words.concat(cards.split(',')));
+    console.log('pipisa');
+    config.saveCreationState(settings.current, words);
+    config.setDeckChoice(true);
+    config.navigateTo(config.Page.Profile);
   };
 
   const handleCreateGame = async () => {
