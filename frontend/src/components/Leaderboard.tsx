@@ -61,6 +61,27 @@ export function Leaderboard() {
     if (deckName) document.cookie = `${deckName}=[${words.join(',')}]`;
   };
 
+  const exportDeck = async () => { // Stolen from stack overflow
+    const response = await fetch(`${HTTP_URL}/game/leaderboard/${config.getArgs().code}/export`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/txt',
+      },
+    });
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+
+    const link: HTMLAnchorElement = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute(
+      'download',
+      'deck.txt',
+    );
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+  };
+
   const toMain = () => {
     config.navigateTo(config.Page.Home);
   };
@@ -99,8 +120,8 @@ export function Leaderboard() {
       </div>
 
       <div className="mt-6 flex flex-wrap justify-center gap-4">
-        <button type="button" className="bg-[#d9d9d9] text-[#3171a6] text-xl px-5 py-2 rounded-lg font-semibold">
-          Export Leaderboard
+        <button type="button" className="bg-[#d9d9d9] text-[#3171a6] text-xl px-5 py-2 rounded-lg font-semibold" onClick={exportDeck}>
+          Export Deck
         </button>
         <button
           type="button"
