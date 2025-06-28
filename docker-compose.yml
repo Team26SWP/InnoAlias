@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  backend:
+    image: docker.io/${DOCKERHUB_USER}/innoalias-backend:latest
+    restart: always
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+
+  frontend:
+    image: docker.io/${DOCKERHUB_USER}/innoalias-frontend:latest
+    restart: always
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:5.0
+    restart: always
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+
+  nginx:
+    image: docker.io/${DOCKERHUB_USER}/innoalias-nginx:latest
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
