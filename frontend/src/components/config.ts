@@ -34,13 +34,41 @@ interface Deck {
   words_count: number;
   tags: string[];
 }
-
 export interface UserProfile {
   id: string;
   name: string;
   surname: string;
   email: string;
-  deck : Deck,
+  deck: Deck,
+}
+export class Settings {
+  time: number;
+
+  deckLimit: number;
+
+  attemptsLimit: number;
+
+  answersLimit: number;
+
+  rotateMasters: boolean;
+
+  constructor(
+    time: number,
+    deck: number,
+    attempts: number,
+    answers: number,
+    rotateMasters: boolean,
+  ) {
+    this.time = time;
+    this.deckLimit = deck;
+    this.attemptsLimit = attempts;
+    this.answersLimit = answers;
+    this.rotateMasters = rotateMasters;
+  }
+}
+export interface GameCreationState {
+  settings: Settings;
+  words: string[];
 }
 
 let hostSocket: WebSocket | null = null;
@@ -48,6 +76,12 @@ let playerSocket: WebSocket | null = null;
 
 let initialState: GameState | null = null;
 let rotation = false;
+let deckChoice = false;
+
+const creationState: GameCreationState = {
+  settings: new Settings(60, 0, 3, 1, false),
+  words: [],
+};
 
 const HOST = 'localhost:8000';
 export const WS_URL = `ws://${HOST}/api`;
@@ -118,4 +152,17 @@ export function setRotation(newRotation: boolean) {
 }
 export function getRotation() {
   return rotation;
+}
+export function setDeckChoice(newChoice: boolean) {
+  deckChoice = newChoice;
+}
+export function getDeckChoice() {
+  return deckChoice;
+}
+export function saveCreationState(settings: Settings, words: string[]) {
+  creationState.settings = settings;
+  creationState.words = words;
+}
+export function loadCreationState() {
+  return creationState;
 }

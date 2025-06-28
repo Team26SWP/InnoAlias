@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import * as config from './config';
 
 interface Deck {
+  id: string;
   name: string;
   words_count: number;
   tags: string[];
@@ -11,14 +12,24 @@ function Profile() {
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [decks, setDecks] = useState<Deck[]>([]);
-  setDecks([]);
+  const [decks, setDecks] = useState<Deck[]>([
+    {
+      id: 'Aboba',
+      name: 'Abobny',
+      words_count: 10,
+      tags: [],
+      words: ['lol', 'amogus', 'bebra', 'chmo', 'ahahaha', 'test69', 'livesey', 'billie bones', 'gandon', 'urod'],
+    },
+  ]);
   const [tags, setTags] = useState<string[]>([]);
-  setTags([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchString, setSearchString] = useState<string | null>(null);
 
   useEffect(() => {
+    // THESE TWO ARE HERE TO SUPPRESS LINTER WARNINGS
+    // REMOVE ON ADDITION OF DECK SAVING
+    setDecks([]);
+    setTags([]);
     const fetchProfile = async () => {
       setLoading(true);
       setError(null);
@@ -56,6 +67,16 @@ function Profile() {
     if (!(event.target instanceof HTMLInputElement)) { return; }
     setSearchString(event.target.value);
   };
+
+  const selectDeck = (event: React.MouseEvent) => {
+    if (!(event.target instanceof HTMLButtonElement)) { return; }
+    const deckId = event.target.id;
+    config.saveCreationState(config.loadCreationState().settings, config.loadCreationState().words
+      .concat(decks.filter((deck) => (deck.id === deckId))[0].words));
+    config.setDeckChoice(false);
+    config.navigateTo(config.Page.Create);
+  };
+
   function checkDeck(deck: Deck) {
     return ((!selectedTag) || deck.tags.indexOf(selectedTag) !== -1)
       && ((!searchString) || deck.name.includes(searchString));
@@ -80,16 +101,16 @@ function Profile() {
 
   return (
     <div className="min-h-screen bg-[#FAF6E9] px-6 py-10 font-adlam text-[#1E6DB9]">
-      <h1 className="text-4xl font-bold mb-6">Profile</h1>
-
-      <div className="flex items-center mb-10 gap-6">
-        <div className="w-36 h-36 bg-gray-300 rounded-full" />
-        <div>
-          <h2 className="text-4xl font-bold">{profile.name}</h2>
-          <p className="text-black text-7sm font-semibold">{profile.email}</p>
+      <div hidden={config.getDeckChoice()}>
+        <h1 className="text-4xl font-bold mb-6">Profile</h1>
+        <div className="flex items-center mb-10 gap-6">
+          <div className="w-36 h-36 bg-gray-300 rounded-full" />
+          <div>
+            <h2 className="text-4xl font-bold">{profile.name}</h2>
+            <p className="text-black text-7sm font-semibold">{profile.email}</p>
+          </div>
         </div>
       </div>
-
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <input
           onChange={searchInput}
@@ -117,8 +138,10 @@ function Profile() {
       <div className="grid grid-cols-1 sm:grid-cols-4 md:grid-cols-3 gap-4 mt-8">
         {decks.filter((deck) => checkDeck(deck)).map((deck) => (
           <button
+            onClick={selectDeck}
             type="button"
-            key={deck.name}
+            key={deck.id}
+            id={deck.id}
             className="bg-[#d9d9d9] hover:bg-[#c9c9c9] text-[#1E6DB9] font-bold text-sm py-5 px-4 rounded-lg shadow-sm transition"
           >
             {deck.name}
