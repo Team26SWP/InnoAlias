@@ -74,28 +74,6 @@ export function JoinGame() {
     <div className="min-h-screen bg-[#FAF6E9] dark:bg-[#1A1A1A] flex flex-col items-center justify-center px-6 py-12">
       <h1 className="text-5xl font-bold text-[#1E6DB9] mb-10">Join Game</h1>
       <form onSubmit={handleJoinGame} className="w-full max-w-lg flex flex-col items-center gap-6">
-        {!config.getProfile()
-          && (
-          <div className="w-full">
-            <label htmlFor="name" className="block text-2xl font-medium text-[#1E6DB9] mb-3 ml-4">
-              Your Name
-              <input
-                type="text"
-                id="name"
-                placeholder="ENTER YOUR NAME"
-                value={playerName}
-                onChange={(e) => {
-                  setPlayerName(e.target.value);
-                  setError(null);
-                }}
-                className="w-full bg-[#D9D9D9] placeholder-[#7d7d7d] text-[#1E6DB9] px-6 py-4 rounded-full text-lg outline-none"
-                maxLength={20}
-                minLength={2}
-                required
-              />
-            </label>
-          </div>
-          )}
         <div className="w-full">
           <label htmlFor="code" className="block text-2xl font-medium text-[#1E6DB9] mb-3 ml-4">
             Code

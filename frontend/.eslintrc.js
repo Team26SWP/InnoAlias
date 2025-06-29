@@ -30,7 +30,7 @@ module.exports = {
   settings: {
     react: { version: 'detect' },
     'import/resolver': {
-      node: { extensions: ['.js','.jsx','.ts','.tsx'] },
+      node: { extensions: ['.js', '.jsx', '.ts', '.tsx'] },
     },
   },
   rules: {
@@ -38,9 +38,12 @@ module.exports = {
     'import/extensions': [
       'error',
       'ignorePackages',
-      { js: 'never', jsx: 'never', ts: 'never', tsx: 'never' }
+      {
+        js: 'never', jsx: 'never', ts: 'never', tsx: 'never',
+      },
     ],
     'linebreak-style': 'off',
+    'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
   },
   ignorePatterns: ['node_modules/', 'dist/'],
 };

@@ -54,7 +54,7 @@ jobs:
       - name: Install deps & run ESLint
         working-directory: frontend
         run: |
-          npm ci
+          npm ci --force
           npm run lint
 
   test-backend:
@@ -74,27 +74,28 @@ jobs:
           pip install -r backend/requirements.txt
           pytest --maxfail=1 --disable-warnings -q backend/tests
 
-  # test-frontend:
-  #   name: ⚛️ Test JavaScript
-  #   runs-on: ubuntu-latest
-  #   needs: lint-js
-  #   steps:
-  #     - uses: actions/checkout@v4
+  test-frontend:
+    name: ⚛️ Test JavaScript
+    runs-on: ubuntu-latest
+    needs: lint-js
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '18'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
-  #     - name: Install deps & run Jest
-  #       working-directory: frontend
-  #       run: |
-  #         npm ci
+      - name: Install deps & run vitest
+        working-directory: frontend
+        run: |
+          npm ci --force
+          npm run test --watchAll=false --coverage
 
   build-and-push-images:
     name: 🔨 Build & Push Docker Images
     runs-on: ubuntu-latest
-    needs: [ test-backend ]
+    needs: [ test-backend, test-frontend ]
     steps:
       - uses: actions/checkout@v4
 
