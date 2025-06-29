@@ -84,13 +84,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install deps & run vitest
         working-directory: frontend
         run: |
           npm ci --force
-          npm run test --watchAll=false --coverage
+          npm run test -- --run
 
   build-and-push-images:
     name: 🔨 Build & Push Docker Images

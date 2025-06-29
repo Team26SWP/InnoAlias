@@ -1,7 +1,7 @@
-FROM node:16 as builder
+FROM node:20 as builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --force
 COPY . .
 RUN npm run build
 FROM nginx:stable-alpine
