@@ -80,14 +80,15 @@ function Register() {
         <h2 className="text-2xl font-bold text-center text-[#1E6DB9] mb-6 font-adlam">
           Create account
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" name="register">
           <div className="flex gap-4">
             <div className="flex-1">
-              <label htmlFor="name" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
+              <label id="name" htmlFor="name" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
                 Name
                 <input
                   type="text"
                   name="name"
+                  aria-labelledby="name"
                   value={form.name}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border-2 border-[#d9d9d9] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
@@ -96,11 +97,12 @@ function Register() {
               </label>
             </div>
             <div className="flex-1">
-              <label htmlFor="surname" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
+              <label id="surname" htmlFor="surname" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
                 Surname
                 <input
                   type="text"
                   name="surname"
+                  aria-labelledby="surname"
                   value={form.surname}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border-2 border-[#d9d9d9] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
@@ -110,11 +112,12 @@ function Register() {
             </div>
           </div>
           <div>
-            <label htmlFor="email" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
+            <label id="email" htmlFor="email" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
               Your Email
               <input
                 type="email"
                 name="email"
+                aria-labelledby="email"
                 value={form.email}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border-2 border-[#d9d9d9] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
@@ -123,11 +126,12 @@ function Register() {
             </label>
           </div>
           <div>
-            <label htmlFor="password" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
+            <label id="password" htmlFor="password" className="block text-[#1E6DB9] font-semibold mb-1 font-adlam">
               Password
               <input
                 type="password"
                 name="password"
+                aria-labelledby="password"
                 value={form.password}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border-2 border-[#d9d9d9] rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E6DB9]"
