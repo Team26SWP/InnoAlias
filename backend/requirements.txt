@@ -8,6 +8,7 @@ passlib[bcrypt]
 pytest_asyncio
 python-decouple
 motor
+bcrypt
 httpx
 mongomock_motor
 pytest
