@@ -8,7 +8,7 @@ This folder contains a FastAPI backend for a game.
    ```bash
    pip install -r backend/requirements.txt
    ```
-2. Copy `.env.example` from repository root to `.env`:
+2. Copy `.env.example` from the repository root to `.env`:
    ```bash
    cp .env.example .env
    ```
