@@ -53,7 +53,7 @@ async def test_deck_save_and_profile_listing(client, test_db):
     headers = {"Authorization": f"Bearer {token}"}
     words = ["one", "two"]
     res = await client.post(
-        "/api/game/deck/save",
+        "/api/profile/deck/save",
         json={"deck_name": "Test", "tags": ["foo", "bar"], "words": words},
         headers=headers,
     )
@@ -69,7 +69,7 @@ async def test_deck_save_and_profile_listing(client, test_db):
 @pytest.mark.asyncio
 async def test_game_creation_and_deck(client, created_game):
     game_id, words = created_game
-    deck_resp = await client.get(f"/api/game/{game_id}/deck")
+    deck_resp = await client.get(f"/api/game/deck/{game_id}")
     assert deck_resp.status_code == 200
     assert deck_resp.json() == {"words": words}
 

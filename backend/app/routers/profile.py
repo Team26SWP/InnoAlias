@@ -1,8 +1,15 @@
 from fastapi import HTTPException, Depends, APIRouter
 from pymongo import DESCENDING
 
+from backend.app.code_gen import generate_deck_id
 from backend.app.db import db
-from backend.app.models import UserInDB, ProfileResponse, DeckPreview
+from backend.app.models import (
+    UserInDB,
+    ProfileResponse,
+    DeckPreview,
+    DeckIn,
+    DeckUpdate,
+)
 from backend.app.services.auth_service import get_current_user
 from backend.app.models import DeckDetail
 
@@ -50,6 +57,62 @@ async def get_profile(user_id: str, current_user: UserInDB = Depends(get_current
     )
 
 
+@router.post("/deck/save")
+async def save_deck_into_profile(
+    deck: DeckIn,
+    current_user: UserInDB = Depends(get_current_user),
+):
+    deck_id = await generate_deck_id()
+    temp_deck = {
+        "_id": deck_id,
+        "name": deck.deck_name,
+        "tags": deck.tags,
+        "words": deck.words,
+        "owner_ids": [current_user.id],
+    }
+    if not await db.users.find_one({"_id": current_user.id}):
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await db.decks.insert_one(temp_deck)
+    await db.users.update_one(
+        {"_id": current_user.id}, {"$addToSet": {"deck_ids": deck_id}}
+    )
+    return {"inserted_id": deck_id}
+
+
+@router.patch("/deck/{deck_id}/edit", response_model=DeckDetail)
+async def edit_deck(
+    deck_id: str,
+    deck: DeckUpdate,
+    current_user: UserInDB = Depends(get_current_user),
+):
+    existing = await db.decks.find_one({"_id": deck_id})
+    if not existing:
+        raise HTTPException(404, "Deck not found")
+    if current_user.id not in existing.get("owner_ids", []):
+        raise HTTPException(403, "Forbidden")
+
+    update_data = {}
+    if deck.deck_name is not None:
+        update_data["name"] = deck.deck_name
+    if deck.words is not None:
+        update_data["words"] = deck.words
+    if deck.tags is not None:
+        update_data["tags"] = deck.tags
+
+    if update_data:
+        await db.decks.update_one({"_id": deck_id}, {"$set": update_data})
+
+    updated = await db.decks.find_one({"_id": deck_id})
+    return DeckDetail(
+        id=updated["_id"],
+        name=updated["name"],
+        words_count=len(updated.get("words", [])),
+        tags=updated.get("tags"),
+        words=updated.get("words", []),
+    )
+
+
 @router.get("/deck/{deck_id}", response_model=DeckDetail)
 async def get_additional_deck_info(deck_id: str):
     deck = await db.decks.find_one({"_id": deck_id})
@@ -65,7 +128,7 @@ async def get_additional_deck_info(deck_id: str):
     )
 
 
-@router.delete("/deck/delete/{deck_id}")
+@router.delete("/deck/{deck_id}/delete")
 async def delete_deck(deck_id: str, current_user: UserInDB = Depends(get_current_user)):
     deck = await db.decks.find_one({"_id": deck_id})
     if not deck:
