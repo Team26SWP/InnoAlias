@@ -68,6 +68,12 @@ class DeckIn(BaseModel):
     tags: Optional[List[str]] = None
 
 
+class DeckUpdate(BaseModel):
+    deck_name: Optional[str] = None
+    words: Optional[List[str]] = None
+    tags: Optional[List[str]] = None
+
+
 class User(BaseModel):
     name: str = Field(...)
     surname: str = Field(...)

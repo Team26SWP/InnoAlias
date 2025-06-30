@@ -3,13 +3,10 @@ from datetime import datetime, timezone
 from random import shuffle
 from fastapi.responses import Response
 from pymongo import ReturnDocument
-from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException, Depends
+from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
 
-from backend.app.code_gen import generate_deck_id, generate_game_code
-from backend.app.db import db
-from backend.app.models import Game, DeckIn
-from backend.app.models import UserInDB
-from backend.app.services.auth_service import get_current_user
+from backend.app.code_gen import generate_game_code
+from backend.app.models import Game
 from backend.app.services.game_service import (
     games,
     manager,
@@ -74,29 +71,6 @@ async def get_game_deck(game_id: str):
         raise HTTPException(status_code=404, detail="Game not found")
 
     return {"words": game.get("deck", [])}
-
-
-@router.post("/deck/save")
-async def save_deck_into_profile(
-    deck: DeckIn,
-    current_user: UserInDB = Depends(get_current_user),
-):
-    deck_id = await generate_deck_id()
-    temp_deck = {
-        "_id": deck_id,
-        "name": deck.deck_name,
-        "tags": deck.tags,
-        "words": deck.words,
-        "owner_ids": [current_user.id],
-    }
-    if not await db.users.find_one({"_id": current_user.id}):
-        raise HTTPException(status_code=404, detail="User not found")
-
-    await db.decks.insert_one(temp_deck)
-    await db.users.update_one(
-        {"_id": current_user.id}, {"$addToSet": {"deck_ids": deck_id}}
-    )
-    return {"inserted_id": deck_id}
 
 
 @router.websocket("/{game_id}")
