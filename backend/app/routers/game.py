@@ -64,7 +64,7 @@ async def export_deck_txt(game_id: str):
     )
 
 
-@router.get("/{game_id}/deck")
+@router.get("/deck/{game_id}")
 async def get_game_deck(game_id: str):
     game = await games.find_one({"_id": game_id})
     if not game:

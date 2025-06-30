@@ -23,7 +23,6 @@ async def test_db(monkeypatch):
     monkeypatch.setattr(game_service, "games", test_db.games)
     monkeypatch.setattr(game_service, "decks", test_db.decks)
     monkeypatch.setattr(game_router, "games", test_db.games)
-    monkeypatch.setattr(game_router, "db", test_db)
     monkeypatch.setattr(profile_router, "db", test_db)
     monkeypatch.setattr(code_gen, "games", test_db.games)
     monkeypatch.setattr(code_gen, "decks", test_db.decks)
