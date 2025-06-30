@@ -59,16 +59,18 @@ Return the full list of words of a deck.
 { "words": ["word1", "word2", ...] }
 ```
 
-### POST `/api/game/{game_id}/deck/save`
+### POST `/api/game/deck/save`
 Save a deck to the current user's profile.
 Requires an authentication token.
 
-Parameters:
-- `deck_name` – string (query)
-- `tags` – list of strings (optional, query)
-
 **Body** (`application/json`)
-Dictionary of words to save.
+```json
+{
+  "deck_name": "My deck",
+  "words": ["word1", "word2"],
+  "tags": ["fun", "party"]
+}
+```
 
 **Response**
 ```json
@@ -95,6 +97,7 @@ All profile routes require authentication unless stated otherwise.
 
 ### GET `/api/profile/{user_id}`
 Return user information and list of decks owned by the user.
+The `{user_id}` must match the authenticated user or a `403` error is returned.
 
 **Response** (`application/json`)
 ```json
@@ -125,6 +128,8 @@ Retrieve details of a specific deck.
 
 ### DELETE `/api/profile/deck/delete/{deck_id}`
 Delete a deck owned by the current user.
+If the deck does not exist a `404` error is returned.
+Attempting to delete a deck not owned by the authenticated user results in `403`.
 
 ### GET `/api/profile/me`
 Shortcut for `GET /api/profile/{user_id}` using the authenticated user ID.
