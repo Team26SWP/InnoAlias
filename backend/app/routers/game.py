@@ -12,7 +12,7 @@ from backend.app.services.game_service import (
     manager,
     process_new_word,
     required_to_advance,
-    compute_team_scores,
+    compute_team_scores, compute_team_scoreboard,
 )
 
 router = APIRouter(prefix="", tags=["game"])
@@ -156,9 +156,11 @@ async def get_leaderboard(game_id: str):
         raise HTTPException(status_code=404, detail="Game not found")
 
     game = await games.find_one({"_id": game_id})
-    team_scores = compute_team_scores(game)
+    if game.get("player_teams"):
+        return compute_team_scoreboard(game)
 
-    return dict(sorted(team_scores.items(), key=lambda kv: kv[1], reverse=True))
+    scores = game.get("scores", {})
+    return dict(sorted(scores.items(), key=lambda kv: kv[1], reverse=True))
 
 
 @router.delete("/delete/{game_id}")

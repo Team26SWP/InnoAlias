@@ -37,6 +37,32 @@ def compute_team_scores(state: dict) -> dict:
 
     return totals
 
+def compute_team_scoreboard(state: dict) -> dict:
+    scores = state.get("scores", {})
+    teams = state.get("player_teams", {})
+    team_count = state.get("team_count")
+
+    board: dict[str, dict] = {}
+
+    for player, team in teams.items():
+        team = str(team)
+        player_score = scores.get(player, 0)
+        t = board.setdefault(team, {"score": 0, "players": {}})
+        t["score"] += player_score
+        t["players"][player] = player_score
+
+    if team_count:
+        for i in range(1, team_count + 1):
+            board.setdefault(str(i), {"score": 0, "players": {}})
+
+    for data in board.values():
+        data["players"] = dict(
+            sorted(data["players"].items(), key=lambda kv: kv[1], reverse=True)
+        )
+
+    board = dict(sorted(board.items(), key=lambda kv: kv[1]["score"], reverse=True))
+    return board
+
 
 class ConnectionManager:
     def __init__(self) -> None:
