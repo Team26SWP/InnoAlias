@@ -10,6 +10,7 @@ section { border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; }
 textarea { width: 100%; height: 100px; }
 .console { background:#f0f0f0; padding:10px; height:120px; overflow:auto; }
 .player { border:1px dashed #aaa; padding:5px; margin-top:10px; }
+.timer { font-weight:bold; margin-left:5px; }
 </style>
 </head>
 <body>
@@ -103,7 +104,7 @@ function addPlayer(){
   const team = document.getElementById('playerTeam').value || '1';
   const container = document.createElement('div');
   container.className='player';
-  container.innerHTML = `<strong>${name}</strong> (team <span class="player-team">${team}</span>)<br>
+  container.innerHTML = `<strong>${name}</strong> (team <span class="player-team">${team}</span>) <span class="timer">-</span><br>
     <input type="text" placeholder="guess" class="guess"><button>Guess</button> <button class="skip">Skip</button><br>
     Switch Team: <input type="number" class="switch-team-input" value="${team}" min="1"><button class="switch-team-btn">Switch</button>
     <div class="console"></div>`;
@@ -114,11 +115,31 @@ function addPlayer(){
   const switchTeamInput = container.querySelector('input.switch-team-input');
   const switchTeamBtn = container.querySelector('button.switch-team-btn');
   const playerTeamSpan = container.querySelector('span.player-team');
+  const timerSpan = container.querySelector('span.timer');
   const consoleEl = container.querySelector('div.console');
   const ws = new WebSocket(`${API_WS}/game/player/${gameId}?name=${encodeURIComponent(name)}&team_id=team_${team}`);
-  ws.onmessage = ev=>log(consoleEl, ev.data);
+  let expiresAt = '';
+  ws.onmessage = (ev) => {
+    log(consoleEl, ev.data);
+    try {
+      const data = JSON.parse(ev.data);
+      if (data.expires_at) {
+        expiresAt = data.expires_at;
+      }
+      if (typeof data.current_master !== 'undefined') {
+        skipBtn.disabled = data.current_master !== name;
+      }
+    } catch (e) { /* ignore */ }
+  };
+  setInterval(() => {
+    if (expiresAt) {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      const sec = Math.max(0, Math.floor(diff / 1000));
+      timerSpan.textContent = `${sec}s`;
+    }
+  }, 500);
   guessBtn.onclick=()=>{ws.send(JSON.stringify({action:'guess', guess:guessInput.value})); guessInput.value='';};
-  skipBtn.onclick=()=>{ws.send(JSON.stringify({action:'skip'}));};
+  skipBtn.onclick=()=>{ if (ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({action:'skip'})); } };
   switchTeamBtn.onclick=()=>{
     const newTeam = switchTeamInput.value;
     ws.send(JSON.stringify({action:'switch_team', new_team_id: `team_${newTeam}`}));
