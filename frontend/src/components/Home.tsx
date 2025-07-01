@@ -42,6 +42,7 @@ export function Home() {
 
   React.useEffect(() => {
     config.closeConnection();
+    config.resetGameCreation();
     if (!config.getProfile() && localStorage.getItem('access_token')) {
       loadProfile();
     }
