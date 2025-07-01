@@ -36,3 +36,27 @@ async def test_process_new_word_sets_next_word(test_db):
     assert result["current_master"] == "host"
     expires_at = result["expires_at"]
     assert isinstance(expires_at, datetime)
+
+
+@pytest.mark.asyncio
+async def test_process_new_word_team_independent(test_db):
+    await test_db.games.insert_one(
+        {
+            "_id": "g3",
+            "team_states": {
+                "1": {"remaining_words": ["a"], "state": "pending"},
+                "2": {"remaining_words": ["b"], "state": "pending"},
+            },
+            "team_count": 2,
+            "scores": {},
+            "state": "pending",
+            "rotate_masters": False,
+        }
+    )
+
+    r1 = await process_new_word("g3", 1, "1")
+    assert r1["team_states"]["1"]["current_word"] == "a"
+    assert r1["team_states"]["2"].get("current_word") is None
+
+    r2 = await process_new_word("g3", 1, "2")
+    assert r2["team_states"]["2"]["current_word"] == "b"

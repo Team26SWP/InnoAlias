@@ -3,6 +3,17 @@ from typing import Optional, List, Literal, Dict
 from pydantic import BaseModel, Field
 
 
+class TeamState(BaseModel):
+    remaining_words: List[str] = Field(default_factory=list)
+    current_word: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    current_correct: int = 0
+    player_attempts: Dict[str, int] = Field(default_factory=dict)
+    correct_players: List[str] = Field(default_factory=list)
+    current_master: Optional[str] = None
+    state: Literal["pending", "in_progress", "finished"] = "pending"
+
+
 class Game(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
     remaining_words: List[str]
@@ -20,6 +31,7 @@ class Game(BaseModel):
     scores: Dict[str, int] = Field(default_factory=dict)
     player_teams: Dict[str, str] = Field(default_factory=dict)
     team_count: int = 1
+    team_states: Dict[str, TeamState] = Field(default_factory=dict)
 
 
 class GameState(BaseModel):
