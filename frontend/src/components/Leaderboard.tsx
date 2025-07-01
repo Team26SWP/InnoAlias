@@ -112,7 +112,7 @@ export function Leaderboard() {
   }
 
   return (
-    <div className="bg-[#FAF6E9] #FAF6E9dark:bg-[#1A1A1A] min-h-screen px-4 py-10 min-h-screen flex flex-col items-center font-[ADLaM_Display]">
+    <div className="bg-[#FAF6E9] dark:bg-[#1A1A1A] min-h-screen px-4 py-10 min-h-screen flex flex-col items-center font-[ADLaM_Display]">
       <h1 className="text-3xl font-bold text-[#3171a6] mb-6">Leaderboard</h1>
 
       <div className="bg-[#d9d9d9] rounded-xl w-full max-w-3xl p-4 max-h-[400px] overflow-y-auto flex flex-col gap-2 mb-8">

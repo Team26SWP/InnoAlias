@@ -58,7 +58,14 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center dark:bg-[#1A1A1A] justify-center bg-[#FAF6E9] font-adlam px-4">
+    <div className="relative min-h-screen flex items-center dark:bg-[#1A1A1A] justify-center bg-[#FAF6E9] font-adlam px-4">
+      <button
+        type="button"
+        onClick={() => config.navigateTo(config.Page.Home)}
+        className="absolute top-4 text-xl left-4 text-[#1E6DB9] hover:underline"
+      >
+        ←Back to main
+      </button>
       <form
         onSubmit={handleSubmit}
         className="bg-white shadow-md rounded-xl px-8 py-10 w-full max-w-md"
@@ -67,7 +74,7 @@ function Login() {
           Log in to your account
         </h2>
 
-        <label htmlFor="email" className="block text-[#1E6DB9] font-semibold mb-1">
+        <label htmlFor="email" className="block text-[#1E6DB9] mb-1">
           Email
           <input
             id="email"
@@ -79,7 +86,7 @@ function Login() {
           />
         </label>
 
-        <label htmlFor="password" className="block text-[#1E6DB9] font-semibold mb-1">
+        <label htmlFor="password" className="block text-[#1E6DB9] mb-1">
           Password
           <input
             id="password"
@@ -108,13 +115,13 @@ function Login() {
           <button
             type="button"
             onClick={() => config.navigateTo(config.Page.Register)}
-            className="text-[#1E6DB9] font-semibold cursor-pointer hover:underline"
+            className="text-[#1E6DB9] cursor-pointer hover:underline"
           >
             Sign up
           </button>
         </div>
         {error && (
-          <p className="text-red-500 text-center font-semibold">{error}</p>
+          <p className="text-red-500 text-center">{error}</p>
         )}
       </form>
     </div>
