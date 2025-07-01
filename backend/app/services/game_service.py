@@ -2,7 +2,6 @@ from asyncio import Lock
 from datetime import datetime, timedelta, timezone
 from random import choice
 from typing import Optional
-
 from fastapi import WebSocket
 from pymongo import ReturnDocument
 
@@ -20,11 +19,30 @@ def required_to_advance(state: dict) -> int:
     return min(state.get("right_answers_to_advance", 1), players_count)
 
 
+def compute_team_scores(state: dict) -> dict:
+    scores = state.get("scores", {})
+    teams = state.get("player_teams", {})
+    totals: dict[str, int] = {}
+
+    for player, score in scores.items():
+        team = teams.get(player)
+        if team is None:
+            continue
+        totals[team] = totals.get(team, 0) + score
+
+    team_count = state.get("team_count")
+    if team_count:
+        for i in range(1, team_count + 1):
+            totals.setdefault(str(i), 0)
+
+    return totals
+
+
 class ConnectionManager:
     def __init__(self) -> None:
         self.hosts: dict[str, WebSocket] = {}
         self.host_names: dict[str, str] = {}
-        self.players: dict[str, list[tuple[WebSocket, str]]] = {}
+        self.players: dict[str, list[tuple[WebSocket, str, str]]] = {}
         self.locks: dict[str, Lock] = {}
 
     async def connect_host(
@@ -44,11 +62,18 @@ class ConnectionManager:
         return True
 
     async def connect_player(
-        self, websocket: WebSocket, game_id: str, player_name: str
+        self, websocket: WebSocket, game_id: str, player_name: str, team: str
     ) -> bool:
         await websocket.accept()
-        self.players.setdefault(game_id, []).append((websocket, player_name))
+        self.players.setdefault(game_id, []).append((websocket, player_name, team))
         return True
+
+    def switch_team(self, game_id: str, websocket: WebSocket, new_team: str) -> None:
+        lst = self.players.get(game_id, [])
+        for idx, (ws, name, team) in enumerate(lst):
+            if ws is websocket:
+                lst[idx] = (ws, name, new_team)
+                break
 
     def disconnect(
         self, game_id: str, websocket: Optional[WebSocket] = None
@@ -61,12 +86,12 @@ class ConnectionManager:
 
         removed_name = None
         lst = self.players.get(game_id, [])
-        remaining: list[tuple[WebSocket, str]] = []
-        for ws, name in lst:
+        remaining: list[tuple[WebSocket, str, str]] = []
+        for ws, name, team in lst:
             if ws is websocket:
                 removed_name = name
             else:
-                remaining.append((ws, name))
+                remaining.append((ws, name, team))
 
         if remaining:
             self.players[game_id] = remaining
@@ -78,6 +103,7 @@ class ConnectionManager:
     async def broadcast_state(self, game_id: str, state: dict) -> None:
         host_ws = self.hosts.get(game_id)
         players = list(state.get("scores", {}).keys())
+        team_scores = compute_team_scores(state)
         if host_ws:
             host_state = GameState(
                 current_word=state.get("current_word"),
@@ -89,10 +115,11 @@ class ConnectionManager:
                 current_correct=state.get("current_correct", 0),
                 right_answers_to_advance=state.get("right_answers_to_advance", 1),
                 current_master=state.get("current_master"),
+                team_scores=team_scores,
             ).model_dump(mode="json")
             await host_ws.send_json(host_state)
 
-            for ws, name in self.players.get(game_id, []):
+            for ws, name, team in self.players.get(game_id, []):
                 tries_per_player = state.get("tries_per_player", 0)
                 attempts = state.get("player_attempts", {}).get(name, 0)
                 tries_left = None
@@ -107,6 +134,7 @@ class ConnectionManager:
                     remaining_words_count=len(state.get("remaining_words", [])),
                     scores=state.get("scores", {}),
                     players=players,
+                    team_scores=team_scores,
                     tries_left=tries_left,
                     current_word=word_for_player,
                     current_master=state.get("current_master"),

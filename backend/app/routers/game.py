@@ -12,6 +12,7 @@ from backend.app.services.game_service import (
     manager,
     process_new_word,
     required_to_advance,
+    compute_team_scores,
 )
 
 router = APIRouter(prefix="", tags=["game"])
@@ -40,6 +41,8 @@ async def create_game(game: Game):
         "state": "pending",
         "rotate_masters": game.rotate_masters,
         "current_master": None,
+        "team_count": game.team_count,
+        "player_teams": {},
     }
 
     result = await games.insert_one(new_game)
@@ -153,7 +156,9 @@ async def get_leaderboard(game_id: str):
         raise HTTPException(status_code=404, detail="Game not found")
 
     game = await games.find_one({"_id": game_id})
-    return dict(sorted(game["scores"].items(), key=lambda kv: kv[1], reverse=True))
+    team_scores = compute_team_scores(game)
+
+    return dict(sorted(team_scores.items(), key=lambda kv: kv[1], reverse=True))
 
 
 @router.delete("/delete/{game_id}")
@@ -170,6 +175,7 @@ async def delete_game(game_id: str):
 @router.websocket("/player/{game_id}")
 async def handle_player(websocket: WebSocket, game_id: str):
     player_name = websocket.query_params.get("name")
+    team = websocket.query_params.get("team", "1")
     if not player_name:
         await websocket.close(code=1008, reason="Missing player's name")
         return
@@ -178,15 +184,20 @@ async def handle_player(websocket: WebSocket, game_id: str):
         await websocket.close(code=1011, reason="Game not found")
         return
 
-    await manager.connect_player(websocket, game_id, player_name)
+    await manager.connect_player(websocket, game_id, player_name, team)
     await games.update_one(
         {"_id": game_id, f"scores.{player_name}": {"$exists": False}},
         {"$set": {f"scores.{player_name}": 0}},
     )
     await games.update_one(
-        {"_id": game_id}, {"$set": {f"player_attempts.{player_name}": 0}}
+        {"_id": game_id},
+        {
+            "$set": {
+                f"player_attempts.{player_name}": 0,
+                f"player_teams.{player_name}": team,
+            }
+        },
     )
-
     try:
 
         game = await games.find_one({"_id": game_id})
@@ -208,6 +219,19 @@ async def handle_player(websocket: WebSocket, game_id: str):
                             game_id, game["time_for_guessing"]
                         )
                         await manager.broadcast_state(game_id, new_state)
+                continue
+
+            if action == "switch_team":
+                new_team = str(data.get("team", "1"))
+                manager.switch_team(game_id, websocket, new_team)
+
+                await games.update_one(
+                    {"_id": game_id},
+                    {"$set": {f"player_teams.{player_name}": new_team}},
+                )
+
+                game = await games.find_one({"_id": game_id})
+                await manager.broadcast_state(game_id, game)
                 continue
 
             if action != "guess":
@@ -303,6 +327,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
                     "$unset": {
                         f"scores.{name}": "",
                         f"player_attempts.{name}": "",
+                        f"player_teams.{name}": "",
                     },
                     "$pull": {"correct_players": name},
                 },
@@ -317,6 +342,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
                     "$unset": {
                         f"scores.{name}": "",
                         f"player_attempts.{name}": "",
+                        f"player_teams.{name}": "",
                     },
                     "$pull": {"correct_players": name},
                 },
