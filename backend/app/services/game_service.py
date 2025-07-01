@@ -215,29 +215,25 @@ async def process_new_word(game_id: str, team_id: str, sec: int) -> dict: # Modi
         return_document=ReturnDocument.AFTER,
     )
 
-    # Check overall game state after updating a team
-    if updated_game:
-        all_teams_finished = True
-        winning_team_id = None
-        max_score = -1
-
-        for tid, t_state in updated_game["teams"].items():
-            if t_state["state"] != "finished":
-                all_teams_finished = False
-                break
-            
-            # Determine winning team based on total team score
-            team_total_score = sum(t_state["scores"].values())
-            if team_total_score > max_score:
-                max_score = team_total_score
-                winning_team_id = tid
-        
-        if all_teams_finished:
+    # Check if this update finishes the overall game
+    if updated_game and updated_game.get("game_state") != "finished":
+        if team_state["state"] == "finished":
             updated_game["game_state"] = "finished"
-            updated_game["winning_team"] = winning_team_id
+            updated_game["winning_team"] = team_id
             await games.update_one(
                 {"_id": game_id},
-                {"$set": {"game_state": "finished", "winning_team": winning_team_id}}
+                {"$set": {"game_state": "finished", "winning_team": team_id}}
             )
+        else:
+            # See if any other team already finished
+            for tid, t_state in updated_game["teams"].items():
+                if t_state["state"] == "finished":
+                    updated_game["game_state"] = "finished"
+                    updated_game["winning_team"] = tid
+                    await games.update_one(
+                        {"_id": game_id},
+                        {"$set": {"game_state": "finished", "winning_team": tid}}
+                    )
+                    break
 
     return updated_game

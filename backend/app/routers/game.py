@@ -53,6 +53,7 @@ async def create_game(game: Game):
             "scores": {},
             "player_attempts": {},
             "current_correct": 0,
+            "right_answers_to_advance": game.right_answers_to_advance,
         }
 
     print(f"DEBUG: Creating game with {game.number_of_teams} teams.")
@@ -136,7 +137,7 @@ async def handle_game(websocket: WebSocket, game_id: str):
                     continue
 
                 game = await games.find_one({"_id": game_id})
-                if not game or team_id not in game["teams"]:
+                if not game or game.get("game_state") == "finished" or team_id not in game["teams"]:
                     print(f"Game {game_id} or team {team_id} not found for host action")
                     continue
 
@@ -360,6 +361,8 @@ async def handle_player(websocket: WebSocket, game_id: str):
             if action == "skip":
                 async with manager.locks[game_id]:
                     game = await games.find_one({"_id": game_id})
+                    if not game or game.get("game_state") == "finished":
+                        continue
                     team_state = game["teams"].get(team_id)
                     if not team_state:
                         continue
@@ -381,6 +384,8 @@ async def handle_player(websocket: WebSocket, game_id: str):
 
             async with manager.locks[game_id]:
                 game = await games.find_one({"_id": game_id})
+                if not game or game.get("game_state") == "finished":
+                    continue
                 team_state = game["teams"].get(team_id)
                 if not team_state or team_state["state"] != "in_progress":
                     continue
