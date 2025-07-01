@@ -140,6 +140,28 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
+async def reassign_master(game_id: str, team_id: str) -> None:
+    """Assign a new game master for a team if possible."""
+    game = await games.find_one({"_id": game_id})
+    if not game:
+        return
+
+    team_state = game.get("teams", {}).get(team_id)
+    if not team_state:
+        return
+
+    players = team_state.get("players", [])
+    if not players:
+        new_master = None
+    else:
+        new_master = choice(players) if game.get("rotate_masters") else players[0]
+
+    await games.update_one(
+        {"_id": game_id},
+        {"$set": {f"teams.{team_id}.current_master": new_master}},
+    )
+
+
 async def process_new_word(game_id: str, team_id: str, sec: int) -> dict: # Modified to accept team_id
     game = await games.find_one({"_id": game_id})
     if not game:

@@ -12,6 +12,7 @@ from backend.app.services.game_service import (
     manager,
     process_new_word,
     required_to_advance,
+    reassign_master,
 )
 
 router = APIRouter(prefix="", tags=["game"])
@@ -304,25 +305,23 @@ async def handle_player(websocket: WebSocket, game_id: str):
                     await websocket.send_json({"message": "Already in this team"})
                     continue
 
+                old_team_id = team_id
                 # Remove player from old team
                 await games.update_one(
                     {"_id": game_id},
-                    {"$pull": {f"teams.{team_id}.players": player_name}}
+                    {"$pull": {f"teams.{old_team_id}.players": player_name}}
                 )
                 await games.update_one(
                     {"_id": game_id},
                     {"$unset": {
-                        f"teams.{team_id}.scores.{player_name}": "",
-                        f"teams.{team_id}.player_attempts.{player_name}": ""
+                        f"teams.{old_team_id}.scores.{player_name}": "",
+                        f"teams.{old_team_id}.player_attempts.{player_name}": ""
                     }}
                 )
-                # If the player was the game master of the old team, clear it if no other players
-                old_team_data = (await games.find_one({"_id": game_id}))["teams"][team_id]
-                if old_team_data.get("current_master") == player_name and not old_team_data.get("players"):
-                    await games.update_one(
-                        {"_id": game_id},
-                        {"$set": {f"teams.{team_id}.current_master": None}}
-                    )
+                # If the player was the game master of the old team, reassign
+                old_team_data = (await games.find_one({"_id": game_id}))["teams"][old_team_id]
+                if old_team_data.get("current_master") == player_name:
+                    await reassign_master(game_id, old_team_id)
 
                 # Add player to new team
                 await games.update_one(
@@ -485,13 +484,10 @@ async def handle_player(websocket: WebSocket, game_id: str):
                         f"teams.{team_id}.player_attempts.{name}": ""
                     }}
                 )
-                # If the disconnected player was the game master of their team, clear it if no other players
+                # If the disconnected player was the game master, assign new one
                 team_data_after_pull = (await games.find_one({"_id": game_id}))["teams"][team_id]
-                if team_data_after_pull.get("current_master") == name and not team_data_after_pull.get("players"):
-                    await games.update_one(
-                        {"_id": game_id},
-                        {"$set": {f"teams.{team_id}.current_master": None}}
-                    )
+                if team_data_after_pull.get("current_master") == name:
+                    await reassign_master(game_id, team_id)
     except Exception as e:
         print(e)
         name = manager.disconnect(game_id, websocket)
@@ -510,10 +506,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
                         f"teams.{team_id}.player_attempts.{name}": ""
                     }}
                 )
-                # If the disconnected player was the game master of their team, clear it if no other players
+                # If the disconnected player was the game master, assign new one
                 team_data_after_pull = (await games.find_one({"_id": game_id}))["teams"][team_id]
-                if team_data_after_pull.get("current_master") == name and not team_data_after_pull.get("players"):
-                    await games.update_one(
-                        {"_id": game_id},
-                        {"$set": {f"teams.{team_id}.current_master": None}}
-                    )
+                if team_data_after_pull.get("current_master") == name:
+                    await reassign_master(game_id, team_id)
