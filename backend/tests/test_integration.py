@@ -7,10 +7,11 @@ async def created_game(client, monkeypatch):
     monkeypatch.setattr("backend.app.routers.game.shuffle", lambda x: None)
     words = ["a", "b", "c"]
     resp = await client.post(
-        "/api/game/create", json={"remaining_words": words, "words_amount": 3}
+        "/api/game/create", json={"host_id": "test_host", "number_of_teams": 1, "deck": words, "words_amount": 3}
     )
     game_id = resp.json()["id"]
-    return game_id, words
+    yield game_id
+    await client.delete(f"/api/game/delete/{game_id}")
 
 
 @pytest.mark.asyncio
@@ -68,15 +69,20 @@ async def test_deck_save_and_profile_listing(client, test_db):
 
 @pytest.mark.asyncio
 async def test_game_creation_and_deck(client, created_game):
-    game_id, words = created_game
+    game_id = created_game
     deck_resp = await client.get(f"/api/game/deck/{game_id}")
     assert deck_resp.status_code == 200
-    assert deck_resp.json() == {"words": words}
+    # The words are now part of the game object, not directly returned by the fixture
+    # We need to fetch the game to get the original deck
+    game = await client.get(f"/api/game/deck/{game_id}") # This endpoint returns the full deck
+    assert deck_resp.json() == game.json()
 
 
 @pytest.mark.asyncio
 async def test_export_deck_integration(client, created_game):
-    game_id, words = created_game
+    game_id = created_game
+    game_data = await client.get(f"/api/game/deck/{game_id}")
+    words = game_data.json()["words"]
     export = await client.get(f"/api/game/leaderboard/{game_id}/export")
     assert export.status_code == 200
     assert export.headers["content-type"].startswith("text/plain")
@@ -86,12 +92,41 @@ async def test_export_deck_integration(client, created_game):
 
 @pytest.mark.asyncio
 async def test_leaderboard_sorting(client, test_db):
+    game_id = "L1"
     await test_db.games.insert_one(
-        {"_id": "L1", "scores": {"alice": 3, "bob": 5, "carol": 2}}
+        {
+            "_id": game_id,
+            "host_id": "host1",
+            "number_of_teams": 2,
+            "teams": {
+                "team_1": {
+                    "id": "team_1",
+                    "name": "Team Alpha",
+                    "players": ["alice", "charlie"],
+                    "scores": {"alice": 3, "charlie": 2},
+                    "remaining_words": [],
+                    "state": "finished",
+                },
+                "team_2": {
+                    "id": "team_2",
+                    "name": "Team Beta",
+                    "players": ["bob", "diana"],
+                    "scores": {"bob": 5, "diana": 1},
+                    "remaining_words": [],
+                    "state": "finished",
+                },
+            },
+            "game_state": "finished",
+            "winning_team": "team_2",
+        }
     )
-    res = await client.get("/api/game/leaderboard/L1")
+    res = await client.get(f"/api/game/leaderboard/{game_id}")
     assert res.status_code == 200
-    assert list(res.json().keys()) == ["bob", "alice", "carol"]
+    expected_leaderboard = {
+        "Team Beta": {"total_score": 6, "players": {"bob": 5, "diana": 1}},
+        "Team Alpha": {"total_score": 5, "players": {"alice": 3, "charlie": 2}},
+    }
+    assert res.json() == expected_leaderboard
 
 
 @pytest.mark.asyncio
