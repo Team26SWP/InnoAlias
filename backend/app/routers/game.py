@@ -162,15 +162,17 @@ async def handle_game(websocket: WebSocket, game_id: str):
                         await manager.broadcast_state(game_id, game) # Broadcast the fully initialized state
                     else:
                         # If game is already in progress, just process the word for the specific team
-                        new_game_state = await process_new_word(
-                            game_id, team_id, game["time_for_guessing"]
-                        )
+                        async with manager.locks[game_id]:
+                            new_game_state = await process_new_word(
+                                game_id, team_id, game["time_for_guessing"]
+                            )
                         await manager.broadcast_state(game_id, new_game_state)
                 elif action == "skip" and team_state.get("state") == "in_progress":
                     print(f"Host skipping word for team {team_id} in game {game_id}")
-                    new_game_state = await process_new_word(
-                        game_id, team_id, game["time_for_guessing"]
-                    )
+                    async with manager.locks[game_id]:
+                        new_game_state = await process_new_word(
+                            game_id, team_id, game["time_for_guessing"]
+                        )
                     await manager.broadcast_state(game_id, new_game_state)
 
             except TimeoutError:
