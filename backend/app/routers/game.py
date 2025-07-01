@@ -295,7 +295,29 @@ async def handle_player(websocket: WebSocket, game_id: str):
             await manager.broadcast_state(game_id, new_state)
 
     except WebSocketDisconnect:
-        manager.disconnect(game_id, websocket)
+        name = manager.disconnect(game_id, websocket)
+        if name:
+            await games.update_one(
+                {"_id": game_id, "state": "pending"},
+                {
+                    "$unset": {
+                        f"scores.{name}": "",
+                        f"player_attempts.{name}": "",
+                    },
+                    "$pull": {"correct_players": name},
+                },
+            )
     except Exception as e:
         print(e)
-        manager.disconnect(game_id, websocket)
+        name = manager.disconnect(game_id, websocket)
+        if name:
+            await games.update_one(
+                {"_id": game_id, "state": "pending"},
+                {
+                    "$unset": {
+                        f"scores.{name}": "",
+                        f"player_attempts.{name}": "",
+                    },
+                    "$pull": {"correct_players": name},
+                },
+            )

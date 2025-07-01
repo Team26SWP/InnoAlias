@@ -50,18 +50,30 @@ class ConnectionManager:
         self.players.setdefault(game_id, []).append((websocket, player_name))
         return True
 
-    def disconnect(self, game_id: str, websocket: Optional[WebSocket] = None) -> None:
+    def disconnect(
+        self, game_id: str, websocket: Optional[WebSocket] = None
+    ) -> Optional[str]:
         if self.hosts.get(game_id) is websocket:
             del self.hosts[game_id]
             self.host_names.pop(game_id, None)
             del self.locks[game_id]
-        else:
-            lst = self.players.get(game_id, [])
-            self.players[game_id] = [
-                (ws, name) for ws, name in lst if ws is not websocket
-            ]
-            if not self.players[game_id]:
-                del self.players[game_id]
+            return None
+
+        removed_name = None
+        lst = self.players.get(game_id, [])
+        remaining: list[tuple[WebSocket, str]] = []
+        for ws, name in lst:
+            if ws is websocket:
+                removed_name = name
+            else:
+                remaining.append((ws, name))
+
+        if remaining:
+            self.players[game_id] = remaining
+        elif game_id in self.players:
+            del self.players[game_id]
+
+        return removed_name
 
     async def broadcast_state(self, game_id: str, state: dict) -> None:
         host_ws = self.hosts.get(game_id)
