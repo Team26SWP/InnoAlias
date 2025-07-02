@@ -22,7 +22,12 @@ router = APIRouter(prefix="", tags=["game"])
 
 @router.post("/create")
 async def create_game(game: Game):
-    words = game.deck
+    words = list(game.deck)
+    shuffle(words)
+
+    if game.words_amount is not None and 1 < game.words_amount < len(words):
+        words = words[: game.words_amount]
+
     code = await generate_game_code()
 
     teams_data: dict[str, dict[str, Any]] = {}
@@ -54,7 +59,7 @@ async def create_game(game: Game):
         "host_id": game.host_id,
         "number_of_teams": game.number_of_teams,
         "teams": teams_data,
-        "deck": game.deck,
+        "deck": words,
         "words_amount": len(words),
         "time_for_guessing": game.time_for_guessing,
         "tries_per_player": game.tries_per_player,

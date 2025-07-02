@@ -113,4 +113,4 @@ async def test_create_game_and_get_deck(client):
 
     deck_res = await client.get(f"/api/game/deck/{game_id}")
     assert deck_res.status_code == 200
-    assert deck_res.json()["words"] == ["alpha", "beta"]
+    assert set(deck_res.json()["words"]) == {"alpha", "beta"}
