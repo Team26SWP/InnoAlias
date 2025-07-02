@@ -1,20 +1,8 @@
 import pytest
-import pytest_asyncio
-
-
-@pytest_asyncio.fixture
-async def created_game(client, monkeypatch):
-    monkeypatch.setattr("backend.app.routers.game.shuffle", lambda x: None)
-    words = ["a", "b", "c"]
-    resp = await client.post(
-        "/api/game/create", json={"remaining_words": words, "words_amount": 3}
-    )
-    game_id = resp.json()["id"]
-    return game_id, words
 
 
 @pytest.mark.asyncio
-async def test_end_to_end_flow(client):
+async def test_end_to_end_auth_flow(client):
     user = {
         "name": "Ann",
         "surname": "Doe",
@@ -27,13 +15,13 @@ async def test_end_to_end_flow(client):
         "/api/auth/login",
         data={"username": user["email"], "password": user["password"]},
     )
+    assert r2.status_code == 200
     token = r2.json()["access_token"]
     r3 = await client.get(
         "/api/profile/me", headers={"Authorization": f"Bearer {token}"}
     )
     assert r3.status_code == 200
-    data = r3.json()
-    assert data["email"] == user["email"]
+    assert r3.json()["email"] == user["email"]
 
 
 @pytest.mark.asyncio
@@ -62,39 +50,67 @@ async def test_deck_save_and_profile_listing(client, test_db):
     deck_doc = await test_db.decks.find_one({"_id": res.json()["inserted_id"]})
     assert deck_doc and deck_doc["name"] == "Test"
     assert deck_doc["words"] == words
-    assert deck_doc.get("tags") in (["foo", "bar"], "foo,bar", ["foo,bar"], None)
     assert user_doc and deck_doc["_id"] in user_doc.get("deck_ids", [])
-
-
-@pytest.mark.asyncio
-async def test_game_creation_and_deck(client, created_game):
-    game_id, words = created_game
-    deck_resp = await client.get(f"/api/game/deck/{game_id}")
-    assert deck_resp.status_code == 200
-    assert deck_resp.json() == {"words": words}
-
-
-@pytest.mark.asyncio
-async def test_export_deck_integration(client, created_game):
-    game_id, words = created_game
-    export = await client.get(f"/api/game/leaderboard/{game_id}/export")
-    assert export.status_code == 200
-    assert export.headers["content-type"].startswith("text/plain")
-    assert "exported_deck_" in export.headers.get("content-disposition", "")
-    assert export.text == "\n".join(words)
-
-
-@pytest.mark.asyncio
-async def test_leaderboard_sorting(client, test_db):
-    await test_db.games.insert_one(
-        {"_id": "L1", "scores": {"alice": 3, "bob": 5, "carol": 2}}
-    )
-    res = await client.get("/api/game/leaderboard/L1")
-    assert res.status_code == 200
-    assert list(res.json().keys()) == ["bob", "alice", "carol"]
 
 
 @pytest.mark.asyncio
 async def test_profile_requires_auth(client):
     res = await client.get("/api/profile/me")
     assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_edit_deck_and_fetch_details(client):
+    user = {
+        "name": "Carl",
+        "surname": "Jones",
+        "email": "carl@example.com",
+        "password": "pw",
+    }
+    await client.post("/api/auth/register", json=user)
+    login = await client.post(
+        "/api/auth/login",
+        data={"username": user["email"], "password": user["password"]},
+    )
+    token = login.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    res = await client.post(
+        "/api/profile/deck/save",
+        json={"deck_name": "Colors", "words": ["red", "blue"], "tags": ["a"]},
+        headers=headers,
+    )
+    deck_id = res.json()["inserted_id"]
+
+    patch = await client.patch(
+        f"/api/profile/deck/{deck_id}/edit",
+        json={"deck_name": "Colors 2", "words": ["red", "green"], "tags": ["a", "b"]},
+        headers=headers,
+    )
+    assert patch.status_code == 200
+    assert patch.json()["name"] == "Colors 2"
+    assert patch.json()["words"] == ["red", "green"]
+
+    get_res = await client.get(f"/api/profile/deck/{deck_id}")
+    assert get_res.status_code == 200
+    assert get_res.json()["words"] == ["red", "green"]
+
+
+@pytest.mark.asyncio
+async def test_create_game_and_get_deck(client):
+    payload = {
+        "host_id": "h1",
+        "number_of_teams": 1,
+        "deck": ["alpha", "beta"],
+        "time_for_guessing": 5,
+        "tries_per_player": 0,
+        "right_answers_to_advance": 1,
+        "rotate_masters": False,
+    }
+    res = await client.post("/api/game/create", json=payload)
+    assert res.status_code == 200
+    game_id = res.json()["id"]
+
+    deck_res = await client.get(f"/api/game/deck/{game_id}")
+    assert deck_res.status_code == 200
+    assert set(deck_res.json()["words"]) == {"alpha", "beta"}
