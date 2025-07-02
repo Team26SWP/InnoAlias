@@ -57,6 +57,7 @@ Creates a new game session.
 - `host_id`: string - The ID of the user hosting the game.
 - `number_of_teams`: integer - The number of teams in the game (e.g., `1` for a free-for-all, `2` or more for team play).
 - `deck`: array of strings - The list of words to be used in the game.
+- `words_amount`: integer *(optional)* - Limit the number of words taken from the deck.
 - `time_for_guessing`: integer (seconds) - The time limit for guessing each word.
 - `tries_per_player`: integer - The number of guess attempts per player for each word (0 for unlimited).
 - `right_answers_to_advance`: integer - The number of correct guesses required to advance to the next word.

@@ -14,7 +14,7 @@ This folder contains a FastAPI backend for a game.
    ```
 3. Modify .env:
    ```bash
-   nano .env # specify SECRET_KEY, ALGORITHM and ACCESS_MINUTES_EXPIRE_MINUTES
+   nano .env # specify SECRET_KEY, ALGORITHM and ACCESS_TOKEN_EXPIRE_MINUTES
    ```
    The backend uses MongoDB. Set `MONGO_URI` to point at your database instance
    (default is `mongodb://localhost:27017/`).
