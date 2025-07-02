@@ -18,8 +18,16 @@ This folder contains a FastAPI backend for a game.
    ```
 4. Run the server **from the repository root:**
    ```bash
-   python -m uvicorn backend.app.main:app --reload
+    python -m uvicorn backend.app.main:app --reload
    ```
+
+## Running Tests
+
+Install test dependencies and run:
+
+```bash
+PYTHONPATH=. pytest
+```
 
 
 ## Structure
