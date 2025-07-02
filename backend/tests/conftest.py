@@ -4,7 +4,7 @@ from httpx import AsyncClient, ASGITransport
 from fastapi.testclient import TestClient
 import mongomock_motor
 
-import backend.app.tests._test_setup  # noqa: F401
+import backend.tests._test_setup  # noqa: F401
 from backend.app.main import app as fastapi_app
 import backend.app.services.auth_service as auth_service
 import backend.app.routers.profile as profile_router
