@@ -28,7 +28,7 @@ This folder contains a FastAPI backend for a game.
 Install test dependencies and run:
 
 ```bash
-PYTHONPATH=. pytest
+pytest -q
 ```
 
 Additional API documentation can be found under `backend/docs/README.md`.
