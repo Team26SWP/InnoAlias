@@ -134,8 +134,11 @@ Retrieves the authenticated user's profile and a list of their saved decks.
 ### POST `/api/profile/deck/save`
 Saves a new word deck to the user's profile.
 
-### PATCH `/api/profile/deck/update/{deck_id}`
+### PATCH `/api/profile/deck/{deck_id}/edit`
 Updates an existing deck.
 
-### DELETE `/api/profile/deck/delete/{deck_id}`
+### GET `/api/profile/deck/{deck_id}`
+Retrieves full details of a saved deck.
+
+### DELETE `/api/profile/deck/{deck_id}/delete`
 Deletes a deck from the user's profile.
