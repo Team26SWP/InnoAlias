@@ -56,6 +56,15 @@ class ConnectionManager:
             self.players[game_id] = remaining_players
         return removed_player
 
+    def switch_player_team(
+        self, game_id: str, player_name: str, new_team_id: str, websocket: WebSocket
+    ):
+        if game_id in self.players:
+            for i, (ws, name, team_id) in enumerate(self.players[game_id]):
+                if ws is websocket and name == player_name:
+                    self.players[game_id][i] = (ws, name, new_team_id)
+                    break
+
     async def broadcast_state(self, game_id: str, game: Dict[str, Any]) -> None:
         if host_ws := self.hosts.get(game_id):
             host_teams_state = {
@@ -163,6 +172,39 @@ async def reassign_master(game_id: str, team_id: str):
     )
 
 
+def determine_winning_team(game: Dict[str, Any]) -> Optional[str]:
+    team_scores = {
+        tid: sum(t.get("scores", {}).values())
+        for tid, t in game.get("teams", {}).items()
+    }
+    if not team_scores:
+        return None
+
+    max_score = -1
+    winning_teams = []
+    for team_id, score in team_scores.items():
+        if score > max_score:
+            max_score = score
+            winning_teams = [team_id]
+        elif score == max_score:
+            winning_teams.append(team_id)
+
+    if len(winning_teams) == 1:
+        return winning_teams[0]
+    else:
+        # Handle ties by checking remaining words, fewest wins
+        min_remaining_words = float("inf")
+        final_winner = None
+        for team_id in winning_teams:
+            remaining_words_count = len(
+                game.get("teams", {}).get(team_id, {}).get("remaining_words", [])
+            )
+            if remaining_words_count < min_remaining_words:
+                min_remaining_words = remaining_words_count
+                final_winner = team_id
+        return final_winner
+
+
 async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, Any]:
     game = cast(Dict[str, Any], await games.find_one({"_id": game_id}))
     team_state = game["teams"][team_id]
@@ -204,11 +246,7 @@ async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, An
     if all(
         t.get("state") == "finished" for t in updated_game.get("teams", {}).values()
     ):
-        team_scores = {
-            tid: sum(t.get("scores", {}).values())
-            for tid, t in updated_game.get("teams", {}).items()
-        }
-        winning_team_id = max(team_scores, key=lambda k: team_scores[k]) if team_scores else None
+        winning_team_id = determine_winning_team(updated_game)
         await games.update_one(
             {"_id": game_id},
             {"$set": {"game_state": "finished", "winning_team": winning_team_id}},

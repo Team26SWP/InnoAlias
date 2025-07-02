@@ -1,7 +1,6 @@
 import os
 import types
 import sys
-from typing import Any
 import mongomock_motor
 
 motor_mock = types.ModuleType("motor")

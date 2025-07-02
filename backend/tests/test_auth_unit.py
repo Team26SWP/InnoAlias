@@ -50,7 +50,6 @@ def test_register_existing_email_fails(sync_client, monkeypatch):
     assert response.json()["detail"] == "Email already registered"
 
 
-# 3 Login with correct credentials returns token
 def test_login_correct_credentials(sync_client, monkeypatch):
     user = UserInDB(id="u1", name="A", surname="B", email="a@b.c", hashed_password="h")
     mock_auth = AsyncMock(return_value=user)
