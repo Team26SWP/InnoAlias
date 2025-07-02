@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import * as config from './config';
 
+type DeckWithWords = config.Deck & { words: string[] };
+
 function Profile() {
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,6 +18,12 @@ function Profile() {
   const [tags, setTags] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchString, setSearchString] = useState<string | null>(null);
+
+  /* для модальных окон */
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [isEditingAll, setIsEditingAll] = useState<boolean>(false);
+  const [draft, setDraft] = useState<DeckWithWords | null>(null);
+  const [newWordText, setNewWordText] = useState<string>('');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -67,22 +75,88 @@ function Profile() {
     setSearchString(event.target.value);
   };
 
-  const selectDeck = async (event: React.MouseEvent) => {
-    if (!(event.target instanceof HTMLButtonElement)) { return; }
-    const deckId = event.target.id;
-    const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await response.json();
-    config.saveCreationState(config.loadCreationState().settings, config.loadCreationState().words
-      .concat(data.words));
-    config.setDeckChoice(false);
-    config.navigateTo(config.Page.Create);
+  const openModal = async (index: number) => {
+    const deckId = decks[index].id;
+    try {
+      const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      setActiveIndex(index);
+      setDraft({ ...decks[index], words: data.words });
+      setIsEditingAll(false);
+      setNewWordText('');
+    } catch (err) {
+      console.error('Failed to load deck words:', err);
+    }
   };
 
+  const closeModal = () => {
+    setActiveIndex(null);
+    setIsEditingAll(false);
+    setNewWordText('');
+  };
+
+  const toggleEditAll = () => {
+    if (activeIndex !== null && !isEditingAll) {
+      setDraft({ ...draft!, words: draft!.words });
+    }
+    setIsEditingAll((prev) => !prev);
+  };
+
+  const deleteDeck = () => {
+    if (activeIndex === null) return;
+    setDecks((prev) => prev.filter((_, idx) => idx !== activeIndex));
+    closeModal();
+  };
+
+  const updateDraftWord = (idx: number, text: string) => {
+    if (!draft) return;
+    const newWords = [...draft.words];
+    newWords[idx] = text;
+    setDraft({ ...draft, words: newWords });
+  };
+
+  const deleteDraftWord = (idx: number) => {
+    if (!draft) return;
+    setDraft({ ...draft, words: draft.words.filter((_, i) => i !== idx) });
+  };
+
+  const addDraftWord = () => {
+    if (!draft || newWordText.trim() === '') return;
+    setDraft({ ...draft, words: [...draft.words, newWordText.trim()] });
+    setNewWordText('');
+  };
+
+  const saveAll = () => {
+    if (activeIndex === null || !draft) return;
+    setDecks((prev) => prev.map((deck, idx) => (idx === activeIndex ? draft : deck)));
+    setIsEditingAll(false);
+  };
+
+  const cancelAll = () => {
+    if (activeIndex !== null && draft) setDraft({ ...draft });
+    setIsEditingAll(false);
+    setNewWordText('');
+  };
+
+  //   const selectDeck = async (event: React.MouseEvent) => {
+  //   if (!(event.target instanceof HTMLButtonElement)) { return; }
+  //   const deckId = event.target.id;
+  //   const response = await fetch(${config.HTTP_URL}/profile/deck/${deckId}, {
+  //     method: 'GET',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //   });
+  //   const data = await response.json();
+  //   config.saveCreationState(config.loadCreationState().settings,
+  //  config.loadCreationState().words
+  //     .concat(data.words));
+  //   config.setDeckChoice(false);
+  //   config.navigateTo(config.Page.Create);
+  // };
   function checkDeck(deck: config.Deck) {
     return ((!selectedTag) || deck.tags.indexOf(selectedTag) !== -1)
       && ((!searchString) || deck.name.includes(searchString));
@@ -107,16 +181,24 @@ function Profile() {
 
   return (
     <div className="min-h-screen bg-[#FAF6E9] px-6 py-10 font-adlam text-[#1E6DB9]">
-      <div hidden={config.getDeckChoice()}>
-        <h1 className="text-4xl font-bold mb-6">Profile</h1>
-        <div className="flex items-center mb-10 gap-6">
-          <div className="w-36 h-36 bg-gray-300 rounded-full" />
-          <div>
-            <h2 className="text-4xl font-bold">{profile.name}</h2>
-            <p className="text-black text-7sm font-semibold">{profile.email}</p>
-          </div>
+      <div className="flex justify-between items-center mb-6 mt-6">
+        <h1 className="text-2xl sm:text-2xl md:text-2xl font-bold ">Profile</h1>
+        <div className="flex gap-8">
+          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline">Home</button>
+          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline">Create game</button>
+          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline">Join game</button>
+        </div>
+        <button type="button" className="px-4 py-2 bg-[#1E6DB9] text-white rounded-md hover:bg-gray-300 transition">Sign out</button>
+      </div>
+
+      <div className="flex items-center mb-10 gap-6">
+        <div className="w-36 h-36 bg-gray-300 rounded-full" />
+        <div>
+          <h2 className="text-4xl font-bold">{profile.name}</h2>
+          <p className="text-black text-7sm font-semibold">{profile.email}</p>
         </div>
       </div>
+
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <input
           onChange={searchInput}
@@ -125,13 +207,13 @@ function Profile() {
           className="w-full md:max-w-md p-3 rounded-full border border-gray-300 shadow-sm placeholder:text-[#1E6DB9] text-[#1E6DB9] font-semibold"
         />
 
-        <div className=" overflow-x-scroll whitespace-nowrap mt-3 md:mt-0">
+        <div className="overflow-x-scroll whitespace-nowrap mt-3 md:mt-0">
           <div className="flex gap-2">
             {tags.map((tag) => (
               <button
                 type="button"
                 key={tag}
-                className="bg-[#e0e0e0] hover:bg-[#d5d5d5] text-[#1E6DB9] px-4 py-1 rounded-md text-sm font-bold transition whitespace-nowrap"
+                className={`px-4 py-1 rounded-md text-sm font-bold transition whitespace-nowrap ${selectedTag === tag ? 'bg-[#1E6DB9] text-white' : 'bg-[#e0e0e0] text-[#1E6DB9] hover:bg-[#d5d5d5]'}`}
                 onClick={selectTag}
               >
                 {tag}
@@ -142,18 +224,90 @@ function Profile() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 md:grid-cols-3 gap-4 mt-8">
-        {decks.filter((deck) => checkDeck(deck)).map((deck) => (
-          <button
-            onClick={selectDeck}
-            type="button"
+        {decks.filter((deck) => checkDeck(deck)).map((deck, idx) => (
+          <div
             key={deck.id}
-            id={deck.id}
-            className="bg-[#d9d9d9] hover:bg-[#c9c9c9] text-[#1E6DB9] font-bold text-sm py-5 px-4 rounded-lg shadow-sm transition"
+            role="button"
+            tabIndex={0}
+            onClick={() => openModal(idx)}
+            onKeyDown={(e) => e.key === 'Enter' && openModal(idx)}
+            className="cursor-pointer bg-[#d9d9d9] hover:bg-[#c9c9c9] text-[#1E6DB9] font-bold text-sm py-5 px-4 rounded-lg shadow-sm transition"
           >
-            {deck.name}
-          </button>
+            <div>{deck.name}</div>
+            <div className="text-xs font-medium">
+              {deck.words_count}
+              {' '}
+              words
+            </div>
+          </div>
         ))}
       </div>
+
+      {activeIndex !== null && draft && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg w-96 max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-7">
+              <h3 className="text-2xl font-bold">
+                {isEditingAll ? (
+                  <input
+                    value={draft.name}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                    className="border p-1 rounded w-48"
+                  />
+                ) : (
+                  draft.name
+                )}
+              </h3>
+              <div className="flex space-x-2">
+                {isEditingAll ? (
+                  <>
+                    <button type="button" onClick={saveAll} className="px-2 py-1 text-[#1E6DB9] rounded text-sm">Save</button>
+                    <button type="button" onClick={cancelAll} className="px-2 py-1 text-gray-500 rounded text-sm">Cancel</button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" onClick={toggleEditAll} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">Edit</button>
+                    <button type="button" onClick={deleteDeck} className="px-2 py-1 text-red-500 rounded text-sm">Delete</button>
+                  </>
+                )}
+                <button type="button" onClick={closeModal} className="px-2 py-1 text-gray-500 hover:text-gray-700 text-sm">✕</button>
+              </div>
+            </div>
+
+            {isEditingAll && (
+              <div className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  placeholder="New word"
+                  value={newWordText}
+                  onChange={(e) => setNewWordText(e.target.value)}
+                  className="flex-1 p-2 border rounded"
+                />
+                <button type="button" onClick={addDraftWord} className="px-4 py-2 bg-[#1E6DB9] text-white rounded hover:bg-[#185a9e] transition">Add</button>
+              </div>
+            )}
+
+            <ul className="space-y-2">
+              {draft.words.map((word, idx) => (
+                <li key={word} className="flex justify-between items-center">
+                  {isEditingAll ? (
+                    <input
+                      value={word}
+                      onChange={(e) => updateDraftWord(idx, e.target.value)}
+                      className="flex-1 p-2 border rounded"
+                    />
+                  ) : (
+                    <span>{word}</span>
+                  )}
+                  {isEditingAll && (
+                    <button type="button" onClick={() => deleteDraftWord(idx)} className="ml-2 text-gray-500 text-xs">Delete</button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

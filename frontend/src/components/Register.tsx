@@ -76,6 +76,13 @@ function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAF6E9] dark:bg-[#1A1A1A] px-4">
+      <button
+        type="button"
+        onClick={() => config.navigateTo(config.Page.Home)}
+        className="absolute top-4 text-xl left-4 text-[#1E6DB9] hover:underline"
+      >
+        ←Back to main
+      </button>
       <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold text-center text-[#1E6DB9] mb-6 font-adlam">
           Create account
@@ -149,10 +156,10 @@ function Register() {
             Create
           </button>
         </form>
-        <p className="mt-4 text-center text-sm text-black font-semibold">
+        <p className="mt-4 text-center text-sm text-black">
           Already have an account?
           {' '}
-          <button type="button" onClick={() => config.navigateTo(config.Page.Login)} className="text-[#1E6DB9] font-semibold hover:underline">
+          <button type="button" onClick={() => config.navigateTo(config.Page.Login)} className="text-[#1E6DB9] hover:underline">
             Sign in
           </button>
         </p>
