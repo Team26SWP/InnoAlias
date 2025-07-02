@@ -126,19 +126,55 @@ Downloads the game's word deck as a `.txt` file.
 
 ## User Profile & Decks
 
-All profile endpoints require Bearer Token authentication.
+All profile endpoints require Bearer Token authentication. Provide it in request header: `Authorization: Bearer <access_token>`
 
 ### GET `/api/profile/me`
-Retrieves the authenticated user's profile and a list of their saved decks.
+Retrieves the authenticated user's profile along with their saved decks.
+
+**Response**
+- `200 OK`: Returns a `ProfileResponse` object containing the user's details
+  and a list of deck previews.
+- `401 Unauthorized`: If the token is missing or invalid.
 
 ### POST `/api/profile/deck/save`
 Saves a new word deck to the user's profile.
 
+**Body** (`application/json`)
+- `deck_name`: string
+- `words`: array of strings
+- `tags`: array of strings *(optional)*
+
+**Response**
+- `200 OK`: Returns the ID of the newly created deck.
+- `404 Not Found`: If the user record cannot be found.
+- `401 Unauthorized`: If authentication fails.
+
 ### PATCH `/api/profile/deck/{deck_id}/edit`
 Updates an existing deck.
+
+**Body** (`application/json`)
+- `deck_name`: string *(optional)*
+- `words`: array of strings *(optional)*
+- `tags`: array of strings *(optional)*
+
+**Response**
+- `200 OK`: Returns the updated `DeckDetail`.
+- `404 Not Found`: If the deck does not exist.
+- `403 Forbidden`: If the deck is not owned by the user.
+- `401 Unauthorized`: If authentication fails.
 
 ### GET `/api/profile/deck/{deck_id}`
 Retrieves full details of a saved deck.
 
+**Response**
+- `200 OK`: Returns a `DeckDetail` object.
+- `404 Not Found`: If the deck does not exist.
+
 ### DELETE `/api/profile/deck/{deck_id}/delete`
 Deletes a deck from the user's profile.
+
+**Response**
+- `200 OK`: Returns `{"status": "deleted"}` when the deck is removed.
+- `404 Not Found`: If the deck does not exist.
+- `403 Forbidden`: If the deck is not owned by the user.
+- `401 Unauthorized`: If authentication fails.
