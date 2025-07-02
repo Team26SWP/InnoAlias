@@ -1,11 +1,10 @@
 from asyncio import Lock
 from datetime import datetime, timedelta, timezone
 from random import choice
-from typing import Optional
+from typing import Optional, Tuple
 
 from fastapi import WebSocket
 from pymongo import ReturnDocument
-
 from backend.app.db import db
 from backend.app.models import GameState, PlayerGameState, TeamStateForHost
 
@@ -13,88 +12,59 @@ games = db.games
 decks = db.decks
 
 
-def required_to_advance(team_state: dict) -> int: # Modified to accept team_state
+def required_to_advance(team_state: dict) -> int:
     names = set(team_state.get("scores", {}).keys())
     names.discard(team_state.get("current_master"))
-    players_count = len(names)
-    return min(team_state.get("right_answers_to_advance", 1), players_count)
+    return min(team_state.get("right_answers_to_advance", 1), len(names))
 
 
 class ConnectionManager:
     def __init__(self) -> None:
         self.hosts: dict[str, WebSocket] = {}
-        self.host_names: dict[str, str] = {}
-        self.players: dict[str, list[tuple[WebSocket, str, str]]] = {} # Store (websocket, player_name, team_id)
+        self.players: dict[str, list[Tuple[WebSocket, str, str]]] = {}
         self.locks: dict[str, Lock] = {}
 
-    async def connect_host(
-        self, websocket: WebSocket, game_id: str, name: Optional[str]
-    ) -> bool:
+    async def connect_host(self, websocket: WebSocket, game_id: str, name: str) -> bool:
         if game_id in self.hosts:
-            await websocket.close(
-                code=1008, reason="Game already active and host is connected"
-            )
+            await websocket.close(code=1008, reason="Host already connected")
             return False
         await websocket.accept()
         self.hosts[game_id] = websocket
-        if name:
-            self.host_names[game_id] = name
         self.locks[game_id] = Lock()
         return True
 
     async def connect_player(
-        self, websocket: WebSocket, game_id: str, player_name: str, team_id: str # Added team_id
-    ) -> bool:
+        self, websocket: WebSocket, game_id: str, player_name: str, team_id: str
+    ) -> None:
         await websocket.accept()
-        self.players.setdefault(game_id, []).append((websocket, player_name, team_id)) # Store team_id
-        return True
+        self.players.setdefault(game_id, []).append((websocket, player_name, team_id))
 
-    def disconnect(
-        self, game_id: str, websocket: Optional[WebSocket] = None
-    ) -> Optional[str]:
+    def disconnect(self, game_id: str, websocket: WebSocket) -> Optional[str]:
         if self.hosts.get(game_id) is websocket:
             del self.hosts[game_id]
-            self.host_names.pop(game_id, None)
-            self.locks.pop(game_id, None) # Remove lock when host disconnects
+            self.locks.pop(game_id, None)
             return None
 
-        removed_name = None
-        lst = self.players.get(game_id, [])
-        remaining: list[tuple[WebSocket, str, str]] = [] # Updated type hint
-        for ws, name, team_id in lst: # Unpack team_id
-            if ws is websocket:
-                removed_name = name
-            else:
-                remaining.append((ws, name, team_id)) # Pack team_id
+        removed_player = None
+        if game_id in self.players:
+            remaining_players = []
+            for conn in self.players[game_id]:
+                if conn[0] is websocket:
+                    removed_player = conn[1]
+                else:
+                    remaining_players.append(conn)
+            self.players[game_id] = remaining_players
+        return removed_player
 
-        if remaining:
-            self.players[game_id] = remaining
-        elif game_id in self.players:
-            del self.players[game_id]
-
-        return removed_name
-
-    async def broadcast_state(self, game_id: str, game: dict) -> None: # Changed state to game
-        host_ws = self.hosts.get(game_id)
-        
-        # Prepare host state
-        host_teams_state = {}
-        for team_id, team_data in game.get("teams", {}).items():
-            host_teams_state[team_id] = TeamStateForHost(
-                id=team_data["id"],
-                name=team_data["name"],
-                remaining_words_count=len(team_data.get("remaining_words", [])),
-                current_word=team_data.get("current_word"),
-                expires_at=team_data.get("expires_at"),
-                current_master=team_data.get("current_master"),
-                state=team_data.get("state"),
-                scores=team_data.get("scores", {}),
-                players=team_data.get("players", []),
-                current_correct=team_data.get("current_correct", 0),
-                right_answers_to_advance=game.get("right_answers_to_advance", 1), # From game level
-            ).model_dump(mode="json")
-
-        if host_ws:
+    async def broadcast_state(self, game_id: str, game: dict) -> None:
+        if host_ws := self.hosts.get(game_id):
+            host_teams_state = {
+                team_id: TeamStateForHost(
+                    **team_data,
+                    remaining_words_count=len(team_data.get("remaining_words", [])),
+                ).model_dump(mode="json")
+                for team_id, team_data in game.get("teams", {}).items()
+            }
             host_state = GameState(
                 game_state=game.get("game_state"),
                 teams=host_teams_state,
@@ -102,26 +72,24 @@ class ConnectionManager:
             ).model_dump(mode="json")
             await host_ws.send_json(host_state)
 
-        # Prepare player states
         all_teams_scores = {
-            team_id: sum(team_data.get("scores", {}).values())
-            for team_id, team_data in game.get("teams", {}).items()
+            t["name"]: sum(t.get("scores", {}).values())
+            for t in game.get("teams", {}).values()
         }
+        for ws, name, p_team_id in self.players.get(game_id, []):
+            if not (team_data := game["teams"].get(p_team_id)):
+                continue
 
-        for ws, player_name, player_team_id in self.players.get(game_id, []): # Unpack team_id
-            team_data = game["teams"].get(player_team_id)
-            if not team_data:
-                continue # Should not happen if player is correctly connected to a team
+            attempts = team_data.get("player_attempts", {}).get(name, 0)
+            tries_left = (
+                (game["tries_per_player"] - attempts)
+                if game.get("tries_per_player", 0) > 0
+                else None
+            )
 
-            tries_per_player = game.get("tries_per_player", 0) # From game level
-            attempts = team_data.get("player_attempts", {}).get(player_name, 0)
-            tries_left = None
-            if tries_per_player:
-                tries_left = max(tries_per_player - attempts, 0)
-
-            pg_state = PlayerGameState(
+            player_state = PlayerGameState(
                 game_state=game.get("game_state"),
-                team_id=player_team_id,
+                team_id=p_team_id,
                 team_name=team_data.get("name"),
                 expires_at=team_data.get("expires_at"),
                 remaining_words_count=len(team_data.get("remaining_words", [])),
@@ -133,107 +101,115 @@ class ConnectionManager:
                 players_in_team=team_data.get("players", []),
                 winning_team=game.get("winning_team"),
             ).model_dump(mode="json")
-
-            await ws.send_json(pg_state)
+            await ws.send_json(player_state)
 
 
 manager = ConnectionManager()
 
 
-async def reassign_master(game_id: str, team_id: str) -> None:
-    """Assign a new game master for a team if possible."""
+async def add_player_to_game(game_id: str, player_name: str, team_id: str):
+    await games.update_one(
+        {"_id": game_id, f"teams.{team_id}.players": {"$ne": player_name}},
+        {"$addToSet": {f"teams.{team_id}.players": player_name}},
+    )
+    await games.update_one(
+        {"_id": game_id, f"teams.{team_id}.scores.{player_name}": {"$exists": False}},
+        {"$set": {f"teams.{team_id}.scores.{player_name}": 0}},
+    )
+    game = await games.find_one({"_id": game_id})
+    if not game.get("rotate_masters") and not game["teams"][team_id].get(
+        "current_master"
+    ):
+        await games.update_one(
+            {"_id": game_id, f"teams.{team_id}.current_master": None},
+            {"$set": {f"teams.{team_id}.current_master": player_name}},
+        )
+    return await games.find_one({"_id": game_id})
+
+
+async def remove_player_from_game(game_id: str, player_name: str, team_id: str):
     game = await games.find_one({"_id": game_id})
     if not game:
-        return
-
-    team_state = game.get("teams", {}).get(team_id)
-    if not team_state:
-        return
-
-    players = team_state.get("players", [])
-    if not players:
-        new_master = None
-    else:
-        new_master = choice(players) if game.get("rotate_masters") else players[0]
+        return None
 
     await games.update_one(
         {"_id": game_id},
-        {"$set": {f"teams.{team_id}.current_master": new_master}},
+        {
+            "$pull": {f"teams.{team_id}.players": player_name},
+            "$unset": {
+                f"teams.{team_id}.scores.{player_name}": "",
+                f"teams.{team_id}.player_attempts.{player_name}": "",
+            },
+        },
+    )
+    if game["teams"][team_id].get("current_master") == player_name:
+        await reassign_master(game_id, team_id)
+    return await games.find_one({"_id": game_id})
+
+
+async def reassign_master(game_id: str, team_id: str):
+    game = await games.find_one({"_id": game_id})
+    if not game or not (team_state := game.get("teams", {}).get(team_id)):
+        return
+
+    players = team_state.get("players", [])
+    new_master = (
+        (choice(players) if game.get("rotate_masters") else players[0])
+        if players
+        else None
+    )
+    await games.update_one(
+        {"_id": game_id}, {"$set": {f"teams.{team_id}.current_master": new_master}}
     )
 
 
-async def process_new_word(game_id: str, team_id: str, sec: int) -> dict: # Modified to accept team_id
+async def process_new_word(game_id: str, team_id: str, sec: int) -> dict:
     game = await games.find_one({"_id": game_id})
-    if not game:
-        return {} # Or raise an error
+    team_state = game["teams"][team_id]
 
-    team_state = game["teams"].get(team_id)
-    if not team_state:
-        return game # Or raise an error
+    new_word = (
+        team_state["remaining_words"].pop(0)
+        if team_state.get("remaining_words")
+        else None
+    )
+    team_state.update(
+        {
+            "current_word": new_word,
+            "expires_at": (
+                datetime.now(timezone.utc) + timedelta(seconds=sec)
+                if new_word
+                else None
+            ),
+            "current_correct": 0,
+            "player_attempts": {},
+            "correct_players": [],
+            "state": "in_progress" if new_word else "finished",
+        }
+    )
 
-    # Pop word from the specific team's remaining_words
-    print(f"DEBUG: Before pop - team_id: {team_id}, remaining_words: {team_state.get('remaining_words')}")
-    if team_state["remaining_words"]:
-        new_word = team_state["remaining_words"].pop(0) # Pop from the beginning
-    else:
-        new_word = None
+    if game.get("rotate_masters") and team_state["players"]:
+        team_state["current_master"] = choice(team_state["players"])
+    elif not team_state.get("current_master") and team_state["players"]:
+        team_state["current_master"] = team_state["players"][0]
 
-    # Update the team's state
-    team_state["current_word"] = new_word
-    print(f"DEBUG: After pop - new_word: {new_word}, remaining_words: {team_state.get('remaining_words')}")
-    print(f"DEBUG: Before DB update - team_id: {team_id}, current_word: {team_state.get('current_word')}")
-    team_state["expires_at"] = datetime.now(timezone.utc) + timedelta(seconds=sec) if new_word else None
-    team_state["current_correct"] = 0
-    team_state["player_attempts"] = {}
-    team_state["correct_players"] = []
-
-    # Game Master Selection for the team
-    if game.get("rotate_masters"): # Multiple game masters mode
-        players_in_team = team_state.get("players", [])
-        if players_in_team:
-            team_state["current_master"] = choice(players_in_team)
-        else:
-            team_state["current_master"] = None
-    else: # Single game master mode for the team
-        # The current_master for the team is set when the first player joins that team.
-        # If it's not set yet, it means no one has joined this team or the first player hasn't been assigned.
-        # We don't change it here if it's already set.
-        if team_state["current_master"] is None and team_state["players"]:
-            team_state["current_master"] = team_state["players"][0] # First player in the team
-
-    if new_word is None:
-        team_state["state"] = "finished"
-        team_state["expires_at"] = None # No word, no expiration
-    else:
-        team_state["state"] = "in_progress" # Set state to in_progress when a new word is processed
-
-    # Update the game document in MongoDB
-    # Use $set to update the specific team within the 'teams' dictionary
     updated_game = await games.find_one_and_update(
         {"_id": game_id},
         {"$set": {f"teams.{team_id}": team_state}},
         return_document=ReturnDocument.AFTER,
     )
 
-    # Check if this update finishes the overall game
-    if updated_game and updated_game.get("game_state") != "finished":
-        if team_state["state"] == "finished":
-            updated_game["game_state"] = "finished"
-            updated_game["winning_team"] = team_id
-            await games.update_one(
-                {"_id": game_id},
-                {"$set": {"game_state": "finished", "winning_team": team_id}}
-            )
-        else:
-            # See if any other team already finished
-            for tid, t_state in updated_game["teams"].items():
-                if t_state["state"] == "finished":
-                    updated_game["game_state"] = "finished"
-                    updated_game["winning_team"] = tid
-                    await games.update_one(
-                        {"_id": game_id},
-                        {"$set": {"game_state": "finished", "winning_team": tid}}
-                    )
-                    break
+    if all(
+        t.get("state") == "finished" for t in updated_game.get("teams", {}).values()
+    ):
+        team_scores = {
+            tid: sum(t.get("scores", {}).values())
+            for tid, t in updated_game.get("teams", {}).items()
+        }
+        winning_team_id = max(team_scores, key=team_scores.get) if team_scores else None
+        await games.update_one(
+            {"_id": game_id},
+            {"$set": {"game_state": "finished", "winning_team": winning_team_id}},
+        )
+        updated_game = await games.find_one({"_id": game_id})
 
     return updated_game
