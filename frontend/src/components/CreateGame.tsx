@@ -20,8 +20,13 @@ export function CreateGame() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = currentWord.trim();
+    for (let i = 0; i < words.length; i += 1) {
+      if (words[i].toLowerCase() === trimmed.toLowerCase()) {
+        return;
+      }
+    }
     if (trimmed) {
-      setWords([...words, trimmed.toLowerCase()]);
+      setWords([...words, trimmed]);
       setCurrentWord('');
     }
   };
@@ -50,6 +55,12 @@ export function CreateGame() {
     if (num < minimum) { return minimum; }
     return num;
   }
+
+  const deleteWord = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!(e.target instanceof HTMLElement)) { return; }
+    const deleted = e.target.textContent;
+    setWords(words.filter((word) => word !== deleted));
+  };
 
   const handleCreateGame = async () => {
     setIsLoading(true);
@@ -132,9 +143,11 @@ export function CreateGame() {
           </h2>
           <div className="grid grid-cols-5 md:grid-cols-7 gap-4">
             {words.map((word) => (
-              <span key={word} className="bg-[#E2E2E2] text-[#1E6DB9] px-4 py-2 rounded-full text-center text-sm font-adlam">
-                {word}
-              </span>
+              <button type="button" key={word} onClick={deleteWord}>
+                <span key={word} className="bg-[#E2E2E2] text-[#1E6DB9] px-4 py-2 rounded-full text-center text-sm font-adlam">
+                  {word}
+                </span>
+              </button>
             ))}
           </div>
         </div>
