@@ -1,12 +1,13 @@
 import os
 import types
 import sys
+from typing import Any
 import mongomock_motor
 
 motor_mock = types.ModuleType("motor")
 motor_asyncio = types.ModuleType("motor.motor_asyncio")
-motor_asyncio.AsyncIOMotorClient = mongomock_motor.AsyncMongoMockClient
-motor_mock.motor_asyncio = motor_asyncio
+setattr(motor_asyncio, "AsyncIOMotorClient", mongomock_motor.AsyncMongoMockClient)
+setattr(motor_mock, "motor_asyncio", motor_asyncio)
 sys.modules.setdefault("motor", motor_mock)
 sys.modules.setdefault("motor.motor_asyncio", motor_asyncio)
 

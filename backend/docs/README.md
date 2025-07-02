@@ -4,6 +4,9 @@ This document provides a comprehensive reference for the InnoAlias backend API, 
 
 All endpoints are prefixed with `/api`.
 
+Most routes return JSON. For authenticated endpoints, include
+`Authorization: Bearer <token>` in the request headers.
+
 ---
 
 ## Core Game Mechanics

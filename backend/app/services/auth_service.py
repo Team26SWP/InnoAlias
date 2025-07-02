@@ -1,10 +1,10 @@
 from datetime import timedelta, datetime, timezone
 from typing import Optional
 from fastapi import HTTPException, Depends, status
-from jose import JWTError, jwt
+from jose import JWTError, jwt  # type: ignore
 
 from fastapi.security import OAuth2PasswordBearer
-from passlib.context import CryptContext
+from passlib.context import CryptContext  # type: ignore
 
 from backend.app.code_gen import generate_user_id
 from backend.app.config import (
