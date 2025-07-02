@@ -1,5 +1,6 @@
 from fastapi import HTTPException, Depends, APIRouter
 from pymongo import DESCENDING
+from typing import Any
 
 from backend.app.code_gen import generate_deck_id
 from backend.app.db import db
@@ -92,7 +93,7 @@ async def edit_deck(
     if current_user.id not in existing.get("owner_ids", []):
         raise HTTPException(403, "Forbidden")
 
-    update_data = {}
+    update_data: dict[str, Any] = {}
     if deck.deck_name is not None:
         update_data["name"] = deck.deck_name
     if deck.words is not None:
@@ -104,6 +105,8 @@ async def edit_deck(
         await db.decks.update_one({"_id": deck_id}, {"$set": update_data})
 
     updated = await db.decks.find_one({"_id": deck_id})
+    if not isinstance(updated, dict):
+        raise HTTPException(404, "Deck not found")
     return DeckDetail(
         id=updated["_id"],
         name=updated["name"],

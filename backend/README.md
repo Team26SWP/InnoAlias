@@ -16,6 +16,8 @@ This folder contains a FastAPI backend for a game.
    ```bash
    nano .env # specify SECRET_KEY, ALGORITHM and ACCESS_MINUTES_EXPIRE_MINUTES
    ```
+   The backend uses MongoDB. Set `MONGO_URI` to point at your database instance
+   (default is `mongodb://localhost:27017/`).
 4. Run the server **from the repository root:**
    ```bash
     python -m uvicorn backend.app.main:app --reload
@@ -28,6 +30,8 @@ Install test dependencies and run:
 ```bash
 PYTHONPATH=. pytest
 ```
+
+Additional API documentation can be found under `backend/docs/README.md`.
 
 
 ## Structure
