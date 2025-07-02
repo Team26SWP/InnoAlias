@@ -95,7 +95,8 @@ function Lobby() {
           <button
             type="button"
             onClick={handleStartGame}
-            className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-full text-lg font-medium hover:opacity-90 transition"
+            className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-full text-lg font-medium hover:opacity-90 transition disabled:bg-gray-400"
+            disabled={players.length === 0}
           >
             Start game
           </button>

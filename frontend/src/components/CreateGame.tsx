@@ -45,6 +45,12 @@ export function CreateGame() {
     config.navigateTo(config.Page.Profile);
   };
 
+  function downToRange(num: number, minimum: number, maximum: number) {
+    if (num > maximum) { return maximum; }
+    if (num < minimum) { return minimum; }
+    return num;
+  }
+
   const handleCreateGame = async () => {
     setIsLoading(true);
     try {
@@ -105,7 +111,7 @@ export function CreateGame() {
 
   return (
     <div className="min-h-screen bg-[#FAF6E9] text-[#1E6DB9] font-adlam flex flex-col items-center dark:bg-[#1A1A1A] pt-10 px-6">
-      <h1 className="text-4xl font-bold mb-10 text-center">Create Word Game</h1>
+      <h1 className="text-4xl font-bold mb-10 text-center">Create A Game</h1>
 
       <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl items-start">
         <div className="flex-1 w-full">
@@ -173,6 +179,10 @@ export function CreateGame() {
                   type="number"
                   placeholder={Math.floor(settings.time / 60).toString()}
                   className="w-14 p-2 rounded-md"
+                  onChange={(e) => {
+                    e.target.value = downToRange(Number.parseInt(e.target.value, 10), 0, 59)
+                      .toString();
+                  }}
                 />
                 <span className="text-sm">min</span>
                 <input
@@ -180,6 +190,10 @@ export function CreateGame() {
                   type="number"
                   placeholder={(settings.time % 60).toString()}
                   className="w-14 p-2 rounded-md"
+                  onChange={(e) => {
+                    e.target.value = downToRange(Number.parseInt(e.target.value, 10), 0, 59)
+                      .toString();
+                  }}
                 />
                 <span className="text-sm">sec</span>
               </div>
@@ -206,8 +220,12 @@ export function CreateGame() {
                   type="number"
                   placeholder={settings.attemptsLimit.toString()}
                   className="w-14 p-2 rounded-md"
+                  onChange={(e) => {
+                    e.target.value = downToRange(Number.parseInt(e.target.value, 10), 1, 100)
+                      .toString();
+                  }}
                 />
-                <span className="text-sm">tries</span>
+                <span className="text-sm">attempts</span>
               </div>
             </div>
 
@@ -219,6 +237,10 @@ export function CreateGame() {
                   type="number"
                   placeholder={settings.answersLimit.toString()}
                   className="w-14 p-2 rounded-md"
+                  onChange={(e) => {
+                    e.target.value = downToRange(Number.parseInt(e.target.value, 10), 1, 100)
+                      .toString();
+                  }}
                 />
                 <span className="text-sm">players</span>
               </div>

@@ -158,6 +158,10 @@ export function setDeckChoice(newChoice: boolean) {
 export function getDeckChoice() {
   return deckChoice;
 }
+export function resetGameCreation() {
+  creationState.settings = new Settings(60, 0, 3, 1, false);
+  creationState.words = [];
+}
 export function saveCreationState(settings: Settings, words: string[]) {
   creationState.settings = settings;
   creationState.words = words;
