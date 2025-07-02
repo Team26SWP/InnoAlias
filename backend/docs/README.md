@@ -1,4 +1,4 @@
-# InnoAlias Backend API Reference
+# API documentation
 
 This document provides a comprehensive reference for the InnoAlias backend API, including REST endpoints and WebSocket channels for real-time gameplay.
 
