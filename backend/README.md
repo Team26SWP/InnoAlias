@@ -40,6 +40,7 @@ Additional API documentation can be found under `backend/docs/README.md`.
 backend/
     requirements.txt  # project dependencies
     Dockerfile        # dockerfile for building the backend container
+    .env.example      # file with environment variables (look at the Usage section)
     app/
         main.py       # FastAPI application
         db.py         # database connection
