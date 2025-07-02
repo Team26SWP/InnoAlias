@@ -1,3 +1,12 @@
+## Usage
+
+## Architecture
+### Static view
+
+### Dynamic view
+
+### Deployment view
+
 ## Development
 ### Kanban board
 
@@ -17,11 +26,4 @@
 
 ### Continuous Deployment
 
-## Architecture
-### Static view
 
-### Dynamic view
-
-### Deployment view
-
-## Usage
