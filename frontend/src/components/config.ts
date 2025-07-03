@@ -10,6 +10,7 @@ export enum Page {
   Register = 'Register',
   EmailConfirm = 'EmailConfirm',
   Profile = 'Profile',
+  Host = 'Host',
 }
 
 export interface Arguments {
@@ -18,15 +19,41 @@ export interface Arguments {
   isHost : boolean;
 }
 
-export interface GameState {
-  current_word: string | null;
+export interface PlayerGameState {
+  game_state: 'in_progress' | 'finished' | 'pending';
   expires_at: string | null;
-  remaining_words_count: number;
-  state: 'in_progress' | 'finished';
-  tries_left: number;
+  current_word: string | null;
   current_master: string;
-  scores: { [name: string]: number };
+  remaining_words_count: number;
+  tries_left: number;
+  team_id: string;
+  team_name: string;
+  team_scores: { [id: string]: number };
+  players_in_team: string[];
+  all_teams_scores: { [id: string]: number };
+  winning_team: string;
 }
+
+export interface TeamGameState {
+  id: string;
+  name: string;
+  remaining_words_count: number;
+  current_word: string;
+  expires_at: string;
+  current_master: string;
+  state: 'pending' | 'in_progress' | 'finished';
+  scores: { [id: string]: number };
+  players: string[];
+  current_correct: number;
+  right_answers_to_advance: number;
+}
+
+export interface HostGameState {
+  game_state: 'pending' | 'in_progress' | 'finished';
+  teams: { [team_id: string]: TeamGameState };
+  winning_team: string;
+}
+
 export interface Deck {
   id: string;
   name: string;
@@ -51,18 +78,22 @@ export class Settings {
 
   rotateMasters: boolean;
 
+  numberOfTeams: number;
+
   constructor(
     time: number,
     deck: number,
     attempts: number,
     answers: number,
     rotateMasters: boolean,
+    numberOfTeams: number,
   ) {
     this.time = time;
     this.deckLimit = deck;
     this.attemptsLimit = attempts;
     this.answersLimit = answers;
     this.rotateMasters = rotateMasters;
+    this.numberOfTeams = numberOfTeams;
   }
 }
 export interface GameCreationState {
@@ -73,12 +104,13 @@ export interface GameCreationState {
 let hostSocket: WebSocket | null = null;
 let playerSocket: WebSocket | null = null;
 
-let initialState: GameState | null = null;
+let initialHostGameState: HostGameState | null = null;
+let initialPlayerGameState: PlayerGameState | null = null;
 let rotation = false;
 let deckChoice = false;
 
 const creationState: GameCreationState = {
-  settings: new Settings(60, 0, 3, 1, false),
+  settings: new Settings(60, 0, 3, 1, false, 1),
   words: [],
 };
 
@@ -86,16 +118,16 @@ const HOST = window.location.hostname;
 export const WS_URL = `ws://${HOST}/api`;
 export const HTTP_URL = `http://${HOST}/api`;
 
-export function connectSocketHost(hostName: string, gameCode: string) {
+export function connectSocketHost(hostId: string, gameCode: string) {
   if (!hostSocket) {
-    hostSocket = new WebSocket(`${WS_URL}/game/${gameCode}?name=${hostName}`);
+    hostSocket = new WebSocket(`${WS_URL}/game/${gameCode}?id=${hostId}`);
   }
   return hostSocket;
 }
 
 export function connectSocketPlayer(playerName: string, gameCode: string) {
   if (!playerSocket) {
-    playerSocket = new WebSocket(`${WS_URL}/game/player/${gameCode}?name=${playerName}`);
+    playerSocket = new WebSocket(`${WS_URL}/game/player/${gameCode}?name=${playerName}&team_id=team_1`);
   }
   return playerSocket;
 }
@@ -109,7 +141,8 @@ export function closeConnection() {
     playerSocket.close();
     playerSocket = null;
   }
-  initialState = null;
+  initialHostGameState = null;
+  initialPlayerGameState = null;
 }
 
 let args : Arguments;
@@ -140,11 +173,17 @@ export function navigateTo(page: Page, newArgs: Arguments = { name: '', code: ''
   setCurrentPage(page);
   args = newArgs;
 }
-export function setInitialState(init: GameState) {
-  initialState = init;
+export function setInitialHostState(init: HostGameState) {
+  initialHostGameState = init;
 }
-export function getInitialState() {
-  return initialState;
+export function setInitialPlayerState(init: PlayerGameState) {
+  initialPlayerGameState = init;
+}
+export function getInitialPlayerState() {
+  return initialPlayerGameState;
+}
+export function getInitialHostState() {
+  return initialHostGameState;
 }
 export function setRotation(newRotation: boolean) {
   rotation = newRotation;
@@ -159,7 +198,7 @@ export function getDeckChoice() {
   return deckChoice;
 }
 export function resetGameCreation() {
-  creationState.settings = new Settings(60, 0, 3, 1, false);
+  creationState.settings = new Settings(60, 0, 3, 1, false, 1);
   creationState.words = [];
 }
 export function saveCreationState(settings: Settings, words: string[]) {

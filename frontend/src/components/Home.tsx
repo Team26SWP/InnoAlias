@@ -73,7 +73,7 @@ export function Home() {
           onClick={handleJoinGame}
           className="bg-[#FAF6E9] dark:bg-[#1A1A1A] border border-[#1E6DB9] font-adlam text-[#1E6DB9] px-6 py-3 rounded-lg text-lg font-medium"
         >
-          Join the game
+          Join game
         </button>
       </div>
     </div>

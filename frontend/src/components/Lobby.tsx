@@ -1,15 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as config from './config';
 
-interface Player {
-  name: string;
-  score: number;
-}
-
 function Lobby() {
   const args = useRef<config.Arguments>({ name: '', code: '', isHost: false });
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<string[]>([]);
   const [socket, setSocket] = useState<WebSocket>();
+  const [teams, setTeams] = useState<string[]>([]);
   const { name, code, isHost } = args.current;
   const gameUrl = `http://${window.location.host}?code=${code}`;
 
@@ -26,25 +22,37 @@ function Lobby() {
     setSocket(ws);
     ws.onopen = () => {};
     ws.onmessage = (message) => {
-      const data = JSON.parse(message.data);
-      const sup = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
-      if (data.scores) {
-        setPlayers(sup);
-      }
-      if (data.state === 'in_progress') {
-        config.setInitialState(data);
-        config.navigateTo(config.Page.Quiz, args.current);
+      if (isHost) {
+        const data: config.HostGameState = JSON.parse(message.data);
+        let sup: string[] = [];
+        Object.keys(data.teams)
+          .forEach((teamId) => { sup = sup.concat(data.teams[teamId].players); });
+        if (sup) {
+          setPlayers(sup);
+        }
+        setTeams(Object.keys(data.teams));
+        if (data.game_state === 'in_progress') {
+          config.setInitialHostState(data);
+          config.navigateTo(config.Page.Host, args.current);
+        }
+      } else {
+        const data: config.PlayerGameState = JSON.parse(message.data);
+        setPlayers(Object.keys(data.team_scores));
+        setTeams(Object.keys(data.all_teams_scores));
+        if (data.game_state === 'in_progress') {
+          config.setInitialPlayerState(data);
+          config.navigateTo(config.Page.Quiz, args.current);
+        }
       }
     };
   }, [code, name, isHost]);
 
+  const changeTeam = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    socket?.send(JSON.stringify({ action: 'switch_team', new_team_id: `team_${e.target.value}` }));
+  };
+
   const handleStartGame = () => {
-    socket?.send(JSON.stringify({ action: 'start' }));
-    if (config.getRotation()) {
-      config.connectSocketPlayer(name, code);
-      args.current.isHost = false;
-    }
-    config.navigateTo(config.Page.Quiz, args.current);
+    socket?.send(JSON.stringify({ action: 'start_game' }));
   };
 
   return (
@@ -54,8 +62,8 @@ function Lobby() {
           <h2 className="text-xl font-bold text-[#1E6DB9] mb-4">Players:</h2>
           <div className="h-64 bg-[#E2E2E2] rounded-xl p-4 overflow-auto">
             {players.map((p) => (
-              <div key={p.name} className="mb-2 text-[#1E6DB9]">
-                {p.name}
+              <div key={p} className="mb-2 text-[#1E6DB9]">
+                {p}
               </div>
             ))}
           </div>
@@ -90,7 +98,7 @@ function Lobby() {
         </div>
       </div>
 
-      {isHost && (
+      {isHost ? (
         <div className="mt-12 text-center">
           <button
             type="button"
@@ -100,6 +108,19 @@ function Lobby() {
           >
             Start game
           </button>
+        </div>
+      ) : (
+        <div className="mt-12 text-center">
+          <select
+            id="team-select"
+            className="px-8 py-3 rounded-md text-lg font-medium hover:opacity-90 transition disabled:bg-gray-400"
+            onChange={changeTeam}
+            defaultValue="1"
+          >
+            {teams.map((team, index) => (
+              <option value={(index + 1).toString()} key={team}>{team}</option>
+            ))}
+          </select>
         </div>
       )}
     </div>

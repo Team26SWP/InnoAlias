@@ -6,14 +6,14 @@ export function CreateGame() {
   const [currentWord, setCurrentWord] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [hostName, setHostName] = useState<string>('');
+  const [hostId, setHostId] = useState<string>('');
   const [settings] = useState<config.Settings>(config.loadCreationState().settings);
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     const profile = config.getProfile();
     if (profile) {
-      setHostName(profile.name);
+      setHostId(profile.id);
     }
   }, []);
 
@@ -69,13 +69,15 @@ export function CreateGame() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          remaining_words: words,
+          host_id: hostId,
+          deck: words,
           words_amount: (settings.deckLimit === 0) ? words.length
             : settings.deckLimit,
           time_for_guessing: settings.time,
           tries_per_player: settings.attemptsLimit,
           right_answers_to_advance: settings.answersLimit,
           rotate_masters: settings.rotateMasters,
+          number_of_teams: settings.numberOfTeams,
         }),
       });
 
@@ -83,12 +85,12 @@ export function CreateGame() {
       const data = await response.json();
       const gameCode = data.id;
 
-      const socket = config.connectSocketHost(hostName, gameCode);
+      const socket = config.connectSocketHost(hostId, gameCode);
       socketRef.current = socket;
 
       socket.onopen = () => {
         config.setRotation(settings.rotateMasters);
-        config.navigateTo(config.Page.Lobby, { name: hostName, code: gameCode, isHost: true });
+        config.navigateTo(config.Page.Lobby, { name: hostId, code: gameCode, isHost: true });
       };
 
       socket.onerror = () => {
@@ -105,16 +107,19 @@ export function CreateGame() {
     const deckLimit = document.getElementById('deck-length');
     const attemptLimit = document.getElementById('attempts');
     const answerLimit = document.getElementById('answers');
+    const numberTeams = document.getElementById('teams');
     const rotation = document.getElementById('different-master');
     if (minutes instanceof HTMLInputElement && seconds instanceof HTMLInputElement
       && deckLimit instanceof HTMLInputElement && attemptLimit instanceof HTMLInputElement
-      && answerLimit instanceof HTMLInputElement && rotation instanceof HTMLInputElement) {
+      && answerLimit instanceof HTMLInputElement && rotation instanceof HTMLInputElement
+      && numberTeams instanceof HTMLInputElement) {
       settings.time = parseInt((minutes.value !== '') ? minutes.value : minutes.placeholder, 10) * 60
         + parseInt((seconds.value !== '') ? seconds.value : seconds.placeholder, 10);
       if (settings.time === 0) settings.time = 1;
       settings.deckLimit = parseInt((deckLimit.value !== '') ? deckLimit.value : deckLimit.placeholder, 10);
       settings.attemptsLimit = parseInt((attemptLimit.value !== '') ? attemptLimit.value : attemptLimit.placeholder, 10);
       settings.answersLimit = parseInt((answerLimit.value !== '') ? answerLimit.value : answerLimit.placeholder, 10);
+      settings.numberOfTeams = parseInt((numberTeams.value !== '') ? numberTeams.value : numberTeams.placeholder, 10);
       settings.rotateMasters = rotation.checked;
     }
     setShowSettings(false);
@@ -122,6 +127,13 @@ export function CreateGame() {
 
   return (
     <div className="min-h-screen bg-[#FAF6E9] text-[#1E6DB9] font-adlam flex flex-col items-center dark:bg-[#1A1A1A] pt-10 px-6">
+      <button
+        type="button"
+        onClick={() => config.navigateTo(config.Page.Home)}
+        className="absolute top-4 text-xl left-4 text-[#1E6DB9] hover:underline"
+      >
+        ←Back to main
+      </button>
       <h1 className="text-4xl font-bold mb-10 text-center">Create A Game</h1>
 
       <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl items-start">
@@ -158,7 +170,7 @@ export function CreateGame() {
             Import via txt
             <input type="file" className="hidden" onChange={fileSubmit} id="file-submit" accept=".txt" />
           </label>
-          <button type="button" onClick={loadDeck} className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-md font-adlam">Saved Desks</button>
+          <button type="button" onClick={loadDeck} className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-md font-adlam">Saved Decks</button>
           <button type="button" onClick={() => setShowSettings(true)} className="bg-[#DBD9D1] text-[#1E6DB9] px-4 py-3 rounded-md font-adlam">Settings</button>
         </div>
       </div>
@@ -166,7 +178,7 @@ export function CreateGame() {
       <button
         type="button"
         onClick={handleCreateGame}
-        disabled={words.length === 0 || !hostName || isLoading}
+        disabled={words.length === 0 || isLoading}
         className="mt-12 px-10 py-4 bg-[#1E6DB9] text-[#FAF6E9] rounded-lg font-adlam text-lg disabled:bg-gray-400"
       >
         {isLoading ? 'Creating Game...' : 'Create Game'}
@@ -256,6 +268,23 @@ export function CreateGame() {
                   }}
                 />
                 <span className="text-sm">players</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-bold w-36">Number of teams:</span>
+              <div className="flex items-center gap-2">
+                <input
+                  id="teams"
+                  type="number"
+                  placeholder={settings.numberOfTeams.toString()}
+                  className="w-14 p-2 rounded-md"
+                  onChange={(e) => {
+                    e.target.value = downToRange(Number.parseInt(e.target.value, 10), 1, 100)
+                      .toString();
+                  }}
+                />
+                <span className="text-sm">teams</span>
               </div>
             </div>
 

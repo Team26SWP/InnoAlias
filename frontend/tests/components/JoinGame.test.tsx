@@ -6,7 +6,7 @@ describe('JoinGame', () => {
   it('should render correctly', () => {
     render(<JoinGamePage />);
     expect(screen.getByRole('textbox')).toBeInTheDocument();
-    expect(screen.getByRole('button')).toBeInTheDocument();
+    expect(screen.getByText('Connect')).toBeInTheDocument();
   });
   it('should not allow code longer than 6 symbols', async () => {
     render(<JoinGamePage />);
