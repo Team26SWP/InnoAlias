@@ -3,13 +3,13 @@ import * as config from './config';
 
 const { HTTP_URL } = config;
 
-interface Player {
-  name: string;
-  score: number;
+interface TeamScore {
+  players: { [name: string]: number },
+  total_score: number;
 }
 
 export function Leaderboard() {
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [teams, setTeams] = useState<{ [teamName: string]: TeamScore }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,15 +28,9 @@ export function Leaderboard() {
           }
           throw new Error('Failed to fetch leaderboard');
         }
-        const scores = await response.json();
-        const formattedPlayers: Player[] = Object.keys(scores).map((key) => ({
-          name: key,
-          score: scores[key],
-        }));
 
-        formattedPlayers.sort((a, b) => b.score - a.score);
-
-        setPlayers(formattedPlayers);
+        const ts: { [teamName: string]: TeamScore } = await response.json();
+        setTeams(ts);
       } catch (err) {
         setError('An error occurred while fetching the leaderboard.');
       } finally {
@@ -73,7 +67,9 @@ export function Leaderboard() {
     });
   };
 
-  const exportDeck = async () => { // Stolen from stack overflow
+  const exportDeck = async () => {
+    const name = prompt('Input the name of the file');
+    if (!name) { return; }
     const response = await fetch(`${HTTP_URL}/game/leaderboard/${config.getArgs().code}/export`, {
       method: 'GET',
       headers: {
@@ -87,7 +83,7 @@ export function Leaderboard() {
     link.href = downloadUrl;
     link.setAttribute(
       'download',
-      'deck.txt',
+      `${name}.txt`,
     );
     document.body.appendChild(link);
     link.click();
@@ -116,17 +112,32 @@ export function Leaderboard() {
       <h1 className="text-3xl font-bold text-[#3171a6] mb-6">Leaderboard</h1>
 
       <div className="bg-[#d9d9d9] rounded-xl w-full max-w-3xl p-4 max-h-[400px] overflow-y-auto flex flex-col gap-2 mb-8">
-        {players.map((player, index) => (
-          <div
-            key={player.name}
-            className="bg-[#bfbfbf] rounded-lg px-4 py-2 flex justify-between items-center text-[#3171a6] font-bold text-lg"
-          >
-            <span>
-              {index + 1}
-              .
-            </span>
-            <span>{player.name}</span>
-            <span>{player.score}</span>
+        {Object.keys(teams).map((team, index) => (
+          <div key={team}>
+            <div
+              key={team}
+              className="bg-[#bfbfbf] rounded-lg px-4 py-2 flex justify-between items-center text-[#3171a6] font-bold text-lg"
+            >
+              <span>
+                {index + 1}
+              </span>
+              <span>{team}</span>
+              <span>{teams[team].total_score}</span>
+            </div>
+            {Object.keys(teams[team].players).map((player, indexP) => (
+              <div
+                key={player}
+                className="bg-[#bfbfbf] rounded-lg px-4 py-2 ml-10 mt-2 flex justify-between items-center text-[#3171a6] font-bold text-lg"
+              >
+                <span>
+                  {index + 1}
+                  .
+                  {indexP + 1}
+                </span>
+                <span>{player}</span>
+                <span>{teams[team].players[player]}</span>
+              </div>
+            ))}
           </div>
         ))}
       </div>

@@ -9,6 +9,7 @@ import LoginPage from './components/Login';
 import RegisterPage from './components/Register';
 import ProfilePage from './components/Profile';
 import EmailConfirmPage from './components/EmailConfirm';
+import Host from './components/Host';
 import * as config from './components/config';
 
 function App() {
@@ -40,6 +41,8 @@ function App() {
         return <ProfilePage />;
       case config.Page.EmailConfirm:
         return <EmailConfirmPage />;
+      case config.Page.Host:
+        return <Host />;
       default:
         return <HomePage />;
     }

@@ -72,6 +72,13 @@ export function JoinGame() {
 
   return (
     <div className="min-h-screen bg-[#FAF6E9] dark:bg-[#1A1A1A] flex flex-col items-center justify-center px-6 py-12">
+      <button
+        type="button"
+        onClick={() => config.navigateTo(config.Page.Home)}
+        className="absolute top-4 text-xl left-4 text-[#1E6DB9] hover:underline"
+      >
+        ←Back to main
+      </button>
       <h1 className="text-5xl font-bold text-[#1E6DB9] mb-10">Join Game</h1>
       <form onSubmit={handleJoinGame} className="w-full max-w-lg flex flex-col items-center gap-6">
         <div className="w-full">

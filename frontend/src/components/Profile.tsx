@@ -77,19 +77,16 @@ function Profile() {
 
   const openModal = async (index: number) => {
     const deckId = decks[index].id;
-    try {
-      const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await response.json();
-      setActiveIndex(index);
-      setDraft({ ...decks[index], words: data.words });
-      setIsEditingAll(false);
-      setNewWordText('');
-    } catch (err) {
-      console.error('Failed to load deck words:', err);
-    }
+
+    const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await response.json();
+    setActiveIndex(index);
+    setDraft({ ...decks[index], words: data.words });
+    setIsEditingAll(false);
+    setNewWordText('');
   };
 
   const closeModal = () => {
@@ -162,6 +159,16 @@ function Profile() {
       && ((!searchString) || deck.name.includes(searchString));
   }
 
+  function toMain() {
+    config.navigateTo(config.Page.Home);
+  }
+
+  function logOut() {
+    localStorage.removeItem('access_token');
+    config.setProfile(null);
+    toMain();
+  }
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -184,11 +191,11 @@ function Profile() {
       <div className="flex justify-between items-center mb-6 mt-6">
         <h1 className="text-2xl sm:text-2xl md:text-2xl font-bold ">Profile</h1>
         <div className="flex gap-8">
-          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline">Home</button>
+          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={toMain}>Home</button>
           <button type="button" className="text-base sm:text-lg md:text-xl hover:underline">Create game</button>
           <button type="button" className="text-base sm:text-lg md:text-xl hover:underline">Join game</button>
         </div>
-        <button type="button" className="px-4 py-2 bg-[#1E6DB9] text-white rounded-md hover:bg-gray-300 transition">Sign out</button>
+        <button type="button" onClick={logOut} className="px-4 py-2 bg-[#1E6DB9] text-white rounded-md hover:bg-gray-300 transition">Sign out</button>
       </div>
 
       <div className="flex items-center mb-10 gap-6">
@@ -203,7 +210,7 @@ function Profile() {
         <input
           onChange={searchInput}
           type="text"
-          placeholder="Search desks or tags"
+          placeholder="Search decks"
           className="w-full md:max-w-md p-3 rounded-full border border-gray-300 shadow-sm placeholder:text-[#1E6DB9] text-[#1E6DB9] font-semibold"
         />
 

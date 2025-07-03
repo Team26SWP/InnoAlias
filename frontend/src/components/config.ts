@@ -10,6 +10,7 @@ export enum Page {
   Register = 'Register',
   EmailConfirm = 'EmailConfirm',
   Profile = 'Profile',
+  Host = 'Host',
 }
 
 export interface Arguments {
@@ -103,7 +104,8 @@ export interface GameCreationState {
 let hostSocket: WebSocket | null = null;
 let playerSocket: WebSocket | null = null;
 
-let initialGameState: HostGameState | PlayerGameState | null = null;
+let initialHostGameState: HostGameState | null = null;
+let initialPlayerGameState: PlayerGameState | null = null;
 let rotation = false;
 let deckChoice = false;
 
@@ -112,7 +114,7 @@ const creationState: GameCreationState = {
   words: [],
 };
 
-const HOST = 'localhost:8000';
+const HOST = window.location.hostname;
 export const WS_URL = `ws://${HOST}/api`;
 export const HTTP_URL = `http://${HOST}/api`;
 
@@ -139,7 +141,8 @@ export function closeConnection() {
     playerSocket.close();
     playerSocket = null;
   }
-  initialGameState = null;
+  initialHostGameState = null;
+  initialPlayerGameState = null;
 }
 
 let args : Arguments;
@@ -170,11 +173,17 @@ export function navigateTo(page: Page, newArgs: Arguments = { name: '', code: ''
   setCurrentPage(page);
   args = newArgs;
 }
-export function setInitialState(init: HostGameState | PlayerGameState) {
-  initialGameState = init;
+export function setInitialHostState(init: HostGameState) {
+  initialHostGameState = init;
 }
-export function getInitialState() {
-  return initialGameState;
+export function setInitialPlayerState(init: PlayerGameState) {
+  initialPlayerGameState = init;
+}
+export function getInitialPlayerState() {
+  return initialPlayerGameState;
+}
+export function getInitialHostState() {
+  return initialHostGameState;
 }
 export function setRotation(newRotation: boolean) {
   rotation = newRotation;
