@@ -2,12 +2,14 @@ import React, {
   useState, useEffect, useCallback, useRef,
 } from 'react';
 import * as config from './config';
+import type { PlayerGameState, HostGameState } from './config';
 
 function Quiz() {
   const args = useRef<config.Arguments>({ name: '', code: '', isHost: false });
 
   // Game states. Aside from WS, do not carry any function except from being displayed on the page
-  const [gameState, setGameState] = useState<config.GameState | null>(null);
+  const [gameState, setGameState] = useState<config.PlayerGameState
+  | config.HostGameState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [wrong, setWrong] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -54,33 +56,30 @@ function Quiz() {
 
     // Stuff kinda self-explanatory
     websocket.onmessage = (event) => {
-      const data: config.GameState = JSON.parse(event.data);
-      setGameState(data);
-
-      if (data.expires_at && data.expires_at !== expiresAt.current) {
-        expiresAt.current = data.expires_at;
-      }
-
       if (!isHost) {
-        if (score.current === undefined) { // First message
-          score.current = data.scores[name] ?? 0;
-          setCorrectCount(score.current);
-        } else if (name && score.current !== data.scores[name]) { // Correct guess
+        const data: config.PlayerGameState = JSON.parse(event.data);
+        setGameState(data);
+
+        if (data.expires_at && data.expires_at !== expiresAt.current) {
+          expiresAt.current = data.expires_at;
+        }
+
+        if (name && score.current !== data.team_scores[name]) { // Correct guess
           setWrong('Right!');
-          score.current = data.scores[name];
+          score.current = data.team_scores[name];
           setEnteredWords([]);
           setCorrectCount(score.current);
-        } else if (name && score.current === data.scores[name]
+        } else if (name && score.current === data.team_scores[name]
           && triesLeft.current !== data.tries_left) { // Wrong guess
           setWrong('Wrong!');
         }
 
         triesLeft.current = data.tries_left;
         setAttemptsLeft(triesLeft.current);
-      }
 
-      if (data.state === 'finished') {
-        config.navigateTo(config.Page.Leaderboard, args.current);
+        if (data.game_state === 'finished') {
+          config.navigateTo(config.Page.Leaderboard, args.current);
+        }
       }
     };
 
@@ -106,13 +105,17 @@ function Quiz() {
 
     const initialState = config.getInitialState();
     setGameState(initialState);
-    if (!initialState || !initialState.expires_at
-      || !initialState.tries_left || !initialState.scores) { return; }
-    expiresAt.current = initialState?.expires_at;
-    triesLeft.current = initialState?.tries_left;
-    score.current = initialState?.scores[args.current.name];
-    setAttemptsLeft(triesLeft.current);
-    setCorrectCount(score.current);
+
+    if (!isHost && initialState instanceof ) {
+      if (config.getInitialState() config.
+      if (!initialState || !initialState.expires_at
+        || !initialState.tries_left || !initialState.scores) { return; }
+      expiresAt.current = initialState?.expires_at;
+      triesLeft.current = initialState?.tries_left;
+      score.current = initialState?.scores[args.current.name];
+      setAttemptsLeft(triesLeft.current);
+      setCorrectCount(score.current);
+    }
   }, []);
 
   useEffect(() => {
@@ -164,6 +167,10 @@ function Quiz() {
 
   if (!gameState) {
     return <div className="quiz-container">Loading...</div>;
+  }
+
+  if (args.current.isHost) {
+    return <>I Am Host!</>;
   }
 
   if (args.current.name === gameState.current_master) { // Quiz-card for the game master

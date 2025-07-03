@@ -1,14 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as config from './config';
 
-interface Player {
-  name: string;
-  score: number;
-}
-
 function Lobby() {
   const args = useRef<config.Arguments>({ name: '', code: '', isHost: false });
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<string[]>([]);
   const [socket, setSocket] = useState<WebSocket>();
   const { name, code, isHost } = args.current;
   const gameUrl = `http://${window.location.host}?code=${code}`;
@@ -27,11 +22,17 @@ function Lobby() {
     ws.onopen = () => {};
     ws.onmessage = (message) => {
       const data = JSON.parse(message.data);
-      const sup = Object.keys(data.scores).map((key) => ({ name: key, score: data.scores[key] }));
-      if (data.scores) {
-        setPlayers(sup);
+      if (isHost) {
+        let sup: string[] = [];
+        Object.keys(data.teams)
+          .forEach((teamId) => { sup = sup.concat(data.teams[teamId].players); });
+        if (sup) {
+          setPlayers(sup);
+        }
+      } else {
+        setPlayers(Object.keys(data.team_scores));
       }
-      if (data.state === 'in_progress') {
+      if (data.game_state === 'in_progress') {
         config.setInitialState(data);
         config.navigateTo(config.Page.Quiz, args.current);
       }
@@ -39,11 +40,7 @@ function Lobby() {
   }, [code, name, isHost]);
 
   const handleStartGame = () => {
-    socket?.send(JSON.stringify({ action: 'start' }));
-    if (config.getRotation()) {
-      config.connectSocketPlayer(name, code);
-      args.current.isHost = false;
-    }
+    socket?.send(JSON.stringify({ action: 'start_game' }));
     config.navigateTo(config.Page.Quiz, args.current);
   };
 
@@ -54,8 +51,8 @@ function Lobby() {
           <h2 className="text-xl font-bold text-[#1E6DB9] mb-4">Players:</h2>
           <div className="h-64 bg-[#E2E2E2] rounded-xl p-4 overflow-auto">
             {players.map((p) => (
-              <div key={p.name} className="mb-2 text-[#1E6DB9]">
-                {p.name}
+              <div key={p} className="mb-2 text-[#1E6DB9]">
+                {p}
               </div>
             ))}
           </div>
