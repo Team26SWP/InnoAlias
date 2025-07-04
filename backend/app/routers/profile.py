@@ -101,6 +101,8 @@ async def edit_deck(
         update_data["words"] = deck.words
     if deck.tags is not None:
         update_data["tags"] = deck.tags
+    if deck.private is not None:
+        update_data["private"] = deck.private
 
     if update_data:
         await db.decks.update_one({"_id": deck_id}, {"$set": update_data})
@@ -114,6 +116,7 @@ async def edit_deck(
         words_count=len(updated.get("words", [])),
         tags=updated.get("tags"),
         words=updated.get("words", []),
+        private=updated.get("private", False),
     )
 
 
