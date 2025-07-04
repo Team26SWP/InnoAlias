@@ -14,11 +14,11 @@ async def get_gallery(number: int):
     cursor = await decks.find({"private": False}).skip(number * 50 - 50).limit(50).sort("name", DESCENDING).to_list()
     return {
         "gallery": cursor,
-        "total_decks": cursor.count(),
+        "total_decks": decks.find({"private": False}).count(),
     }
 
 
-@router.get("/decks/save{deck_id}")
+@router.put("/decks/save/{deck_id}")
 async def save_deck_from_gallery (
     deck: Deck,
     current_user: UserInDB = Depends(get_current_user),
