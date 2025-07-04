@@ -74,6 +74,7 @@ class Deck(BaseModel):
     words: List[str] = Field(default_factory=list)
     owner_ids: List[str] = Field(default_factory=list)
     tags: Optional[List[str]] = None
+    private: Optional[bool] = False
 
 
 class DeckPreview(BaseModel):
@@ -81,6 +82,7 @@ class DeckPreview(BaseModel):
     name: str
     words_count: int
     tags: Optional[List[str]] = None
+    private: Optional[bool] = False
 
 
 class DeckDetail(DeckPreview):
@@ -91,12 +93,14 @@ class DeckIn(BaseModel):
     deck_name: str
     words: List[str]
     tags: Optional[List[str]] = None
+    private: Optional[bool] = False
 
 
 class DeckUpdate(BaseModel):
     deck_name: Optional[str] = None
     words: Optional[List[str]] = None
     tags: Optional[List[str]] = None
+    private: Optional[bool] = False
 
 
 class User(BaseModel):

@@ -70,6 +70,7 @@ async def save_deck_into_profile(
         "tags": deck.tags,
         "words": deck.words,
         "owner_ids": [current_user.id],
+        "private": False,
     }
     if not await db.users.find_one({"_id": current_user.id}):
         raise HTTPException(status_code=404, detail="User not found")
