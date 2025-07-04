@@ -25,7 +25,8 @@ async def save_deck_from_gallery (
 ):
     if not await users.find_one({"_id": current_user.id}):
         raise HTTPException(status_code=404, detail="User not found")
-
+    if await decks.find_one({"_id": deck.id}).get("private"):
+        raise HTTPException(status_code=403, detail="Forbidden")
     await decks.update_one({"_id": deck.id}, {"$addToSet": {"owner_ids": current_user.id}})
     await users.update_one(
         {"_id": current_user.id}, {"$addToSet": {"deck_ids": deck.id}}
