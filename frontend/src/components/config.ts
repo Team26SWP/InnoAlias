@@ -115,8 +115,8 @@ const creationState: GameCreationState = {
 };
 
 const HOST = window.location.hostname;
-export const WS_URL = `ws://${HOST}/api`;
-export const HTTP_URL = `http://${HOST}/api`;
+export const WS_URL = `ws://${HOST}:8000/api`;
+export const HTTP_URL = `http://${HOST}:8000/api`;
 
 export function connectSocketHost(hostId: string, gameCode: string) {
   if (!hostSocket) {

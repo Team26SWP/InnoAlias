@@ -45,26 +45,59 @@ export function Leaderboard() {
 
   const saveDeck = async () => {
     const { code } = config.getArgs();
-    const response = await fetch(`${HTTP_URL}/game/${code}/deck`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const data = await response.json();
+    let words: string[] = [];
+    try {
+      const deckResp = await fetch(`${HTTP_URL}/game/deck/${code}`);
+      if (!deckResp.ok) {
+        alert('Failed to fetch deck words for this game.');
+        return;
+      }
+      const deckData = await deckResp.json();
+      words = deckData.words || [];
+    } catch (err) {
+      alert('An error occurred while fetching the deck words.');
+      return;
+    }
+    if (!words.length) {
+      alert('No words found for this game.');
+      return;
+    }
     const deckName = prompt('Please, input the name of the deck');
     if (!deckName) { return; }
-    const tags = prompt('Please, input tags separated by commas')?.split(',');
-    await fetch(`${HTTP_URL}/game/deck/save`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-      },
-      body: JSON.stringify({
-        deck_name: deckName,
-        tags: tags || [],
-        words: data.words,
-      }),
-    });
+
+    const tagsInput = prompt('Please, input tags separated by commas (optional)');
+    const tags = tagsInput ? tagsInput.split(',').map((t) => t.trim()).filter(Boolean) : [];
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      alert('You must be logged in to save a deck.');
+      return;
+    }
+    try {
+      const saveResp = await fetch(`${HTTP_URL}/profile/deck/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          deck_name: deckName,
+          words,
+          tags,
+        }),
+      });
+      if (saveResp.ok) {
+        const result = await saveResp.json();
+        alert(`Deck saved! Deck ID: ${result.inserted_id}`);
+      } else if (saveResp.status === 404) {
+        alert('User record not found.');
+      } else if (saveResp.status === 401) {
+        alert('Unauthorized. Please log in again.');
+      } else {
+        alert('Failed to save deck.');
+      }
+    } catch (err) {
+      alert('An error occurred while saving the deck.');
+    }
   };
 
   const exportDeck = async () => {
