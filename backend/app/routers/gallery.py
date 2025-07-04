@@ -16,7 +16,7 @@ async def get_gallery(number: int):
     cursor = await decks.find({"private": False}).skip(number * 50 - 50).limit(50).sort("name", DESCENDING).to_list()
     return {
         "gallery": cursor,
-        "total_decks": decks.find({"private": False}).count(),
+        "total_decks": await decks.find({"private": False}).count(),
     }
 
 
