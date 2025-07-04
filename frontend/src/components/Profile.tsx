@@ -102,10 +102,27 @@ function Profile() {
     setIsEditingAll((prev) => !prev);
   };
 
-  const deleteDeck = () => {
+  const deleteDeck = async () => {
     if (activeIndex === null) return;
-    setDecks((prev) => prev.filter((_, idx) => idx !== activeIndex));
-    closeModal();
+    const deckId = decks[activeIndex].id;
+    const token = localStorage.getItem('access_token');
+    try {
+      const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}/delete`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        setError('Failed to delete deck.');
+        return;
+      }
+      setDecks((prev) => prev.filter((_, idx) => idx !== activeIndex));
+      closeModal();
+    } catch (err) {
+      setError('An unexpected error occurred while deleting the deck.');
+    }
   };
 
   const updateDraftWord = (idx: number, text: string) => {
@@ -126,10 +143,42 @@ function Profile() {
     setNewWordText('');
   };
 
-  const saveAll = () => {
+  const saveAll = async () => {
     if (activeIndex === null || !draft) return;
-    setDecks((prev) => prev.map((deck, idx) => (idx === activeIndex ? draft : deck)));
-    setIsEditingAll(false);
+    const deckId = decks[activeIndex].id;
+    const token = localStorage.getItem('access_token');
+    try {
+      const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}/edit`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          deck_name: draft.name,
+          words: draft.words,
+          tags: draft.tags || [],
+        }),
+      });
+      if (!response.ok) {
+        setError('Failed to update deck.');
+        return;
+      }
+      const updatedDeck = await response.json();
+      setDecks((prev) => prev.map((deck, idx) => {
+        if (idx === activeIndex) {
+          return {
+            ...deck,
+            ...updatedDeck,
+            words_count: updatedDeck.words.length,
+          };
+        }
+        return deck;
+      }));
+      setIsEditingAll(false);
+    } catch (err) {
+      setError('An unexpected error occurred while updating the deck.');
+    }
   };
 
   const cancelAll = () => {
@@ -159,14 +208,16 @@ function Profile() {
       && ((!searchString) || deck.name.includes(searchString));
   }
 
-  function toMain() {
-    config.navigateTo(config.Page.Home);
+  function toPage(page : string) {
+    if (page === 'Home') { config.navigateTo(config.Page.Home); }
+    if (page === 'Create') { config.navigateTo(config.Page.Create); }
+    if (page === 'Join') { config.navigateTo(config.Page.Join); }
   }
 
   function logOut() {
     localStorage.removeItem('access_token');
     config.setProfile(null);
-    toMain();
+    toPage('Home');
   }
 
   if (loading) {
@@ -191,9 +242,9 @@ function Profile() {
       <div className="flex justify-between items-center mb-6 mt-6">
         <h1 className="text-2xl sm:text-2xl md:text-2xl font-bold ">Profile</h1>
         <div className="flex gap-8">
-          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={toMain}>Home</button>
-          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline">Create game</button>
-          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline">Join game</button>
+          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Home')}>Home</button>
+          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Create')}>Create game</button>
+          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Join')}>Join game</button>
         </div>
         <button type="button" onClick={logOut} className="px-4 py-2 bg-[#1E6DB9] text-white rounded-md hover:bg-gray-300 transition">Sign out</button>
       </div>
