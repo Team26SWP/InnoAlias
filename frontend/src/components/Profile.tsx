@@ -18,6 +18,7 @@ function Profile() {
   const [tags, setTags] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchString, setSearchString] = useState<string | null>(null);
+  const [deckLoad, setDeckLoad] = useState<boolean>(false);
 
   /* для модальных окон */
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -59,6 +60,7 @@ function Profile() {
       }
     };
     fetchProfile();
+    setDeckLoad(config.getDeckChoice);
   }, []);
 
   const selectTag = (event: React.MouseEvent) => {
@@ -138,7 +140,7 @@ function Profile() {
   };
 
   const addDraftWord = () => {
-    if (!draft || newWordText.trim() === '') return;
+    if (!draft || newWordText.trim() === '' || draft.words.includes(newWordText.trim())) return;
     setDraft({ ...draft, words: [...draft.words, newWordText.trim()] });
     setNewWordText('');
   };
@@ -187,32 +189,22 @@ function Profile() {
     setNewWordText('');
   };
 
-  //   const selectDeck = async (event: React.MouseEvent) => {
-  //   if (!(event.target instanceof HTMLButtonElement)) { return; }
-  //   const deckId = event.target.id;
-  //   const response = await fetch(${config.HTTP_URL}/profile/deck/${deckId}, {
-  //     method: 'GET',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //   });
-  //   const data = await response.json();
-  //   config.saveCreationState(config.loadCreationState().settings,
-  //  config.loadCreationState().words
-  //     .concat(data.words));
-  //   config.setDeckChoice(false);
-  //   config.navigateTo(config.Page.Create);
-  // };
   function checkDeck(deck: config.Deck) {
     return ((!selectedTag) || deck.tags.indexOf(selectedTag) !== -1)
       && ((!searchString) || deck.name.includes(searchString));
   }
 
-  function toPage(page : string) {
+  function toPage(page : 'Home' | 'Create' | 'Join') {
     if (page === 'Home') { config.navigateTo(config.Page.Home); }
     if (page === 'Create') { config.navigateTo(config.Page.Create); }
     if (page === 'Join') { config.navigateTo(config.Page.Join); }
   }
+
+  const selectDeck = async () => {
+    if (!draft || !draft.words) { return; }
+    config.addWords(draft.words);
+    toPage('Create');
+  };
 
   function logOut() {
     localStorage.removeItem('access_token');
@@ -239,25 +231,30 @@ function Profile() {
 
   return (
     <div className="min-h-screen bg-[#FAF6E9] px-6 py-10 font-adlam text-[#1E6DB9]">
-      <div className="flex justify-between items-center mb-6 mt-6">
-        <h1 className="text-2xl sm:text-2xl md:text-2xl font-bold ">Profile</h1>
-        <div className="flex gap-8">
-          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Home')}>Home</button>
-          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Create')}>Create game</button>
-          <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Join')}>Join game</button>
-        </div>
-        <button type="button" onClick={logOut} className="px-4 py-2 bg-[#1E6DB9] text-white rounded-md hover:bg-gray-300 transition">Sign out</button>
-      </div>
+      {!deckLoad && (
+        <>
+          <div className="flex justify-between items-center mb-6 mt-6">
+            <h1 className="text-2xl sm:text-2xl md:text-2xl font-bold ">Profile</h1>
+            <div className="flex gap-8">
+              <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Home')}>Home</button>
+              <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Create')}>Create game</button>
+              <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Join')}>Join game</button>
+            </div>
+            <button type="button" onClick={logOut} className="px-4 py-2 bg-[#1E6DB9] text-white rounded-md hover:bg-gray-300 transition">Sign out</button>
+          </div>
 
-      <div className="flex items-center mb-10 gap-6">
-        <div className="w-36 h-36 bg-gray-300 rounded-full" />
-        <div>
-          <h2 className="text-4xl font-bold">{profile.name}</h2>
-          <p className="text-black text-7sm font-semibold">{profile.email}</p>
-        </div>
-      </div>
+          <div className="flex items-center mb-10 gap-6">
+            <div className="w-36 h-36 bg-gray-300 rounded-full" />
+            <div>
+              <h2 className="text-4xl font-bold">{profile.name}</h2>
+              <p className="text-black text-7sm font-semibold">{profile.email}</p>
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        {deckLoad && (<button type="button" onClick={() => { toPage('Create'); }} className="px-4 py-2 bg-[#1E6DB9] text-white rounded-md hover:bg-gray-300 transition">Cancel deck load</button>)}
         <input
           onChange={searchInput}
           type="text"
@@ -322,12 +319,12 @@ function Profile() {
                     <button type="button" onClick={saveAll} className="px-2 py-1 text-[#1E6DB9] rounded text-sm">Save</button>
                     <button type="button" onClick={cancelAll} className="px-2 py-1 text-gray-500 rounded text-sm">Cancel</button>
                   </>
-                ) : (
+                ) && !deckLoad : (
                   <>
                     <button type="button" onClick={toggleEditAll} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">Edit</button>
                     <button type="button" onClick={deleteDeck} className="px-2 py-1 text-red-500 rounded text-sm">Delete</button>
                   </>
-                )}
+                ) && !deckLoad}
                 <button type="button" onClick={closeModal} className="px-2 py-1 text-gray-500 hover:text-gray-700 text-sm">✕</button>
               </div>
             </div>
@@ -363,6 +360,9 @@ function Profile() {
                 </li>
               ))}
             </ul>
+            <div className="flex space-x-2 items-center justify-end mt-7">
+              <button type="button" onClick={selectDeck} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">Use</button>
+            </div>
           </div>
         </div>
       )}

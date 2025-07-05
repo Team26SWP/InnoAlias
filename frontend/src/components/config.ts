@@ -208,3 +208,17 @@ export function saveCreationState(settings: Settings, words: string[]) {
 export function loadCreationState() {
   return creationState;
 }
+export function addWords(words: string[]) {
+  for (let i = 0; i < words.length; i += 1) {
+    let addition = true;
+    for (let j = 0; j < creationState.words.length; j += 1) {
+      if (creationState.words[j].toLowerCase() === words[i].toLowerCase()) {
+        addition = false;
+        break;
+      }
+    }
+    if (addition) {
+      creationState.words.push(words[i]);
+    }
+  }
+}

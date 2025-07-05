@@ -58,10 +58,6 @@ export function Leaderboard() {
       alert('An error occurred while fetching the deck words.');
       return;
     }
-    if (!words.length) {
-      alert('No words found for this game.');
-      return;
-    }
     const deckName = prompt('Please, input the name of the deck');
     if (!deckName) { return; }
 
@@ -86,8 +82,7 @@ export function Leaderboard() {
         }),
       });
       if (saveResp.ok) {
-        const result = await saveResp.json();
-        alert(`Deck saved! Deck ID: ${result.inserted_id}`);
+        alert('Deck saved!');
       } else if (saveResp.status === 404) {
         alert('User record not found.');
       } else if (saveResp.status === 401) {
