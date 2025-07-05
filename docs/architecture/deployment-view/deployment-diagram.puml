@@ -1,0 +1,96 @@
+@startuml InnoAlias Deployment Architecture
+!theme plain
+skinparam node {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+}
+
+node "Client Browser" as Client {
+    [React SPA] as SPA
+}
+
+node "Load Balancer\n(Optional)" as LB {
+    [HAProxy/Nginx] as LoadBalancer
+}
+
+node "Web Server" as WebServer {
+    [Nginx Reverse Proxy] as Nginx
+    [SSL Certificate] as SSL
+}
+
+node "Application Server" as AppServer {
+    [Frontend Container] as Frontend
+    [Backend Container] as Backend
+}
+
+node "Database Server" as DBServer {
+    [MongoDB Container] as MongoDB
+    [MongoDB Data Volume] as MongoData
+}
+
+node "Monitoring\n(Optional)" as Monitoring {
+    [Prometheus] as Prom
+    [Grafana] as Grafana
+}
+
+' Client to Load Balancer
+Client --> LB : HTTPS (443)
+Client --> WebServer : HTTPS (443) if no LB
+
+' Load Balancer to Web Server
+LB --> WebServer : HTTP (80)
+
+' Web Server to Application
+WebServer --> Frontend : HTTP (3000)
+WebServer --> Backend : HTTP (8000)
+
+' Application to Database
+Backend --> MongoDB : MongoDB (27017)
+
+' Database storage
+MongoDB --> MongoData : Persistent Storage
+
+' Monitoring connections
+Prom --> Backend : Metrics collection
+Prom --> Frontend : Metrics collection
+Grafana --> Prom : Query metrics
+
+note right of Client
+  Modern web browser
+  Supports WebSocket
+  JavaScript enabled
+end note
+
+note right of WebServer
+  Nginx configuration:
+  - SSL termination
+  - Static file serving
+  - WebSocket proxy
+  - CORS handling
+end note
+
+note right of AppServer
+  Docker containers:
+  - Frontend: React build
+  - Backend: FastAPI + Python
+  - Environment variables
+  - Health checks
+end note
+
+note right of DBServer
+  MongoDB:
+  - Document storage
+  - Authentication
+  - Backup strategy
+  - Index optimization
+end note
+
+note right of Monitoring
+  Optional monitoring stack:
+  - Performance metrics
+  - Error tracking
+  - Resource usage
+  - Alerting
+end note
+
+@enduml 
