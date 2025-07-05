@@ -18,7 +18,7 @@ Ensuring game rules are enforced accurately is paramount. Players expect consist
 3. Verifying that scoring increments properly
 
 
-### Functional Correctness
+### Functional Appropriateness
 Our customer prioritizes lean, intentional design where all functionalities directly contribute to the word-guessing challenge. 
 
 #### Test: Input Field Behavior Validation
@@ -35,7 +35,7 @@ Our customer prioritizes lean, intentional design where all functionalities dire
 **Execution Method**:
 1. Find 15 new users among students
 2. Ask them to go through couple of games
-3. Conduct a survey among these users
+3. Conduct a survey among these users about UI decisions made 
 
 
 
