@@ -30,7 +30,12 @@ class AIGameConnectionManager:
     async def send_state(self, game_id: str, game_data: dict):
         if game_id in self.active_connections:
             if "expires_at" in game_data and game_data["expires_at"]:
-                game_data["expires_at"] = game_data["expires_at"].isoformat()
+                expires_at = game_data["expires_at"]
+                if expires_at.tzinfo is None:
+                    expires_at = expires_at.replace(tzinfo=timezone.utc)
+                else:
+                    expires_at = expires_at.astimezone(timezone.utc)
+                game_data["expires_at"] = expires_at.isoformat()
             await self.active_connections[game_id].send_json(game_data)
 
 
@@ -148,8 +153,12 @@ async def check_timer(game_id: str):
         ):
             break
 
+        expires_at = game["expires_at"]
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+
         now = datetime.now(timezone.utc)
-        if now >= game["expires_at"]:
+        if now >= expires_at:
             await process_new_word(game_id)
 
         await asyncio.sleep(1)
