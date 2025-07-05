@@ -114,7 +114,7 @@ const creationState: GameCreationState = {
   words: [],
 };
 
-const HOST = window.location.hostname;
+const HOST = window.location.host;
 export const WS_URL = `ws://${HOST}/api`;
 export const HTTP_URL = `http://${HOST}/api`;
 
