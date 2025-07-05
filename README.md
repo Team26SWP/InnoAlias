@@ -38,7 +38,7 @@ The design decisions significantly improve maintainability through:
 - **Technology Flexibility**: Easy to replace individual components without affecting others
 
 **Reference Files:**
-- Component Diagram: [`docs/architecture/static-view/component-diagram.puml`](docs/architecture/static-view/component-diagram.puml)
+- Component Diagram: [`docs/architecture/static-view/component-diagram.puml`](docs/architecture/static-view/component-diagram.png)
 
 ### Dynamic view
 
@@ -65,7 +65,7 @@ The complete game flow scenario has been tested in the production environment wi
 - Test Implementation: [`docs/architecture/dynamic-view/performance-test.py`](docs/architecture/dynamic-view/performance-test.py)
 
 **Reference Files:**
-- Sequence Diagram: [`docs/architecture/dynamic-view/game-flow-sequence.puml`](docs/architecture/dynamic-view/game-flow-sequence.puml)
+- Sequence Diagram: [`docs/architecture/dynamic-view/game-flow-sequence.puml`](docs/architecture/dynamic-view/game-flow-sequence.png)
 
 ### Deployment view
 
@@ -96,7 +96,7 @@ The deployment architecture is documented using a custom deployment diagram that
 - **On-Premises**: Full control over infrastructure and data
 
 **Reference Files:**
-- Deployment Diagram: [`docs/architecture/deployment-view/deployment-diagram.puml`](docs/architecture/deployment-view/deployment-diagram.puml)
+- Deployment Diagram: [`docs/architecture/deployment-view/deployment-diagram.puml`](docs/architecture/deployment-view/deployment-diagram.png)
 - Deployment Guide: [`docs/architecture/deployment-view/deployment-guide.md`](docs/architecture/deployment-view/deployment-guide.md)
 
 ## Development
