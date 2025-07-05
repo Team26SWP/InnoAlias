@@ -17,7 +17,29 @@ Ensuring game rules are enforced accurately is paramount. Players expect consist
 2. Manually entering the correct/incorrect words
 3. Verifying that scoring increments properly
 
-   
+
+### Functional Correctness
+Our customer prioritizes lean, intentional design where all functionalities directly contribute to the word-guessing challenge. 
+
+#### Test: Input Field Behavior Validation
+**Quality Attribute Scenario**:
+
+- **Source**: Player during timed round
+- **Stimulus**: Type guess into input field
+- **Artifact**: Input handling system
+- **Environment**: Active game with 30s timer
+- **Response**: Field optimizes for rapid word entry without distractions
+- **Response Measure**: 95% of players clearly understand the main goal of app. 
+
+
+**Execution Method**:
+1. Find 15 new users among students
+2. Ask them to go through couple of games
+3. Conduct a survey among these users
+
+
+
+
 ## Interaction capability
 
 ### Self-descriptiveness
