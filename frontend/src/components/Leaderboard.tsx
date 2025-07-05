@@ -64,18 +64,35 @@ export function Leaderboard() {
     const tagsInput = prompt('Please, input tags separated by commas (optional)');
     const tags = tagsInput ? tagsInput.split(',').map((t) => t.trim()).filter(Boolean) : [];
     const token = localStorage.getItem('access_token');
-    await fetch(`${HTTP_URL}/profile/deck/save`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        deck_name: deckName,
-        words,
-        tags,
-      }),
-    });
+    if (!token) {
+      alert('You must be logged in to save a deck.');
+      return;
+    }
+    try {
+      const saveResp = await fetch(`${HTTP_URL}/profile/deck/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          deck_name: deckName,
+          words,
+          tags,
+        }),
+      });
+      if (saveResp.ok) {
+        alert('Deck saved!');
+      } else if (saveResp.status === 404) {
+        alert('User record not found.');
+      } else if (saveResp.status === 401) {
+        alert('Unauthorized. Please log in again.');
+      } else {
+        alert('Failed to save deck.');
+      }
+    } catch (err) {
+      alert('An error occurred while saving the deck.');
+    }
   };
 
   const exportDeck = async () => {
