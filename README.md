@@ -34,7 +34,7 @@ Entry criteria for each kanban board column:
 
 ## Quality assurance
 ### Quality attribute scenarios
-
+https://github.com/Team26SWP/InnoAlias/blob/ca1317b7fe61124c86f485a1d6afc69a71eaa774/docs/quality-assurance/quality-attribute-scenarios.md
 ### Automated tests
 
 ### User acceptance tests
