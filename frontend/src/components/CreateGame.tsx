@@ -12,6 +12,7 @@ export function CreateGame() {
 
   useEffect(() => {
     const profile = config.getProfile();
+    config.setDeckChoice(false);
     if (profile) {
       setHostId(profile.id);
     }
