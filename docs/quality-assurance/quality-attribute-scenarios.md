@@ -14,4 +14,28 @@ Ensuring game rules are enforced accurately is paramount. Players expect consist
 
 **Execution Method**:
 1. Create test .txt file with 1000 words
-2. Manually entering the correct/incorrect 
+2. Manually entering the correct/incorrect words
+3. Verifying that scoring increments properly
+
+   
+## Interaction capability
+
+### Self-descriptiveness
+Intuitive interfaces minimize learning curves. Clear input guidance and error feedback prevent player frustration during timed rounds.
+
+#### Test: New user UI usage
+**Quality Attribute Scenario**:
+- **Source**: New player
+- **Stimulus**: Create a game
+- **Artifact**: UI create game button
+- **Environment**: Home page
+- **Response**: Correctly creates a game with settings that new players wants
+- **Response Measure**: 100% of users intuitively understand the UI.
+
+**Execution Method**:
+1. Find 15 new users among students
+2. Ask them to go through couple of games
+3. Conduct a small survey about UI among new users
+
+
+
