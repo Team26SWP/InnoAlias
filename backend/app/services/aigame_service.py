@@ -17,17 +17,17 @@ aigames = db.aigames
 
 
 class AIGameConnectionManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: Dict[str, WebSocket] = {}
 
-    async def connect(self, websocket: WebSocket, game_id: str):
+    async def connect(self, websocket: WebSocket, game_id: str) -> None:
         await websocket.accept()
         self.active_connections[game_id] = websocket
 
-    def disconnect(self, game_id: str):
+    def disconnect(self, game_id: str) -> None:
         self.active_connections.pop(game_id, None)
 
-    async def send_state(self, game_id: str, game_data: dict):
+    async def send_state(self, game_id: str, game_data: dict) -> None:
         if game_id in self.active_connections:
             if "expires_at" in game_data and game_data["expires_at"]:
                 expires_at = game_data["expires_at"]
@@ -46,7 +46,9 @@ async def create_aigame(game: AIGame) -> str:
     words = list(game.deck)
     random.shuffle(words)
 
-    if (game.settings.word_amount is not None) and (1 < game.settings.word_amount < len(words)):
+    if (game.settings.word_amount is not None) and (
+        1 < game.settings.word_amount < len(words)
+    ):
         words = words[: game.settings.word_amount]
 
     code = await generate_aigame_code()
@@ -101,7 +103,7 @@ async def process_new_word(game_id: str):
         await manager.send_state(game_id, updated_game)
 
 
-async def generate_clue(word: str, previous_clues=None) -> str:
+async def generate_clue(word: str, previous_clues: list[str] | None = None) -> str:
     if previous_clues is None:
         previous_clues = []
     prompt = f"Explain the word '{word}' in a single sentence."
@@ -117,10 +119,10 @@ async def generate_clue(word: str, previous_clues=None) -> str:
             system_instruction=system_instructions,
             temperature=0.8,
             max_output_tokens=50,
-            top_p=1.0
+            top_p=1.0,
         ),
     )
-    return response.text
+    return response.text or ""
 
 
 async def handle_guess(game_id: str, guess: str):

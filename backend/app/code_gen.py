@@ -15,11 +15,13 @@ async def generate_game_code():
         if not await games.find_one({"_id": code}):
             return code
 
+
 async def generate_aigame_code():
     while True:
         code = "".join(choice(digits) for _ in range(6))
         if not await aigames.find_one({"_id": code}):
             return code
+
 
 async def generate_deck_id():
     while True:
