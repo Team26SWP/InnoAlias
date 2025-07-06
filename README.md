@@ -142,14 +142,25 @@ To keep our application secure and maintainable, we follow these rules for handl
    - In local development, developers load secrets from a `.env` file in the project root.  
    - We commit a `.env.example` with *placeholder* keys and comments describing each variable:  
      ```dotenv
-     # .env.example
-     # secret_key for hashing the passwords
-     SECRET_KEY=sample_secret_key
-     # algorithm for hashing
-     ALGORITHM=algorithm
-     # how many minutes auth token will live
-     ACCESS_TOKEN_EXPIRE_MINUTES=30
+      # secret_key for hashing the passwords
+      SECRET_KEY=sample_secret_key
+
+      # algorithm for hashing
+      ALGORITHM=HS256
+
+      # how many minutes auth token will live
+      ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+      # user in docker hub (for CI/CD)
+      DOCKERHUB_USER=user
+
+      # Gemini API key for single player with AI
+      GEMINI_API_KEY=api_key
+
+      # Gemini model id for single player with AI
+      GEMINI_MODEL_NAME=model_name
      ```
+
    - When onboarding, copy `.env.example` to `.env` and fill in real values (never commit `.env`).
 
 4. **Access control & least privilege**  
@@ -267,6 +278,9 @@ All architectural views (static, dynamic, deployment) are fully documented with 
 - `SECRET_KEY`: JWT signing secret
 - `ALGORITHM`: JWT algorithm (default: HS256)
 - `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time
+- `DOCKERHUB_USER`: user in docker hub with images of containers (used for CI/CD, only used in docker-compose.yml)
+- `GEMINI_API_KEY`: API key for Gemini LLM - needed for AI single player game
+- `GEMINI_MODEL_NAME`: Gemini LLM model ID (you have to choose among the available in Google AIStudio)
 
 ### Static view
 
@@ -415,7 +429,71 @@ The deployment architecture is documented using a custom deployment diagram that
 2. Sign in with the test credentials.  
 3. Explore features.
 
-### 2. Running locally
+### 2. Running locally (via Docker)
 
+The **`docker-compose.yml`** in the repo is wired for our CI/CD pipeline, which normally **pulls** pre-built images from Docker Hub.  
+If you want to **build and run everything from source on your own computer**, follow the steps below.
 
+#### 2.1  Prerequisites
 
+| Tool | Version | Check |
+|------|---------|-------|
+| Docker Engine | ≥ 24.0 | `docker --version` |
+| Docker Compose | v2 (bundled with Docker Desktop) | `docker compose version` |
+
+> **Tip:** On Windows use WSL 2; on macOS use Docker Desktop.
+
+---
+
+#### 2.2  Clone the repo
+
+```bash
+git clone https://github.com/Team26/InnoAlias.git
+cd innoalias
+```
+
+#### 2.3 Add local environment variables
+```bash
+cp .env.example .env # Secret key you can generate via command "openssl rand -base64 32"
+nano .env
+```
+
+The .env file already contains safe defaults (no production secrets). Adjust anything you need—e.g. SMTP creds—before starting the stack.
+
+#### 2.4 Change docker-compose.yml
+
+Just replace each `image:` line with a `build:` block that points at the directory containing the relevant Dockerfile:
+
+```diff
+ services:
+   backend:
+-    image: docker.io/${DOCKERHUB_USER}/innoalias-backend:latest
++    build:
++      context: ./backend
+```
+
+```diff
+ services:
+   frontend:
+-    image: docker.io/${DOCKERHUB_USER}/innoalias-frontend:latest
++    build:
++      context: ./frontend
+```
+
+```diff
+ services:
+   nginx:
+-    image: docker.io/${DOCKERHUB_USER}/innoalias-nginx:latest
++    build:
++      context: ./nginx
+```
+
+This step is necessary because right now docker-compose is configured for automatic deployment via CI/CD, but changing the strings will allow the project to be built locally.
+
+#### 2.5 Launch the building!
+
+```bash
+docker-compose up -d --build
+```
+
+After build, you can use app on localhost.
