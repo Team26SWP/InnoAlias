@@ -196,3 +196,22 @@ async def test_edit_deck_forbidden_for_non_owner(client, test_db):
         headers=att_headers,
     )
     assert res.status_code == 403
+
+@pytest.mark.asyncio
+async def test_get_game_leaderboard(client, test_db):
+    await test_db.games.insert_one(
+        {
+            "_id": "lb1",
+            "teams": {
+                "team_1": {"name": "Team 1", "scores": {"alice": 2, "bob": 1}},
+                "team_2": {"name": "Team 2", "scores": {"carl": 4}},
+            },
+        }
+    )
+
+    res = await client.get("/api/game/leaderboard/lb1")
+    assert res.status_code == 200
+    data = res.json()
+    assert list(data.keys()) == ["Team 2", "Team 1"]
+    assert data["Team 2"]["total_score"] == 4
+    assert data["Team 1"]["players"] == {"alice": 2, "bob": 1}
