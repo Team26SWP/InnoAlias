@@ -3,226 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Backend Test</title>
+    <title>AI Alias Game Tester</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
-        section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1, h2 { color: #333; }
-        input[type="text"], input[type="number"], textarea, button {
-            padding: 8px; margin: 5px 0; border-radius: 4px; border: 1px solid #ddd;
-        }
-        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        button:disabled { background-color: #ccc; }
-        textarea { width: 98%; height: 100px; }
-        .console { background: #e9ecef; padding: 10px; height: 150px; overflow-y: scroll; border-radius: 4px; margin-top: 10px; font-family: monospace; white-space: pre-wrap; }
-        .player { border: 1px dashed #aaa; padding: 10px; margin-top: 10px; border-radius: 8px; }
-        .timer { font-weight: bold; margin-left: 10px; color: #d9534f; }
-        #playerList { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
+        body { font-family: sans-serif; }
+        #game-state { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+        #clues { list-style-type: none; padding-left: 0; }
     </style>
 </head>
 <body>
-    <h1>Game Backend Test Page</h1>
+    <h1>AI Alias Game Tester</h1>
 
-    <section id="create">
-        <h2>Create Game</h2>
-        <label>Host Name: <input id="hostName" type="text" value="GameHost"></label><br>
-        <label>Number of Teams: <input id="teamCount" type="number" value="2" min="1"></label><br>
-        <label>Words (one per line):<br>
-            <textarea id="words">apple
-banana
-car
-dog
-house
-tree
-river
-mountain
-book
-computer</textarea>
-        </label><br>
-        <label>Time per Word (seconds): <input id="timeForGuessing" type="number" value="60" min="1"></label><br>
-        <label>Tries per Player (0 for unlimited): <input id="triesPerPlayer" type="number" value="0" min="0"></label><br>
-        <label>Rotate Game Masters: <input id="rotateMasters" type="checkbox"></label><br>
-        <button onclick="createGame()">Create Game</button>
-        <div><strong>Game ID:</strong> <span id="gameId">-</span></div>
-        <div class="console" id="hostConsole"></div>
-        <button id="startGameBtn" onclick="startGame()" disabled>Start Game</button>
-        <button id="stopGameBtn" onclick="stopGame()" disabled>Stop Game</button>
-    </section>
+    <div>
+        <label for="player-id">Player ID:</label>
+        <input type="text" id="player-id" value="test-player">
+    </div>
+    <div>
+        <label for="deck">Deck (comma-separated words):</label>
+        <input type="text" id="deck" value="apple,banana,orange,grape,strawberry">
+    </div>
+    <div>
+        <label for="time">Time per word (seconds):</label>
+        <input type="number" id="time" value="30">
+    </div>
+    <div>
+        <label for="words">Word Amount:</label>
+        <input type="number" id="words" value="5">
+    </div>
+    <button id="create-game">Create Game</button>
 
-    <section id="players">
-        <h2>Players</h2>
-        <label>Name: <input id="playerName" type="text" placeholder="Player Name"></label>
-        <label>Join Team: <input id="playerTeam" type="number" value="1" min="1"></label>
-        <button onclick="addPlayer()">Add Player</button>
-        <div id="playerList"></div>
-    </section>
+    <hr>
+
+    <div id="game-area" style="display: none;">
+        <h2 id="game-id"></h2>
+        <button id="start-game">Start Game</button>
+        <div id="game-state">
+            <h3>Game State</h3>
+            <p><strong>State:</strong> <span id="state"></span></p>
+            <p><strong>Score:</strong> <span id="score"></span></p>
+            <p><strong>Current Word:</strong> <span id="current-word"></span></p>
+            <p><strong>Time Left:</strong> <span id="timer"></span></p>
+            <p><strong>Clues:</strong></p>
+            <ul id="clues"></ul>
+        </div>
+        <div>
+            <input type="text" id="guess-input" placeholder="Enter your guess">
+            <button id="send-guess">Guess</button>
+            <button id="skip-word">Skip</button>
+        </div>
+    </div>
 
     <script>
-        const API_HTTP = `http://localhost:8000/api`;
-        const API_WS = `ws://localhost:8000/api`;
-        let gameId = null;
-        let hostSocket = null;
-        // This will store all player data, including UI elements and timer info
-        const players = {};
+        const createGameBtn = document.getElementById('create-game');
+        const startGameBtn = document.getElementById('start-game');
+        const sendGuessBtn = document.getElementById('send-guess');
+        const skipWordBtn = document.getElementById('skip-word');
+        const guessInput = document.getElementById('guess-input');
 
-        // --- Logging Utility ---
-        function log(element, message) {
-            try {
-                const data = JSON.parse(message);
-                element.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre><hr>`;
-            } catch (e) {
-                element.innerHTML += `<p>${message}</p><hr>`;
-            }
-            element.scrollTop = element.scrollHeight;
-        }
+        let socket;
+        let gameId;
+        let timerInterval;
 
-        // --- Global Timer Loop ---
-        // A single interval to update all player timers, which is more robust.
-        setInterval(() => {
-            const now = Date.now();
-            for (const playerId in players) {
-                const player = players[playerId];
-                if (player.expiryTime) {
-                    const diff = player.expiryTime - now;
-                    if (diff <= 0) {
-                        player.timerSpan.textContent = '0s';
-                        player.expiryTime = null; // Stop countdown for this player
-                    } else {
-                        player.timerSpan.textContent = `${Math.floor(diff / 1000)}s`;
-                    }
-                } else {
-                    player.timerSpan.textContent = '-';
-                }
-            }
-        }, 1000);
+        createGameBtn.addEventListener('click', async () => {
+            const playerId = document.getElementById('player-id').value;
+            const deck = document.getElementById('deck').value.split(',');
+            const time = parseInt(document.getElementById('time').value);
+            const words = parseInt(document.getElementById('words').value);
 
-        // --- Game Creation and Host Logic ---
-        async function createGame() {
-            const hostName = document.getElementById('hostName').value || 'Host';
-            const teamCount = parseInt(document.getElementById('teamCount').value) || 1;
-            const words = document.getElementById('words').value.split(/\n+/).filter(w => w.trim());
-            const timeForGuessing = parseInt(document.getElementById('timeForGuessing').value);
-            const triesPerPlayer = parseInt(document.getElementById('triesPerPlayer').value);
-            const rotateMasters = document.getElementById('rotateMasters').checked;
-
-            const body = {
-                host_id: hostName,
-                deck: words,
-                number_of_teams: teamCount,
-                time_for_guessing: timeForGuessing,
-                tries_per_player: triesPerPlayer,
-                right_answers_to_advance: 1,
-                rotate_masters: rotateMasters,
-            };
-
-            const res = await fetch(`${API_HTTP}/game/create`, {
+            const response = await fetch('http://localhost:8000/api/aigame/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: JSON.stringify({
+                    player_id: playerId,
+                    deck: deck,
+                    settings: {
+                        time_for_guessing: time,
+                        word_amount: words
+                    }
+                })
             });
-            const data = await res.json();
-            gameId = data.id;
-            document.getElementById('gameId').textContent = gameId;
+            const data = await response.json();
+            gameId = data.game_id;
+            document.getElementById('game-id').innerText = `Game ID: ${gameId}`;
+            document.getElementById('game-area').style.display = 'block';
+            connectWebSocket();
+        });
 
-            document.getElementById('startGameBtn').disabled = false;
-            document.getElementById('stopGameBtn').disabled = false;
+        function connectWebSocket() {
+            if (socket) {
+                socket.close();
+            }
+            socket = new WebSocket(`ws://localhost:8000/api/aigame/${gameId}`);
 
-            hostSocket = new WebSocket(`${API_WS}/game/${gameId}?id=${encodeURIComponent(hostName)}`);
-            hostSocket.onmessage = ev => log(document.getElementById('hostConsole'), ev.data);
-            hostSocket.onopen = () => log(document.getElementById('hostConsole'), 'Host connected.');
-            hostSocket.onclose = () => log(document.getElementById('hostConsole'), 'Host disconnected.');
-        }
-
-        function startGame() {
-            if (hostSocket) hostSocket.send(JSON.stringify({ action: 'start_game' }));
-        }
-        
-        function stopGame() {
-            if (hostSocket) hostSocket.send(JSON.stringify({ action: 'stop_game' }));
-        }
-
-        // --- Player Logic ---
-        function addPlayer() {
-            if (!gameId) return alert('Create a game first.');
-            const name = document.getElementById('playerName').value || `Player${Object.keys(players).length + 1}`;
-            const team = document.getElementById('playerTeam').value || '1';
-            const playerId = `${name}-team${team}`;
-
-            if (players[playerId]) return alert('Player with this name and team already exists.');
-
-            const container = document.createElement('div');
-            container.className = 'player';
-            container.id = `player-${playerId}`;
-            container.innerHTML = `
-                <strong>${name}</strong> (Team <span class="player-team">${team}</span>)
-                <span class="timer">-</span> Tries Left: <span class="tries-left">-</span><br>
-                <input type="text" placeholder="Guess the word" class="guess-input">
-                <button class="guess-btn">Guess</button>
-                <button class="skip-btn">Skip Word</button><br>
-                Switch to Team: <input type="number" class="switch-team-input" value="${team}" min="1">
-                <button class="switch-team-btn">Switch</button>
-                <div class="console"></div>`;
-            document.getElementById('playerList').appendChild(container);
-
-            const ws = new WebSocket(`${API_WS}/game/player/${gameId}?name=${encodeURIComponent(name)}&team_id=team_${team}`);
-            
-            // Store all relevant info for this player in the global players object
-            players[playerId] = {
-                ws: ws,
-                container: container,
-                timerSpan: container.querySelector('.timer'),
-                triesLeftSpan: container.querySelector('.tries-left'),
-                expiryTime: null // This will be updated by the onmessage handler
+            socket.onopen = () => {
+                console.log("WebSocket connection established.");
             };
 
-            ws.onopen = () => log(container.querySelector('.console'), `Player ${name} connected to team ${team}.`);
-            
-            ws.onclose = () => {
-                log(container.querySelector('.console'), `Player ${name} disconnected.`);
-                // Clean up on disconnect
-                if(players[playerId]) {
-                    players[playerId].container.remove();
-                    delete players[playerId];
-                }
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                updateGameState(data);
             };
 
-            ws.onmessage = (ev) => {
-                const consoleEl = players[playerId].container.querySelector('.console');
-                log(consoleEl, ev.data);
-                try {
-                    const data = JSON.parse(ev.data);
-                    
-                    // Update the player's state from the received PlayerGameState object
-                    const playerState = players[playerId];
-                    if (data.expires_at) {
-                        playerState.expiryTime = new Date(data.expires_at).getTime();
-                    } else {
-                        playerState.expiryTime = null;
-                    }
-                    
-                    playerState.triesLeftSpan.textContent = data.tries_left !== null ? data.tries_left : 'Unlimited';
-                    playerState.container.querySelector('.skip-btn').disabled = data.current_master !== name;
-                    if (data.team_id) {
-                        playerState.container.querySelector('.player-team').textContent = data.team_id.replace('team_', '');
-                    }
-                } catch (e) { 
-                    console.error("Failed to parse message or update UI:", e);
-                }
+            socket.onclose = () => {
+                console.log("WebSocket connection closed. Reconnecting...");
+                // Optional: implement a reconnect strategy
             };
+        }
 
-            container.querySelector('.guess-btn').onclick = () => {
-                const guessInput = container.querySelector('.guess-input');
-                ws.send(JSON.stringify({ action: 'guess', guess: guessInput.value }));
+        startGameBtn.addEventListener('click', () => {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ action: 'start_game' }));
+            }
+        });
+
+        sendGuessBtn.addEventListener('click', () => {
+            const guess = guessInput.value;
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ action: 'guess', guess: guess }));
                 guessInput.value = '';
-            };
-            container.querySelector('.skip-btn').onclick = () => ws.send(JSON.stringify({ action: 'skip' }));
-            container.querySelector('.switch-team-btn').onclick = () => {
-                const newTeam = container.querySelector('.switch-team-input').value;
-                ws.send(JSON.stringify({ action: 'switch_team', new_team_id: `team_${newTeam}` }));
-            };
+            }
+        });
+
+        skipWordBtn.addEventListener('click', () => {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ action: 'skip' }));
+            }
+        });
+
+        function updateGameState(data) {
+            document.getElementById('state').innerText = data.game_state;
+            document.getElementById('score').innerText = data.score;
+            document.getElementById('current-word').innerText = data.current_word || 'N/A';
+            
+            const cluesList = document.getElementById('clues');
+            cluesList.innerHTML = '';
+            if(data.clues) {
+                data.clues.forEach(clue => {
+                    const li = document.createElement('li');
+                    li.innerText = clue;
+                    cluesList.appendChild(li);
+                });
+            }
+
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+
+            if (data.expires_at && data.game_state === 'in_progress') {
+                const expiresAt = new Date(data.expires_at);
+                
+                // Check if the expiry date is valid
+                if (isNaN(expiresAt.getTime())) {
+                    console.error("Invalid expires_at date received:", data.expires_at);
+                    document.getElementById('timer').innerText = 'Error';
+                    return;
+                }
+
+                timerInterval = setInterval(() => {
+                    const now = new Date();
+                    const timeLeft = Math.round((expiresAt - now) / 1000);
+                    
+                    if (timeLeft > 0) {
+                        document.getElementById('timer').innerText = timeLeft;
+                    } else {
+                        document.getElementById('timer').innerText = 0;
+                        clearInterval(timerInterval);
+                    }
+                }, 1000);
+            } else {
+                document.getElementById('timer').innerText = 'N/A';
+            }
         }
     </script>
 </body>
 </html>
-
