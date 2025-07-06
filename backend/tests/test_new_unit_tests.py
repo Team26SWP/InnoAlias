@@ -1,4 +1,6 @@
 import pytest
+
+from backend.app.models import AIGame, AIGameSettings
 from backend.app.services.auth_service import verify_password, create_user
 from backend.app.models import User
 from backend.app.services.game_service import reassign_master
@@ -47,9 +49,6 @@ async def test_generate_multiple_unique_ids(test_db):
     assert len(user_ids) == 3
 
 
-from backend.app.models import AIGame, AIGameSettings
-
-
 @pytest.mark.asyncio
 async def test_create_ai_game(test_db, monkeypatch):
     await test_db.aigames.delete_many({})
@@ -78,7 +77,6 @@ async def test_create_ai_game(test_db, monkeypatch):
     )
     game_id = await create_aigame(game)
     assert game_id == "AIGAME"
-
 
 
 @pytest.mark.asyncio

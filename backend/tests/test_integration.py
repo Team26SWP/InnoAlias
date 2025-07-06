@@ -115,10 +115,14 @@ async def test_create_game_and_get_deck(client):
     assert deck_res.status_code == 200
     assert set(deck_res.json()["words"]) == {"alpha", "beta"}
 
+
 @pytest.mark.asyncio
 async def test_delete_deck_removes_from_profile(client, test_db):
     user = {
-        "name": "Del", "surname": "User", "email": "del@example.com", "password": "pw"
+        "name": "Del",
+        "surname": "User",
+        "email": "del@example.com",
+        "password": "pw",
     }
     await client.post("/api/auth/register", json=user)
     login = await client.post(
@@ -168,7 +172,12 @@ async def test_profile_forbidden_for_other_user(client, test_db):
 
 @pytest.mark.asyncio
 async def test_edit_deck_forbidden_for_non_owner(client, test_db):
-    owner = {"name": "O", "surname": "U", "email": "owner@example.com", "password": "pw"}
+    owner = {
+        "name": "O",
+        "surname": "U",
+        "email": "owner@example.com",
+        "password": "pw",
+    }
     attacker = {"name": "H", "surname": "T", "email": "h@example.com", "password": "pw"}
     await client.post("/api/auth/register", json=owner)
     await client.post("/api/auth/register", json=attacker)
@@ -196,6 +205,7 @@ async def test_edit_deck_forbidden_for_non_owner(client, test_db):
         headers=att_headers,
     )
     assert res.status_code == 403
+
 
 @pytest.mark.asyncio
 async def test_get_game_leaderboard(client, test_db):
