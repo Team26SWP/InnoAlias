@@ -2,16 +2,21 @@
 
 ## Architecture
 
-The InnoAlias system follows a modern microservices architecture with clear separation of concerns between frontend, backend, and database layers. The system is designed for scalability, maintainability, and real-time performance.
+The InnoAlias system follows a monolyth architecture with three tiers:  of concerns between frontend, backend, and database layers. The system is designed for scalability, maintainability, and real-time performance.
 
-**📋 Architecture Documentation Status**: Complete ✅
+**Key Dynamic Interactions:**
+
+1. **Presentation tier**: Frontend monolith in its own Docker container
+2. **Application tier**: Backend monolith in its own Docker container
+3. **Infrastructure tier**: Nginx container, Mongodb container
+
+**📋 Architecture Documentation Status**:
 All architectural views (static, dynamic, deployment) are fully documented with UML diagrams, performance tests, and deployment guides in the `docs/architecture/` directory.
 
 **🔧 Required Environment Variables:**
 - `SECRET_KEY`: JWT signing secret
 - `ALGORITHM`: JWT algorithm (default: HS256)
 - `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time
-- `MONGO_URL` or `MONGO_URI`: MongoDB connection string
 
 ### Static view
 
@@ -76,8 +81,8 @@ The complete game flow scenario has been tested using the provided performance t
 
 **Prerequisites:**
 1. **Start MongoDB**: `sudo systemctl start mongodb`
-2. **Install dependencies**: `pip install aiohttp`
-3. **Start backend server**: `python -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000`
+2. **Install dependencies**: `python -m pip install -r backend/requirements.txt`
+3. **Start backend server**: `python -m uvicorn backend.app.main:app --reload --port 8000`
 
 **Running the Test:**
 
@@ -96,10 +101,10 @@ The complete game flow scenario has been tested using the provided performance t
 sudo systemctl start mongodb
 
 # 2. Install dependencies
-pip install aiohttp
+python -m pip install -r backend/requirements.txt
 
 # 3. Start backend server
-python -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn backend.app.main:app --reload --port 8000
 
 # 4. Run performance test
 python docs/architecture/dynamic-view/performance-test.py http://localhost:8000
@@ -121,7 +126,7 @@ The deployment architecture is documented using a custom deployment diagram that
 **Deployment Architecture:**
 
 - **Client Layer**: Modern web browsers with WebSocket support
-- **Load Balancer**: Optional HAProxy/Nginx for high availability
+- **Load Balancer**: Nginx for high availability
 - **Web Server**: Nginx reverse proxy with SSL termination
 - **Application Layer**: Containerized frontend and backend services
 - **Database Layer**: MongoDB with persistent storage
