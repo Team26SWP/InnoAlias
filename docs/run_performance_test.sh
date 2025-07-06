@@ -8,6 +8,8 @@ set -e
 echo "🚀 InnoAlias Performance Test Runner"
 echo "======================================"
 
+cd ..
+
 # Check if we're in the right directory
 if [ ! -f "backend/app/main.py" ]; then
     echo "❌ Error: Please run this script from the InnoAlias project root"
