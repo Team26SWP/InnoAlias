@@ -51,7 +51,9 @@ https://github.com/Team26SWP/InnoAlias/blob/ca1317b7fe61124c86f485a1d6afc69a71ea
 3. **Backend integration tests**  
    End-to-end HTTP flows: registration, login, profile retrieval, game creation and retrieval, leaderboard export
 4. **Static analysis**  
-   Code style and error checking with ESLint
+   - **Frontend:** ESLint  
+   - **Backend:** Black, Flake8, Mypy  
+
 
 **Test locations:**
 
@@ -73,10 +75,13 @@ https://github.com/Team26SWP/InnoAlias/blob/ca1317b7fe61124c86f485a1d6afc69a71ea
 # Frontend
 npm run test           # Vitest
 npm run test -- --coverage
-npm run lint
+npm run lint           # ESLint
 
 # Backend
-pytest -q --disable-warnings
+pytest -q              # run all backend tests
+flake8 backend         # lint Python code
+black --check backend  # check Python formatting
+mypy backend           # static type checking
 
 ### User acceptance tests
 See [user tests](/docs/quality-assurance/user-acceptance-tests.md)
