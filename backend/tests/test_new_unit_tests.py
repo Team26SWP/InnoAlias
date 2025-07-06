@@ -62,6 +62,11 @@ async def test_create_ai_game(test_db, monkeypatch):
         mock_generate_aigame_code,
     )
 
+    monkeypatch.setattr(
+        "backend.app.services.aigame_service.aigames",
+        test_db.aigames,
+    )
+
     game_settings = AIGameSettings(
         time_for_guessing=10,
         word_amount=5,
