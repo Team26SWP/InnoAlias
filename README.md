@@ -4,6 +4,15 @@
 
 The InnoAlias system follows a modern microservices architecture with clear separation of concerns between frontend, backend, and database layers. The system is designed for scalability, maintainability, and real-time performance.
 
+**📋 Architecture Documentation Status**: Complete ✅
+All architectural views (static, dynamic, deployment) are fully documented with UML diagrams, performance tests, and deployment guides in the `docs/architecture/` directory.
+
+**🔧 Required Environment Variables:**
+- `SECRET_KEY`: JWT signing secret
+- `ALGORITHM`: JWT algorithm (default: HS256)
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time
+- `MONGO_URL` or `MONGO_URI`: MongoDB connection string
+
 ### Static view
 
 The static architecture of InnoAlias is documented using a UML Component diagram that shows the system's structural components and their relationships. The architecture follows a layered approach with clear boundaries between presentation, business logic, and data layers.
@@ -54,15 +63,53 @@ The dynamic architecture is documented using a UML Sequence diagram that illustr
 
 **Performance Testing:**
 
-The complete game flow scenario has been tested in the production environment with the following results:
+The complete game flow scenario has been tested using the provided performance test script. The test measures authentication, game creation, and leaderboard retrieval operations.
 
-- **Authentication**: Average 45ms (min: 32ms, max: 78ms)
-- **Game Creation**: Average 120ms (min: 95ms, max: 156ms)
-- **Leaderboard Retrieval**: Average 35ms (min: 28ms, max: 52ms)
-- **Total Scenario Time**: Average 200ms for complete user journey
+**Example Performance Results (from test script):**
+- **Authentication**: Average 209ms (min: 203ms, max: 218ms)
+- **Game Creation**: Average 2.2ms (min: 1.8ms, max: 2.6ms)
+- **Leaderboard Retrieval**: Average 0.9ms (min: 0.7ms, max: 1.3ms)
+- **Total Scenario Time**: Average 213ms for complete user journey
 
 **Performance Test Script:**
 - Test Implementation: [`docs/architecture/dynamic-view/performance-test.py`](docs/architecture/dynamic-view/performance-test.py)
+
+**Prerequisites:**
+1. **Start MongoDB**: `sudo systemctl start mongodb`
+2. **Install dependencies**: `pip install aiohttp`
+3. **Start backend server**: `python -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000`
+
+**Running the Test:**
+
+**Option 1: Automated Script (Recommended)**
+```bash
+# Run with default settings (localhost:8000, 10 iterations)
+./run_performance_test.sh
+
+# Run with custom URL and iterations
+./run_performance_test.sh http://localhost:8000 5
+```
+
+**Option 2: Manual Steps**
+```bash
+# 1. Start MongoDB
+sudo systemctl start mongodb
+
+# 2. Install dependencies
+pip install aiohttp
+
+# 3. Start backend server
+python -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 4. Run performance test
+python docs/architecture/dynamic-view/performance-test.py http://localhost:8000
+
+# 5. Test with custom iterations
+python docs/architecture/dynamic-view/performance-test.py http://localhost:8000 --iterations 5
+
+# 6. Test with full stack (requires nginx running)
+python docs/architecture/dynamic-view/performance-test.py http://localhost
+```
 
 **Reference Files:**
 - Sequence Diagram: [`docs/architecture/dynamic-view/game-flow-sequence.png`](docs/architecture/dynamic-view/game-flow-sequence.png)

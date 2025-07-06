@@ -9,6 +9,7 @@ import aiohttp
 import json
 import time
 import statistics
+import argparse
 from typing import Dict, List, Any
 import sys
 
@@ -42,10 +43,18 @@ class InnoAliasPerformanceTest:
             "password": "testpassword123"
         }
         
+        if not self.session:
+            return {
+                "success": False,
+                "duration_ms": 0,
+                "error": "Session not initialized"
+            }
+        
         try:
             async with self.session.post(
                 f"{self.base_url}/api/auth/login",
-                data=login_data
+                data=login_data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
             ) as response:
                 end_time = time.time()
                 duration = (end_time - start_time) * 1000  # Convert to milliseconds
@@ -89,6 +98,13 @@ class InnoAliasPerformanceTest:
         
         headers = {"Authorization": f"Bearer {token}"}
         
+        if not self.session:
+            return {
+                "success": False,
+                "duration_ms": 0,
+                "error": "Session not initialized"
+            }
+        
         try:
             async with self.session.post(
                 f"{self.base_url}/api/game/create",
@@ -123,6 +139,13 @@ class InnoAliasPerformanceTest:
     async def test_leaderboard(self, game_id: str) -> Dict[str, Any]:
         """Test leaderboard retrieval"""
         start_time = time.time()
+        
+        if not self.session:
+            return {
+                "success": False,
+                "duration_ms": 0,
+                "error": "Session not initialized"
+            }
         
         try:
             async with self.session.get(
@@ -214,16 +237,52 @@ class InnoAliasPerformanceTest:
 
 async def main():
     """Main function to run performance tests"""
-    if len(sys.argv) > 1:
-        base_url = sys.argv[1]
-    else:
-        base_url = "http://localhost"
+    parser = argparse.ArgumentParser(
+        description="Performance test script for InnoAlias game flow",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Prerequisites:
+  # 1. Start the backend server: python -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+  # 2. Ensure MongoDB is running: sudo systemctl start mongodb
+  # 3. Install dependencies: pip install aiohttp
+  
+  python docs/architecture/dynamic-view/performance-test.py                    # Test localhost:80 (requires nginx)
+  python docs/architecture/dynamic-view/performance-test.py http://localhost:8000  # Test backend directly
+  python docs/architecture/dynamic-view/performance-test.py --iterations 5    # Run 5 iterations
+  python docs/architecture/dynamic-view/performance-test.py --help            # Show this help
+        """
+    )
     
-    print(f"Testing InnoAlias performance at: {base_url}")
+    parser.add_argument(
+        "base_url",
+        nargs="?",
+        default="http://localhost",
+        help="Base URL of the InnoAlias backend (default: http://localhost)"
+    )
+    
+    parser.add_argument(
+        "--iterations",
+        "-i",
+        type=int,
+        default=10,
+        help="Number of test iterations (default: 10)"
+    )
+    
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose output"
+    )
+    
+    args = parser.parse_args()
+    
+    print(f"Testing InnoAlias performance at: {args.base_url}")
     print("=" * 50)
     
-    async with InnoAliasPerformanceTest(base_url) as tester:
-        results = await tester.run_performance_test(iterations=10)
+    async with InnoAliasPerformanceTest(args.base_url) as tester:
+        results = await tester.run_performance_test(iterations=args.iterations)
         
         print("\nPerformance Test Results:")
         print("=" * 50)
