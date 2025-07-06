@@ -60,7 +60,7 @@ function Profile() {
       }
     };
     fetchProfile();
-    setDeckLoad(config.getDeckChoice);
+    setDeckLoad(config.getDeckChoice());
   }, []);
 
   const selectTag = (event: React.MouseEvent) => {
@@ -319,12 +319,12 @@ function Profile() {
                     <button type="button" onClick={saveAll} className="px-2 py-1 text-[#1E6DB9] rounded text-sm">Save</button>
                     <button type="button" onClick={cancelAll} className="px-2 py-1 text-gray-500 rounded text-sm">Cancel</button>
                   </>
-                ) && !deckLoad : (
+                ) : (
                   <>
                     <button type="button" onClick={toggleEditAll} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">Edit</button>
                     <button type="button" onClick={deleteDeck} className="px-2 py-1 text-red-500 rounded text-sm">Delete</button>
                   </>
-                ) && !deckLoad}
+                )}
                 <button type="button" onClick={closeModal} className="px-2 py-1 text-gray-500 hover:text-gray-700 text-sm">✕</button>
               </div>
             </div>

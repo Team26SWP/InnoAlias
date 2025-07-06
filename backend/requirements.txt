@@ -14,3 +14,4 @@ mongomock_motor
 pytest
 python-multipart
 aiohttp
+google-genai

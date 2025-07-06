@@ -33,6 +33,7 @@ jobs:
               ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             "cd /home/InnoAlias \
              && git pull origin main \
+             && docker-compose down \
              && docker-compose pull \
              && docker-compose up -d \
              && docker image prune -f"
