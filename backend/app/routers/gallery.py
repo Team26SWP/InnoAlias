@@ -25,8 +25,8 @@ async def save_deck_from_gallery (
     deck_id: str,
     current_user: UserInDB = Depends(get_current_user),
 ):
-    temp_user = await users.find_one({"_id": current_user.id}) if current_user else None
-    temp_deck = await decks.find_one({"_id": deck_id}) if deck_id else None
+    temp_user = await users.find_one({"_id": current_user.id})
+    temp_deck = await decks.find_one({"_id": deck_id})
     if not temp_user:
         raise HTTPException(status_code=404, detail="User not found")
     if not temp_deck:

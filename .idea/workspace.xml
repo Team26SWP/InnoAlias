@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="54d3dfd9-bb05-46c0-b3e6-b477d6dd442f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/PythonProject8.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/PythonProject8.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app/routers/profile.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/routers/profile.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -64,7 +62,7 @@
       <option name="presentableId" value="Default" />
       <updated>1751633420924</updated>
       <workItem from="1751633422168" duration="6171000" />
-      <workItem from="1751886234051" duration="1359000" />
+      <workItem from="1751886234051" duration="2001000" />
     </task>
     <servers />
   </component>
