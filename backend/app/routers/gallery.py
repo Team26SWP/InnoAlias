@@ -23,7 +23,7 @@ async def get_gallery(number: int):
     )
     return {
         "gallery": cursor,
-        "total_decks": await decks.count_documents({"private": False})
+        "total_decks": await decks.count_documents({"private": False}),
     }
 
 

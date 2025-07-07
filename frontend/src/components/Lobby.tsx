@@ -1,9 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as config from './config';
 
+interface Player {
+  name: string;
+  team: string;
+}
+
 function Lobby() {
   const args = useRef<config.Arguments>({ name: '', code: '', isHost: false });
-  const [players, setPlayers] = useState<string[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [socket, setSocket] = useState<WebSocket>();
   const [teams, setTeams] = useState<string[]>([]);
   const { name, code, isHost } = args.current;
@@ -24,9 +29,16 @@ function Lobby() {
     ws.onmessage = (message) => {
       if (isHost) {
         const data: config.HostGameState = JSON.parse(message.data);
-        let sup: string[] = [];
-        Object.keys(data.teams)
-          .forEach((teamId) => { sup = sup.concat(data.teams[teamId].players); });
+        const sup: Player[] = [];
+        const teamIds: string[] = Object.keys(data.teams);
+        for (let i = 0; i < teamIds.length; i += 1) {
+          for (let j = 0; j < data.teams[teamIds[i]].players.length; j += 1) {
+            sup.push({
+              name: data.teams[teamIds[i]].players[j],
+              team: data.teams[teamIds[i]].name,
+            });
+          }
+        }
         if (sup) {
           setPlayers(sup);
         }
@@ -37,7 +49,7 @@ function Lobby() {
         }
       } else {
         const data: config.PlayerGameState = JSON.parse(message.data);
-        setPlayers(Object.keys(data.team_scores));
+        setPlayers(Object.keys(data.team_scores).map((playerName) => ({ name: playerName, team: '' })));
         setTeams(Object.keys(data.all_teams_scores));
         if (data.game_state === 'in_progress') {
           config.setInitialPlayerState(data);
@@ -62,8 +74,10 @@ function Lobby() {
           <h2 className="text-xl font-bold text-[#1E6DB9] mb-4">Players:</h2>
           <div className="h-64 bg-[#E2E2E2] rounded-xl p-4 overflow-auto">
             {players.map((p) => (
-              <div key={p} className="mb-2 text-[#1E6DB9]">
-                {p}
+              <div key={p.name} className="mb-2 text-[#1E6DB9]">
+                {p.name}
+                {' - '}
+                {p.team}
               </div>
             ))}
           </div>

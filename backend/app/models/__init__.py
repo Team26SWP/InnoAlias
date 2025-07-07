@@ -3,6 +3,24 @@ from typing import Optional, List, Literal, Dict
 from pydantic import BaseModel, Field
 
 
+class AIGameSettings(BaseModel):
+    time_for_guessing: int = Field(...)
+    word_amount: int = Field(...)
+
+
+class AIGame(BaseModel):
+    id: Optional[str] = Field(None, alias="_id")
+    player_id: str
+    deck: List[str]
+    game_state: str = "pending"
+    settings: AIGameSettings
+    remaining_words: List[str] = []
+    current_word: Optional[str] = None
+    clues: List[str] = []
+    score: int = 0
+    expires_at: Optional[datetime] = None
+
+
 class Team(BaseModel):
     id: str
     name: str
