@@ -5,6 +5,7 @@ from backend.app.routers.auth import router as auth_router
 from backend.app.routers.game import router as game_router
 from backend.app.routers.profile import router as profile_router
 from backend.app.routers.gallery import router as gallery_router
+
 app = FastAPI()
 
 app.add_middleware(
