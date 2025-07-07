@@ -114,7 +114,7 @@ docker-compose up -d --build
 
 After build, you can use app on localhost.
 
-## Documentaation
+## Documentation
 
 - [Develompent](https://github.com/Team26SWP/InnoAlias/edit/main/README.md#development)
 - [Quality attribute scenatios](https://github.com/Team26SWP/InnoAlias/edit/main/README.md#quality-attribute-scenarios)
