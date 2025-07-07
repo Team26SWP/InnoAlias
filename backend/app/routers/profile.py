@@ -63,6 +63,11 @@ async def save_deck_into_profile(
     deck: DeckIn,
     current_user: UserInDB = Depends(get_current_user),
 ):
+    temp_cursor = db.decks.find({"name": deck.name})
+    if temp_cursor:
+        raise HTTPException(400, "Deck with this name already exists")
+    if not await db.users.find_one({"_id": current_user.id}):
+        raise HTTPException(status_code=404, detail="User not found")
     deck_id = await generate_deck_id()
     temp_deck = {
         "_id": deck_id,
@@ -72,8 +77,6 @@ async def save_deck_into_profile(
         "owner_ids": [current_user.id],
         "private": False,
     }
-    if not await db.users.find_one({"_id": current_user.id}):
-        raise HTTPException(status_code=404, detail="User not found")
 
     await db.decks.insert_one(temp_deck)
     await db.users.update_one(
