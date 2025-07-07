@@ -7,6 +7,7 @@ from backend.app.routers.profile import router as profile_router
 from backend.app.routers.gallery import router as gallery_router
 from backend.app.routers.aigame import router as aigame_router
 from backend.app.routers.admin_panel import router as admin_router
+
 app = FastAPI()
 
 app.add_middleware(
