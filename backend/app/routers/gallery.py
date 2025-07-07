@@ -20,7 +20,7 @@ async def get_gallery(number: int):
     }
 
 
-@router.put("/decks/save/{deck_id}")
+@router.put("/decks/{deck_id}")
 async def save_deck_from_gallery (
     deck_id: str,
     current_user: UserInDB = Depends(get_current_user),
