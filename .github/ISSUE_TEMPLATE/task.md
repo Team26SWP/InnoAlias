@@ -2,7 +2,7 @@
 name: Task
 about: Describe a task that needs to be done
 title: ''
-labels: ''
+labels: task
 assignees: ''
 
 ---
