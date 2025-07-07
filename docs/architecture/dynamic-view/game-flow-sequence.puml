@@ -1,0 +1,107 @@
+@startuml InnoAlias Game Flow Sequence
+!theme plain
+skinparam sequenceMessageAlign center
+
+actor User as U
+participant "Frontend\n(React)" as F
+participant "Nginx\n(Reverse Proxy)" as N
+participant "Backend\n(FastAPI)" as B
+participant "Auth Service" as AS
+participant "Game Service" as GS
+participant "Code Generator" as CG
+participant "MongoDB" as DB
+
+== Authentication Phase ==
+U -> F: Navigate to Login
+F -> N: HTTP POST /api/auth/login
+N -> B: Forward request
+B -> AS: authenticate_user(email, password)
+AS -> DB: find user by email
+DB --> AS: user document
+AS -> AS: verify_password()
+AS -> AS: create_access_token()
+AS --> B: JWT token
+B --> N: HTTP 200 + token
+N --> F: Forward response
+F --> U: Store token, redirect to home
+
+== Game Creation Phase ==
+U -> F: Click "Create Game"
+F -> F: Validate form data
+F -> N: HTTP POST /api/game/create
+N -> B: Forward request
+B -> GS: create_game(game_data)
+GS -> CG: generate_game_code()
+CG --> GS: unique game code
+GS -> GS: shuffle_words()
+GS -> GS: setup_teams()
+GS -> DB: insert_one(game_document)
+DB --> GS: inserted_id
+GS --> B: game_id
+B --> N: HTTP 200 + game_id
+N --> F: Forward response
+F --> U: Show game code, redirect to lobby
+
+== Game Start Phase ==
+U -> F: Click "Start Game"
+F -> N: WebSocket /api/game/{game_id}
+N -> B: Upgrade connection
+B -> GS: connect_host(websocket, game_id)
+GS -> DB: find_one(game_id)
+DB --> GS: game document
+GS -> GS: process_new_word(team_id, time_limit)
+GS -> DB: update_one(game_state: "in_progress")
+DB --> GS: confirmation
+GS -> GS: broadcast_state(game_id, game_data)
+GS --> B: WebSocket message
+B --> N: Forward WebSocket message
+N --> F: Real-time game state
+F --> U: Show game interface
+
+== Gameplay Phase ==
+U -> F: Submit answer
+F -> N: WebSocket message
+N -> B: Forward WebSocket message
+B -> GS: process_answer(game_id, team_id, answer)
+GS -> DB: find_one(game_id)
+DB --> GS: current game state
+GS -> GS: validate_answer()
+GS -> GS: update_scores()
+GS -> GS: check_advancement()
+GS -> DB: update_one(scores, state)
+DB --> GS: confirmation
+GS -> GS: broadcast_state(game_id, updated_state)
+GS --> B: WebSocket message
+B --> N: Forward WebSocket message
+N --> F: Real-time updates
+F --> U: Show updated game state
+
+== Game End Phase ==
+U -> F: Click "End Game"
+F -> N: WebSocket message
+N -> B: Forward WebSocket message
+B -> GS: stop_game(game_id)
+GS -> DB: find_one(game_id)
+DB --> GS: final game state
+GS -> GS: determine_winning_team()
+GS -> DB: update_one(game_state: "finished")
+DB --> GS: confirmation
+GS -> GS: broadcast_state(game_id, final_state)
+GS --> B: WebSocket message
+B --> N: Forward WebSocket message
+N --> F: Final game state
+F --> U: Show results, redirect to leaderboard
+
+== Leaderboard Phase ==
+U -> F: View Leaderboard
+F -> N: HTTP GET /api/game/leaderboard/{game_id}
+N -> B: Forward request
+B -> GS: get_leaderboard(game_id)
+GS -> DB: find_one(game_id)
+DB --> GS: game with scores
+GS --> B: leaderboard data
+B --> N: HTTP 200 + leaderboard
+N --> F: Forward response
+F --> U: Display leaderboard
+
+@enduml 

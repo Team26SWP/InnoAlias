@@ -1,0 +1,103 @@
+@startuml InnoAlias Static Architecture
+!theme plain
+skinparam componentStyle rectangle
+
+package "Frontend (React)" {
+    [Home Component] as Home
+    [CreateGame Component] as CreateGame
+    [JoinGame Component] as JoinGame
+    [Quiz Component] as Quiz
+    [Lobby Component] as Lobby
+    [Leaderboard Component] as Leaderboard
+    [Login Component] as Login
+    [Register Component] as Register
+    [Profile Component] as Profile
+    [Host Component] as Host
+    [EmailConfirm Component] as EmailConfirm
+    [Config Utils] as Config
+}
+
+package "Backend (FastAPI)" {
+    [Auth Router] as AuthRouter
+    [Game Router] as GameRouter
+    [Profile Router] as ProfileRouter
+    [Auth Service] as AuthService
+    [Game Service] as GameService
+    [Code Generator] as CodeGen
+    [Database Models] as Models
+}
+
+package "Database" {
+    [MongoDB] as MongoDB
+}
+
+package "Infrastructure" {
+    [Nginx Reverse Proxy] as Nginx
+}
+
+' Frontend internal relationships
+Home --> Config
+CreateGame --> Config
+JoinGame --> Config
+Quiz --> Config
+Lobby --> Config
+Leaderboard --> Config
+Login --> Config
+Register --> Config
+Profile --> Config
+Host --> Config
+EmailConfirm --> Config
+
+' Frontend to Backend communication
+Login --> AuthRouter : HTTP/REST
+Register --> AuthRouter : HTTP/REST
+CreateGame --> GameRouter : HTTP/REST
+JoinGame --> GameRouter : WebSocket
+Quiz --> GameRouter : WebSocket
+Lobby --> GameRouter : WebSocket
+Host --> GameRouter : WebSocket
+Leaderboard --> GameRouter : HTTP/REST
+Profile --> ProfileRouter : HTTP/REST
+
+' Backend internal relationships
+AuthRouter --> AuthService
+GameRouter --> GameService
+GameRouter --> CodeGen
+ProfileRouter --> AuthService
+AuthService --> Models
+GameService --> Models
+CodeGen --> Models
+
+' Backend to Database
+AuthService --> MongoDB : MongoDB Driver
+GameService --> MongoDB : MongoDB Driver
+Models --> MongoDB : MongoDB Driver
+
+' Infrastructure relationships
+Nginx --> Frontend : HTTP/HTTPS
+Nginx --> Backend : HTTP/HTTPS
+
+note right of Frontend
+  React SPA with TypeScript
+  Tailwind CSS for styling
+  WebSocket for real-time game updates
+end note
+
+note right of Backend
+  FastAPI with async/await
+  JWT authentication
+  WebSocket support for real-time features
+end note
+
+note right of Database
+  MongoDB for document storage
+  Collections: users, games
+end note
+
+note right of Infrastructure
+  Nginx as reverse proxy
+  Docker containerization
+  Load balancing ready
+end note
+
+@enduml 
