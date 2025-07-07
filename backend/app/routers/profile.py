@@ -63,6 +63,8 @@ async def save_deck_into_profile(
     deck: DeckIn,
     current_user: UserInDB = Depends(get_current_user),
 ):
+    if not await db.users.find_one({"_id": current_user.id}):
+        raise HTTPException(status_code=404, detail="User not found")
     deck_id = await generate_deck_id()
     temp_deck = {
         "_id": deck_id,
@@ -70,9 +72,8 @@ async def save_deck_into_profile(
         "tags": deck.tags,
         "words": deck.words,
         "owner_ids": [current_user.id],
+        "private": False,
     }
-    if not await db.users.find_one({"_id": current_user.id}):
-        raise HTTPException(status_code=404, detail="User not found")
 
     await db.decks.insert_one(temp_deck)
     await db.users.update_one(
@@ -100,6 +101,8 @@ async def edit_deck(
         update_data["words"] = deck.words
     if deck.tags is not None:
         update_data["tags"] = deck.tags
+    if deck.private is not None:
+        update_data["private"] = deck.private
 
     if update_data:
         await db.decks.update_one({"_id": deck_id}, {"$set": update_data})
@@ -113,6 +116,7 @@ async def edit_deck(
         words_count=len(updated.get("words", [])),
         tags=updated.get("tags"),
         words=updated.get("words", []),
+        private=updated.get("private", False),
     )
 
 
