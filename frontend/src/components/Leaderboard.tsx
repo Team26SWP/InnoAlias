@@ -142,6 +142,7 @@ export function Leaderboard() {
       <div className="bg-[#d9d9d9] rounded-xl w-full max-w-3xl p-4 max-h-[400px] overflow-y-auto flex flex-col gap-2 mb-8">
         {Object.keys(teams).map((team, index) => (
           <div key={team}>
+            {Object.keys(teams).length !== 1 && (
             <div
               key={team}
               className="bg-[#bfbfbf] rounded-lg px-4 py-2 flex justify-between items-center text-[#3171a6] font-bold text-lg"
@@ -152,14 +153,14 @@ export function Leaderboard() {
               <span>{team}</span>
               <span>{teams[team].total_score}</span>
             </div>
+            )}
             {Object.keys(teams[team].players).map((player, indexP) => (
               <div
                 key={player}
-                className="bg-[#bfbfbf] rounded-lg px-4 py-2 ml-10 mt-2 flex justify-between items-center text-[#3171a6] font-bold text-lg"
+                className={`bg-[#bfbfbf] rounded-lg px-4 py-2 ${Object.keys(teams).length !== 1 && 'ml-10'} mt-2 flex justify-between items-center text-[#3171a6] font-bold text-lg`}
               >
                 <span>
-                  {index + 1}
-                  .
+                  {Object.keys(teams).length !== 1 && `${index + 1}.`}
                   {indexP + 1}
                 </span>
                 <span>{player}</span>
