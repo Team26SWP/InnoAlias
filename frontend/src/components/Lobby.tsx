@@ -71,13 +71,17 @@ function Lobby() {
     <div className="min-h-screen pt-32 px-9 bg-[#FAF6E9] dark:bg-[#1A1A1A] px-6 py-12 font-adlam">
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-start gap-12">
         <div className="w-full lg:w-1/3">
-          <h2 className="text-xl font-bold text-[#1E6DB9] mb-4">Players:</h2>
+          <h2 className="text-xl font-bold text-[#1E6DB9] mb-4">
+            Players
+            {!isHost && teams.length !== 1 && ' in your team'}
+            :
+          </h2>
           <div className="h-64 bg-[#E2E2E2] rounded-xl p-4 overflow-auto">
             {players.map((p) => (
               <div key={p.name} className="mb-2 text-[#1E6DB9]">
                 {p.name}
-                {' - '}
-                {p.team}
+                {isHost && teams.length !== 1 && ' - '}
+                {isHost && teams.length !== 1 && p.team}
               </div>
             ))}
           </div>
@@ -123,7 +127,7 @@ function Lobby() {
             Start game
           </button>
         </div>
-      ) : (
+      ) : (teams.length !== 1 && (
         <div className="mt-12 text-center">
           <select
             id="team-select"
@@ -136,7 +140,7 @@ function Lobby() {
             ))}
           </select>
         </div>
-      )}
+      ))}
     </div>
   );
 }
