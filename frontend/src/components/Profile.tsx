@@ -16,7 +16,7 @@ function Profile() {
     },
   ]);
   const [tags, setTags] = useState<string[]>([]);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchString, setSearchString] = useState<string | null>(null);
   const [deckLoad, setDeckLoad] = useState<boolean>(false);
 
@@ -48,9 +48,13 @@ function Profile() {
         setProfile(data);
         config.setProfile(data);
         setDecks(data.decks);
-        let supp: string[] = [];
+        const supp: string[] = [];
         data.decks.forEach((deck) => {
-          supp = supp.concat(deck.tags);
+          deck.tags.forEach((tag) => {
+            if (!supp.includes(tag)) {
+              supp.push(tag);
+            }
+          });
         });
         setTags(supp);
       } catch (err) {
@@ -64,12 +68,14 @@ function Profile() {
   }, []);
 
   const selectTag = (event: React.MouseEvent) => {
-    if (!(event.target instanceof HTMLButtonElement)) { return; }
-    if (event.target.textContent === selectedTag) {
-      setSelectedTag(null);
+    const btn = event.target;
+    if (!(btn instanceof HTMLButtonElement)) { return; }
+    if (!(btn.textContent)) { return; }
+    if (selectedTags.includes(btn.textContent)) {
+      setSelectedTags(selectedTags.filter((tag) => (tag !== btn.textContent)));
       return;
     }
-    setSelectedTag(event.target.textContent);
+    setSelectedTags(selectedTags.concat(btn.textContent));
   };
 
   const searchInput = (event: React.ChangeEvent) => {
@@ -190,8 +196,11 @@ function Profile() {
   };
 
   function checkDeck(deck: config.Deck) {
-    return ((!selectedTag) || deck.tags.indexOf(selectedTag) !== -1)
-      && ((!searchString) || deck.name.includes(searchString));
+    for (let i = 0; i < selectedTags.length; i += 1) {
+      if (!deck.tags.includes(selectedTags[i])) { return false; }
+    }
+    if (!searchString) { return true; }
+    return deck.name.toLowerCase().includes(searchString.toLowerCase());
   }
 
   function toPage(page : 'Home' | 'Create' | 'Join') {
@@ -268,7 +277,7 @@ function Profile() {
               <button
                 type="button"
                 key={tag}
-                className={`px-4 py-1 rounded-md text-sm font-bold transition whitespace-nowrap ${selectedTag === tag ? 'bg-[#1E6DB9] text-white' : 'bg-[#e0e0e0] text-[#1E6DB9] hover:bg-[#d5d5d5]'}`}
+                className={`px-4 py-1 rounded-md text-sm font-bold transition whitespace-nowrap ${selectedTags.includes(tag) ? 'bg-[#1E6DB9] text-white' : 'bg-[#e0e0e0] text-[#1E6DB9] hover:bg-[#d5d5d5]'}`}
                 onClick={selectTag}
               >
                 {tag}
