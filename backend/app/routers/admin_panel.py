@@ -4,7 +4,7 @@ from fastapi import HTTPException, Depends
 from fastapi import APIRouter
 
 from backend.app.db import db
-from backend.app.services.auth_service import users
+from backend.app.services.auth_service import users, get_current_user
 from backend.app.services.game_service import decks
 
 router = APIRouter(prefix="", tags=["admin"])
@@ -17,7 +17,7 @@ logs = db.logs
 async def delete_user(
     user_id: str,
     reason: str,
-    current_user=Depends(users.get_current_user),
+    current_user=Depends(get_current_user),
 ):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
@@ -41,7 +41,7 @@ async def delete_user(
 
 
 @router.get("/logs")
-async def get_logs(current_user=Depends(users.get_current_user)):
+async def get_logs(current_user=Depends(get_current_user)):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
     show_logs = await logs.find()
@@ -51,9 +51,7 @@ async def get_logs(current_user=Depends(users.get_current_user)):
 
 
 @router.delete("/delete/deck/{deck_id}")
-async def delete_deck(
-    deck_id, reason: str, current_user=Depends(users.get_current_user)
-):
+async def delete_deck(deck_id, reason: str, current_user=Depends(get_current_user)):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
     deck = await decks.find_one({"deck_id": deck_id})
@@ -75,7 +73,7 @@ async def delete_deck(
 @router.put("/add/{user_id}")
 async def add_admin(
     user_id: str,
-    current_user=Depends(users.get_current_user),
+    current_user=Depends(get_current_user),
 ):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
@@ -96,7 +94,7 @@ async def add_admin(
 @router.put("/remove/{user_id}")
 async def remove_admin(
     user_id: str,
-    current_user=Depends(users.get_current_user),
+    current_user=Depends(get_current_user),
 ):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
@@ -118,7 +116,7 @@ async def remove_admin(
 async def delete_tag(
     tag: str,
     reason: str,
-    current_user=Depends(users.get_current_user),
+    current_user=Depends(get_current_user),
 ):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
@@ -135,7 +133,7 @@ async def delete_tag(
 
 
 @router.delete("/clear/logs")
-async def clear_logs(current_user=Depends(users.get_current_user)):
+async def clear_logs(current_user=Depends(get_current_user)):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
     await db.drop_collection("logs")
