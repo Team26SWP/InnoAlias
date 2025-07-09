@@ -135,6 +135,7 @@ class UserInDB(BaseModel):
     email: str
     hashed_password: str
     deck_ids: List[str] = Field(default_factory=list)
+    isAdmin: Optional[bool] = Field(default=False)
 
 
 class ProfileResponse(BaseModel):
