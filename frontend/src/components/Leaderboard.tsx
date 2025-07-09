@@ -59,7 +59,13 @@ export function Leaderboard() {
       return;
     }
     const deckName = prompt('Please, input the name of the deck');
-    if (!deckName) { return; }
+    const profile = config.getProfile();
+    if (!deckName || !profile) { return; }
+
+    if (profile.decks.map((deck) => deck.name.toLowerCase()).includes(deckName.toLowerCase())) {
+      alert('Deck with this name already exists');
+      return;
+    }
 
     const tagsInput = prompt('Please, input tags separated by commas (optional)');
     const tags = tagsInput ? tagsInput.split(',').map((t) => t.trim()).filter(Boolean) : [];

@@ -43,17 +43,20 @@ export function Home() {
   React.useEffect(() => {
     config.closeConnection();
     config.resetGameCreation();
-    if (!config.getProfile() && localStorage.getItem('access_token')) {
-      loadProfile();
+    async function gameLoad() {
+      if (!config.getProfile() && localStorage.getItem('access_token')) {
+        await loadProfile();
+      }
+      const code = new URLSearchParams(window.location.search).get('code');
+      const profile = config.getProfile();
+      if (!profile && code) {
+        config.navigateTo(config.Page.Login);
+      }
+      if (profile && code) {
+        config.navigateTo(config.Page.Join, { name: profile.name, code, isHost: false });
+      }
     }
-    const code = new URLSearchParams(window.location.search).get('code');
-    const profile = config.getProfile();
-    if (!profile && code) {
-      config.navigateTo(config.Page.Login);
-    }
-    if (profile && code) {
-      config.navigateTo(config.Page.Join, { name: profile.name, code, isHost: false });
-    }
+    gameLoad();
   }, []);
 
   return (
