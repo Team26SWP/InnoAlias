@@ -73,6 +73,14 @@ function Home() {
     } catch {
       /* lalala */
     }
+    const code = new URLSearchParams(window.location.search).get('code');
+    const profile = config.getProfile();
+    if (!profile && code) {
+      config.navigateTo(config.Page.Login);
+    }
+    if (profile && code) {
+      config.navigateTo(config.Page.Join, { name: profile.name, code, isHost: false });
+    }
   }, []);
 
   useEffect(() => {
