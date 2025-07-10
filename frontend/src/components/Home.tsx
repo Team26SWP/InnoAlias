@@ -54,6 +54,7 @@ function Home() {
 
   const isLoggedIn = Boolean(localStorage.getItem('access_token'));
 
+
   const handleScroll = useCallback((): void => {
     setShowGallery(window.scrollY > 0);
   }, []);
@@ -73,18 +74,25 @@ function Home() {
     } catch {
       /* lalala */
     }
-    const code = new URLSearchParams(window.location.search).get('code');
-    const profile = config.getProfile();
-    if (!profile && code) {
-      config.navigateTo(config.Page.Login);
-    }
-    if (profile && code) {
-      config.navigateTo(config.Page.Join, { name: profile.name, code, isHost: false });
-    }
+    gameLoad();
   }, []);
 
   useEffect(() => {
     loadGallery();
+    config.closeConnection();
+    config.resetGameCreation();
+    async function gameLoad() {
+      if (!config.getProfile() && localStorage.getItem('access_token')) {
+        await loadProfile();
+      }
+      const code = new URLSearchParams(window.location.search).get('code');
+      const profile = config.getProfile();
+      if (!profile && code) {
+        config.navigateTo(config.Page.Login);
+      }
+      if (profile && code) {
+        config.navigateTo(config.Page.Join, { name: profile.name, code, isHost: false });
+      }
   }, [loadGallery]);
 
   const fullGallery = useMemo<Template[]>(() => [...dummyTemplates, ...apiGallery], [apiGallery]);

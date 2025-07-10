@@ -359,7 +359,7 @@ function Profile() {
               ))}
             </ul>
             <div className="flex space-x-2 items-center justify-end mt-7">
-              <button type="button" onClick={selectDeck} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">Use</button>
+              {!isEditingAll && (<button type="button" onClick={selectDeck} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">Use</button>)}
             </div>
           </div>
         </div>
