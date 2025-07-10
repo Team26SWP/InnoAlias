@@ -135,7 +135,7 @@ export function CreateGame() {
       >
         ←Back to main
       </button>
-      <h1 className="text-4xl font-bold mb-10 text-center">Create A Game</h1>
+      <h1 className="text-4xl font-bold mb-10 text-center">Create Game</h1>
 
       <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl items-start">
         <div className="flex-1 w-full">
@@ -186,8 +186,8 @@ export function CreateGame() {
       </button>
 
       {showSettings && (
-      <div className="fixed inset-0 bg-black backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-[#DBD9D1] text-[#1E6DB9] rounded-lg px-12 py-10 w-[90%] max-w-2xl relative font-adlam">
+      <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-[#DBD9D1] text-[#1E6DB9] rounded-lg px-6 py-10 w-[90%] max-w-2xl relative">
           <button
             type="button"
             onClick={() => setShowSettings(false)}
@@ -196,114 +196,97 @@ export function CreateGame() {
             ✕
           </button>
 
-          <div className="flex flex-col gap-4 mt-10">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-bold w-36">Time:</span>
-              <div className="flex items-center gap-2">
-                <input
-                  id="minutes"
-                  type="number"
-                  placeholder={Math.floor(settings.time / 60).toString()}
-                  className="w-14 p-2 rounded-md"
-                  onChange={(e) => {
-                    e.target.value = downToRange(Number.parseInt(e.target.value, 10), 0, 59)
-                      .toString();
-                  }}
-                />
-                <span className="text-sm">min</span>
-                <input
-                  id="seconds"
-                  type="number"
-                  placeholder={(settings.time % 60).toString()}
-                  className="w-14 p-2 rounded-md"
-                  onChange={(e) => {
-                    e.target.value = downToRange(Number.parseInt(e.target.value, 10), 0, 59)
-                      .toString();
-                  }}
-                />
-                <span className="text-sm">sec</span>
-              </div>
+          <div className="grid md:grid-cols-[35ch_auto_auto_minmax(0,1fr)] lg:grid-cols-[40ch_auto_auto_minmax(0,1fr)] gap-x-2 gap-y-4 items-center">
+            <span className="font-bold text-left">Time:</span>
+            <input
+              id="minutes"
+              type="number"
+              placeholder={Math.floor(settings.time / 60).toString()}
+              className="w-12 p-2 rounded-md"
+              onChange={(e) => {
+                e.target.value = downToRange(Number.parseInt(e.target.value, 10), 0, 59)
+                  .toString();
+              }}
+            />
+            <span className="text-sm">min</span>
+            <div className="flex items-center gap-2">
+              <input
+                id="seconds"
+                type="number"
+                placeholder={String(settings.time % 60)}
+                className="w-12 p-2 rounded-md"
+                onChange={(e) => {
+                  e.target.value = downToRange(Number.parseInt(e.target.value, 10), 0, 59)
+                    .toString();
+                }}
+              />
+              <span className="text-sm">sec</span>
             </div>
 
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-bold w-36">Deck limit:</span>
-              <div className="flex items-center gap-2">
-                <input
-                  id="deck-length"
-                  type="number"
-                  placeholder={settings.deckLimit.toString()}
-                  className="w-14 p-2 rounded-md"
-                />
-                <span className="text-sm">cards</span>
-              </div>
+            <span className="font-bold text-left">Deck limit:</span>
+            <div />
+            <div />
+            <div className="flex items-center gap-2">
+              <input
+                id="deck-length"
+                type="number"
+                placeholder={settings.deckLimit.toString()}
+                className="w-12 p-2 rounded-md"
+              />
+              <span className="text-sm">cards</span>
+            </div>
+            <span className="font-bold text-left">Limit of attempts:</span>
+            <div />
+            <div />
+            <div className="flex items-center gap-2">
+              <input
+                id="attempts"
+                type="number"
+                placeholder={String(settings.attemptsLimit)}
+                className="w-12 p-2 rounded-md"
+                onChange={(e) => {
+                  e.target.value = String(
+                    downToRange(parseInt(e.target.value, 10), 1, 100),
+                  );
+                }}
+              />
+              <span className="text-sm">tries</span>
             </div>
 
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-bold w-36">Limit of attempts:</span>
-              <div className="flex items-center gap-2">
-                <input
-                  id="attempts"
-                  type="number"
-                  placeholder={settings.attemptsLimit.toString()}
-                  className="w-14 p-2 rounded-md"
-                  onChange={(e) => {
-                    e.target.value = downToRange(Number.parseInt(e.target.value, 10), 1, 100)
-                      .toString();
-                  }}
-                />
-                <span className="text-sm">attempts</span>
-              </div>
+            <span className="font-bold text-left">Limit of correct answers:</span>
+            <div />
+            <div />
+            <div className="flex items-center gap-2">
+              <input
+                id="answers"
+                type="number"
+                placeholder={String(settings.answersLimit)}
+                className="w-12 p-2 rounded-md"
+                onChange={(e) => {
+                  e.target.value = downToRange(Number.parseInt(e.target.value, 10), 1, 100)
+                    .toString();
+                }}
+              />
+              <span className="text-sm">teams</span>
             </div>
+          </div>
 
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-bold w-36">Limit of correct answers:</span>
-              <div className="flex items-center gap-2">
-                <input
-                  id="answers"
-                  type="number"
-                  placeholder={settings.answersLimit.toString()}
-                  className="w-14 p-2 rounded-md"
-                  onChange={(e) => {
-                    e.target.value = downToRange(Number.parseInt(e.target.value, 10), 1, 100)
-                      .toString();
-                  }}
-                />
-                <span className="text-sm">players</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-5 mt-10">
+            <label htmlFor="single-master" className="flex items-center gap-2">
+              <input type="radio" id="single-master" name="master-mode" value="single" defaultChecked={!settings.rotateMasters} />
+              <span className="font-bold w-36">Single Master</span>
+            </label>
+            <label htmlFor="different-master" className="flex items-center gap-2">
+              <input type="radio" id="different-master" name="master-mode" value="different" defaultChecked={settings.rotateMasters} />
+              <span className="font-bold w-36">Different Masters</span>
+            </label>
+          </div>
 
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-bold w-36">Number of teams:</span>
-              <div className="flex items-center gap-2">
-                <input
-                  id="teams"
-                  type="number"
-                  placeholder={settings.numberOfTeams.toString()}
-                  className="w-14 p-2 rounded-md"
-                  onChange={(e) => {
-                    e.target.value = downToRange(Number.parseInt(e.target.value, 10), 1, 100)
-                      .toString();
-                  }}
-                />
-                <span className="text-sm">teams</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-5 mt-10">
-              <label htmlFor="single-master" className="flex items-center gap-2">
-                <input type="radio" id="single-master" name="master-mode" value="single" defaultChecked={!settings.rotateMasters} />
-                <span className="font-bold w-36">Single Master</span>
-              </label>
-              <label htmlFor="different-master" className="flex items-center gap-2">
-                <input type="radio" id="different-master" name="master-mode" value="different" defaultChecked={settings.rotateMasters} />
-                <span className="font-bold w-36">Different Masters</span>
-              </label>
-            </div>
-
+          <div className="flex justify-center w-full mt-6">
             <button
               type="button"
               onClick={saveSettings}
-              className="bg-[#1E6DB9] text-white py-2 mt-4 rounded-md"
+              className="bg-[#1E6DB9] text-white px-8 py-4 rounded-md text-lg w-64"
             >
               Save
             </button>
@@ -311,7 +294,6 @@ export function CreateGame() {
         </div>
       </div>
       )}
-
     </div>
   );
 }

@@ -176,7 +176,7 @@ function Quiz() {
   }
 
   return ( // Playing field for the player
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#ffefe3] p-10 font-adlam">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#FAF6E9] dark:bg-[#1A1A1A] p-10 font-adlam">
       <div className="bg-[#d9d9d9] rounded-lg p-6 w-full md:w-1/2 min-h-[400px] mb-6 md:mb-0">
         <h2 className="text-2xl font-bold text-[#3171a6] border-b-4 border-[#3171a6] mb-4">Entered words:</h2>
         <ul className="text-[#3171a6]">
