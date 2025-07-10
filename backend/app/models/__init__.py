@@ -10,7 +10,6 @@ class AIGameSettings(BaseModel):
 
 class AIGame(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
-    player_id: str
     deck: List[str]
     game_state: str = "pending"
     settings: AIGameSettings
