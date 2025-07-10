@@ -1,4 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+} from 'react';
 import * as config from './config';
 
 export function JoinGame() {
@@ -13,21 +18,6 @@ export function JoinGame() {
   const codeFromUrl = urlParams.get('code')?.toUpperCase();
   const gameCode = codeFromUrl || manualCode;
 
-  useEffect(() => {
-    const profile = config.getProfile();
-    if (profile) {
-      setPlayerName(profile.name);
-    }
-  }, []);
-
-  const validatePlayerName = (name: string): string | null => {
-    // no need (max/min lenght in html)
-    /* if (name.length < 2) {return 'Name must be at least 2 characters long';}
-    if (name.length > 20) {return 'Name must be less than 20 characters';} */
-    if (!/^[a-zA-Z\s-]+$/.test(name)) { return 'Name can only contain letters, spaces'; }
-    return null;
-  };
-
   const validateGameCode = (code: string): string | null => {
     // no need (max lenght in html)
     // if (code.length !== 6) {return 'Game code must be 6 characters long';}
@@ -35,26 +25,30 @@ export function JoinGame() {
     return null;
   };
 
-  const handleJoinGame = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleJoinGame = useCallback(async (
+    e: React.FormEvent | null = null,
+    name: string = playerName,
+  ) => {
+    if (e) {
+      e.preventDefault();
+    }
 
-    const nameError = validatePlayerName(playerName);
     const codeError = validateGameCode(gameCode);
 
-    if (nameError || codeError) {
-      setError(nameError || codeError);
+    if (codeError) {
+      setError(codeError);
       return;
     }
 
     setIsLoading(true);
     setError(null);
 
-    const socket = config.connectSocketPlayer(playerName, gameCode);
+    const socket = config.connectSocketPlayer(name, gameCode);
     socketRef.current = socket;
 
     socket.onopen = () => {
       setSocketOpen(true);
-      config.navigateTo(config.Page.Lobby, { name: playerName, code: gameCode, isHost: false });
+      config.navigateTo(config.Page.Lobby, { name, code: gameCode, isHost: false });
     };
 
     socket.onerror = () => {
@@ -68,7 +62,18 @@ export function JoinGame() {
         setIsLoading(false);
       }
     };
-  };
+  }, [gameCode, playerName, socketOpen]);
+
+  useEffect(() => {
+    const profile = config.getProfile();
+    if (profile) {
+      setPlayerName(profile.name);
+    }
+    if (codeFromUrl && profile) {
+      window.history.pushState({}, document.title, window.location.pathname);
+      handleJoinGame(null, profile.name);
+    }
+  }, [codeFromUrl, handleJoinGame]);
 
   return (
     <div className="min-h-screen bg-[#FAF6E9] dark:bg-[#1A1A1A] flex flex-col items-center justify-center px-6 py-12">
