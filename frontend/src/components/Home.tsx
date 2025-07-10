@@ -54,7 +54,6 @@ function Home() {
 
   const isLoggedIn = Boolean(localStorage.getItem('access_token'));
 
-
   const handleScroll = useCallback((): void => {
     setShowGallery(window.scrollY > 0);
   }, []);
@@ -67,15 +66,24 @@ function Home() {
   }, [handleScroll]);
 
   const loadGallery = useCallback(async (): Promise<void> => {
-    try {
-      const data = await fetchGallery();
-      const templates = (data.templates ?? []) as Template[];
-      setApiGallery([...templates].reverse());
-    } catch {
-      /* lalala */
-    }
-    gameLoad();
+    const data = await fetchGallery();
+    const templates = (data.templates ?? []) as Template[];
+    setApiGallery([...templates].reverse());
   }, []);
+
+  const loadProfile = async () => {
+    const response = await fetch(`${config.HTTP_URL}/profile/me`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    const profile = await response.json();
+    if (response.ok) {
+      config.setProfile(profile);
+    }
+  };
 
   useEffect(() => {
     loadGallery();
@@ -93,6 +101,8 @@ function Home() {
       if (profile && code) {
         config.navigateTo(config.Page.Join, { name: profile.name, code, isHost: false });
       }
+    }
+    gameLoad();
   }, [loadGallery]);
 
   const fullGallery = useMemo<Template[]>(() => [...dummyTemplates, ...apiGallery], [apiGallery]);
