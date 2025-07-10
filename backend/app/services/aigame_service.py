@@ -55,7 +55,6 @@ async def create_aigame(game: AIGame) -> str:
 
     new_game = {
         "_id": code,
-        "player_id": game.player_id,
         "deck": words,
         "game_state": "pending",
         "settings": game.settings.model_dump(),
