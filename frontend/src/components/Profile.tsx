@@ -20,7 +20,6 @@ function Profile() {
   const [searchString, setSearchString] = useState<string | null>(null);
   const [deckLoad, setDeckLoad] = useState<boolean>(false);
 
-  /* для модальных окон */
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isEditingAll, setIsEditingAll] = useState<boolean>(false);
   const [draft, setDraft] = useState<DeckWithWords | null>(null);
@@ -230,24 +229,23 @@ function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF6E9] px-6 py-10 font-adlam text-[#1E6DB9]">
+    <div className="min-h-screen bg-[#FAF6E9] dark:bg-[#1A1A1A] px-10 py-0.5 font-adlam text-[#1E6DB9]">
       {!deckLoad && (
         <>
-          <div className="flex justify-between items-center mb-6 mt-6">
-            <h1 className="text-2xl sm:text-2xl md:text-2xl font-bold ">Profile</h1>
-            <div className="flex gap-8">
-              <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Home')}>Home</button>
-              <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Create')}>Create game</button>
-              <button type="button" className="text-base sm:text-lg md:text-xl hover:underline" onClick={() => toPage('Join')}>Join game</button>
-            </div>
+          <div className="flex justify-between items-center mb-6 mt-5">
+            <button type="button" className="py-1 text-xl left-4 text-[#1E6DB9] hover:underline" onClick={() => config.navigateTo(config.Page.Home)}>←Back to main</button>
             <button type="button" onClick={logOut} className="px-4 py-2 bg-[#1E6DB9] text-white rounded-md hover:bg-gray-300 transition">Sign out</button>
           </div>
-
-          <div className="flex items-center mb-10 gap-6">
-            <div className="w-36 h-36 bg-gray-300 rounded-full" />
+          <h1 className="py-1 text-2xl sm:text-3xl md:text-3xl mb-6 font-bold ">Profile</h1>
+          <div className="flex items-center mb-10 gap-5">
+            <div className="w-36 h-36 bg-[#c9c9c9] rounded-full" />
             <div>
-              <h2 className="text-4xl font-bold">{profile.name}</h2>
-              <p className="text-black text-7sm font-semibold">{profile.email}</p>
+              <h2 className="text-4xl font-bold">
+                {profile.name}
+                &nbsp;
+                {profile.surname}
+              </h2>
+              <p className="text-black dark:text-white text-7sm font-semibold">{profile.email}</p>
             </div>
           </div>
         </>
@@ -259,22 +257,22 @@ function Profile() {
           onChange={searchInput}
           type="text"
           placeholder="Search decks"
-          className="w-full md:max-w-md p-3 rounded-full border border-gray-300 shadow-sm placeholder:text-[#1E6DB9] text-[#1E6DB9] font-semibold"
+          className="w-full md:max-w-md p-3 rounded-full bg-[#c9c9c9] shadow-sm placeholder:text-[#1E6DB9] text-[#1E6DB9] dark:text-white font-semibold"
         />
-
-        <div className="overflow-x-scroll whitespace-nowrap mt-3 md:mt-0">
-          <div className="flex gap-2">
-            {tags.map((tag) => (
-              <button
-                type="button"
-                key={tag}
-                className={`px-4 py-1 rounded-md text-sm font-bold transition whitespace-nowrap ${selectedTag === tag ? 'bg-[#1E6DB9] text-white' : 'bg-[#e0e0e0] text-[#1E6DB9] hover:bg-[#d5d5d5]'}`}
-                onClick={selectTag}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
+      </div>
+      <div> </div>
+      <div className="overflow-x-scroll whitespace-nowrap mt-4 hide-scrollbar">
+        <div className="flex gap-2">
+          {tags.map((tag) => (
+            <button
+              type="button"
+              key={tag}
+              className={`px-4 py-1 rounded-md text-sm font-bold transition whitespace-nowrap ${selectedTag === tag ? 'bg-[#1E6DB9] text-white' : 'bg-[#e0e0e0] text-[#1E6DB9] hover:bg-[#d5d5d5]'}`}
+              onClick={selectTag}
+            >
+              {tag}
+            </button>
+          ))}
         </div>
       </div>
 
