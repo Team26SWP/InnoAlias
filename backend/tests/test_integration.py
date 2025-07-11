@@ -162,6 +162,7 @@ async def test_delete_deck_requires_auth(client):
 async def test_profile_forbidden_for_other_user(client, test_db):
     user1 = {"name": "A", "surname": "B", "email": "a@example.com", "password": "pw", "isAdmin": "true"}
     user2 = {"name": "C", "surname": "D", "email": "c@example.com", "password": "pw", "isAdmin": "true"}
+    
     await client.post("/api/auth/register", json=user1)
     await client.post("/api/auth/register", json=user2)
     login = await client.post(
