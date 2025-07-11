@@ -8,7 +8,7 @@ async def test_end_to_end_auth_flow(client):
         "surname": "Doe",
         "email": "ann@example.com",
         "password": "pw",
-        "isAdmin": "true"
+        "isAdmin": "true",
     }
     r1 = await client.post("/api/auth/register", json=user)
     assert r1.status_code == 200
@@ -32,7 +32,7 @@ async def test_deck_save_and_profile_listing(client, test_db):
         "surname": "Smith",
         "email": "bob@example.com",
         "password": "pw",
-        "isAdmin": "true"
+        "isAdmin": "true",
     }
     await client.post("/api/auth/register", json=user)
     login = await client.post(
@@ -68,7 +68,7 @@ async def test_edit_deck_and_fetch_details(client):
         "surname": "Jones",
         "email": "carl@example.com",
         "password": "pw",
-        "isAdmin": "true"
+        "isAdmin": "true",
     }
     await client.post("/api/auth/register", json=user)
     login = await client.post(
@@ -126,7 +126,7 @@ async def test_delete_deck_removes_from_profile(client, test_db):
         "surname": "User",
         "email": "del@example.com",
         "password": "pw",
-        "isAdmin": "true"
+        "isAdmin": "true",
     }
     await client.post("/api/auth/register", json=user)
     login = await client.post(
@@ -160,9 +160,21 @@ async def test_delete_deck_requires_auth(client):
 
 @pytest.mark.asyncio
 async def test_profile_forbidden_for_other_user(client, test_db):
-    user1 = {"name": "A", "surname": "B", "email": "a@example.com", "password": "pw", "isAdmin": "true"}
-    user2 = {"name": "C", "surname": "D", "email": "c@example.com", "password": "pw", "isAdmin": "true"}
-    
+    user1 = {
+        "name": "A",
+        "surname": "B",
+        "email": "a@example.com",
+        "password": "pw",
+        "isAdmin": "true",
+    }
+    user2 = {
+        "name": "C",
+        "surname": "D",
+        "email": "c@example.com",
+        "password": "pw",
+        "isAdmin": "true",
+    }
+
     await client.post("/api/auth/register", json=user1)
     await client.post("/api/auth/register", json=user2)
     login = await client.post(
@@ -182,7 +194,7 @@ async def test_edit_deck_forbidden_for_non_owner(client, test_db):
         "surname": "U",
         "email": "owner@example.com",
         "password": "pw",
-        "isAdmin": "true"
+        "isAdmin": "true",
     }
     attacker = {"name": "H", "surname": "T", "email": "h@example.com", "password": "pw"}
     await client.post("/api/auth/register", json=owner)
