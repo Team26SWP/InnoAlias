@@ -46,6 +46,7 @@ async def get_profile(user_id: str, current_user: UserInDB = Depends(get_current
         name=user_data["name"],
         surname=user_data["surname"],
         email=user_data["email"],
+        isAdmin=user_data.get("isAdmin", False),
         decks=[
             DeckPreview(
                 id=deck["_id"],
