@@ -3,6 +3,7 @@ import HomePage from './components/Home';
 import CreateGamePage from './components/CreateGame';
 import JoinGamePage from './components/JoinGame';
 import QuizPage from './components/Quiz';
+import AiQuizPage from './components/AiQuiz';
 import LobbyPage from './components/Lobby';
 import LeaderboardPage from './components/Leaderboard';
 import LoginPage from './components/Login';
@@ -33,6 +34,8 @@ function App() {
         return <LobbyPage />;
       case config.Page.Quiz:
         return <QuizPage />;
+      case config.Page.AiGame:
+        return <AiQuizPage />;
       case config.Page.Leaderboard:
         return <LeaderboardPage />;
       case config.Page.Login:

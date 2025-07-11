@@ -4,6 +4,7 @@ export enum Page {
   Create = 'Create',
   AiCreate = 'AiCreate',
   Quiz = 'Quiz',
+  AiGame = 'AiGame',
   Lobby = 'Lobby',
   Leaderboard = 'Leaderboard',
   Results = 'Results',
@@ -55,6 +56,21 @@ export interface HostGameState {
   winning_team: string;
 }
 
+export interface AiGameState {
+  _id: string;
+  deck: string[];
+  game_state: 'pending' | 'in_progress' | 'finished';
+  settings: {
+    time_for_guessing: number,
+    word_amount: number,
+  };
+  remaining_words: string[];
+  current_word: string | null;
+  clues: string[];
+  score: number;
+  expires_at: string | null;
+}
+
 export interface Deck {
   id: string;
   name: string;
@@ -100,26 +116,37 @@ export class Settings {
 export interface GameCreationState {
   settings: Settings;
   words: string[];
+  aiGame: boolean;
 }
 
+// WebSocket instances
 let hostSocket: WebSocket | null = null;
 let playerSocket: WebSocket | null = null;
 let aiSocket: WebSocket | null = null;
 
+// Initial states (recieved from websoket in onmessage and transferred to other page)
 let initialHostGameState: HostGameState | null = null;
 let initialPlayerGameState: PlayerGameState | null = null;
+let initialAiGameState: AiGameState | null = null;
+
+// Supplementary variables to help with page management
 let rotation = false;
 let deckChoice = false;
+let args : Arguments;
+let profile: UserProfile | null = null;
 
+// Game creation state to remember when loading a deck
 const creationState: GameCreationState = {
   settings: new Settings(60, 0, 3, 1, false, 1),
   words: [],
+  aiGame: false,
 };
 
-const HOST = 'localhost:8000'; // in development, will change later
+const HOST = window.location.host; // in development, will change later
 export const WS_URL = `ws://${HOST}/api`;
 export const HTTP_URL = `http://${HOST}/api`;
 
+// WebSocket functions
 export function connectSocketHost(hostId: string, gameCode: string) {
   if (!hostSocket) {
     hostSocket = new WebSocket(`${WS_URL}/game/${gameCode}?id=${hostId}`);
@@ -158,21 +185,7 @@ export function closeConnection() {
   initialPlayerGameState = null;
 }
 
-let args : Arguments;
-let profile: UserProfile | null = null;
-
-export function setProfile(newProfile: UserProfile | null) {
-  profile = newProfile;
-}
-
-export function getProfile(): UserProfile | null {
-  return profile;
-}
-
-export function getArgs() {
-  return args;
-}
-
+// Page navigation
 let setCurrentPage: ((page: Page) => void) | null = null;
 
 export function registerSetCurrentPage(fn: (page: Page) => void) {
@@ -186,41 +199,73 @@ export function navigateTo(page: Page, newArgs: Arguments = { name: '', code: ''
   setCurrentPage(page);
   args = newArgs;
 }
-export function setInitialHostState(init: HostGameState) {
+
+export function getArgs() {
+  return args;
+}
+
+// Profile
+export function setProfile(newProfile: UserProfile | null) {
+  profile = newProfile;
+}
+
+export function getProfile(): UserProfile | null {
+  return profile;
+}
+
+// Initial states
+export function setInitialHostState(init: HostGameState) { // Host
   initialHostGameState = init;
 }
-export function setInitialPlayerState(init: PlayerGameState) {
+export function getInitialHostState() {
+  return initialHostGameState;
+}
+
+export function setInitialPlayerState(init: PlayerGameState) { // Player
   initialPlayerGameState = init;
 }
 export function getInitialPlayerState() {
   return initialPlayerGameState;
 }
-export function getInitialHostState() {
-  return initialHostGameState;
+
+export function setInitialAiState(init: AiGameState) { // Ai
+  initialAiGameState = init;
 }
+export function getInitialAiState() {
+  return initialAiGameState;
+}
+
+// Supplementary variables
 export function setRotation(newRotation: boolean) {
   rotation = newRotation;
 }
 export function getRotation() {
   return rotation;
 }
+
 export function setDeckChoice(newChoice: boolean) {
   deckChoice = newChoice;
 }
 export function getDeckChoice() {
   return deckChoice;
 }
+
+// Game creation
 export function resetGameCreation() {
   creationState.settings = new Settings(60, 0, 3, 1, false, 1);
   creationState.words = [];
+  creationState.aiGame = false;
 }
-export function saveCreationState(settings: Settings, words: string[]) {
+export function saveCreationState(settings: Settings, words: string[], aiGame: boolean = false) {
   creationState.settings = settings;
   creationState.words = words;
+  creationState.aiGame = aiGame;
 }
 export function loadCreationState() {
   return creationState;
 }
+
+// Used to add words from a chosen deck into game creation
 export function addWords(words: string[]) {
   for (let i = 0; i < words.length; i += 1) {
     let addition = true;

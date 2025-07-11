@@ -14,7 +14,6 @@ export function CreateGame(prop: CreateProp) {
   const [settings] = useState<config.Settings>(config.loadCreationState().settings);
   const socketRef = useRef<WebSocket | null>(null);
   const { aiGame } = prop;
-  console.log(aiGame);
 
   useEffect(() => {
     const profile = config.getProfile();
@@ -52,7 +51,7 @@ export function CreateGame(prop: CreateProp) {
   };
 
   const loadDeck = () => {
-    config.saveCreationState(settings, words);
+    config.saveCreationState(settings, words, aiGame);
     config.setDeckChoice(true);
     config.navigateTo(config.Page.Profile);
   };
@@ -126,8 +125,10 @@ export function CreateGame(prop: CreateProp) {
           config.navigateTo(config.Page.Lobby, { name: hostId, code: gameCode, isHost: true });
         };
       } else {
-        socket.onopen = () => { console.log('ai game lol'); };
-        socket.onmessage = (msg) => { console.log(msg.data); };
+        socket.onmessage = (msg) => {
+          config.setInitialAiState(JSON.parse(msg.data));
+          config.navigateTo(config.Page.AiGame);
+        };
       }
 
       socket.onerror = () => {
