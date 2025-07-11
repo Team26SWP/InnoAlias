@@ -142,6 +142,7 @@ class ProfileResponse(BaseModel):
     name: str
     surname: str
     email: str
+    isAdmin: bool
     decks: List[DeckPreview] = Field(default_factory=list)
 
 
