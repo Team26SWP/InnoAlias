@@ -35,7 +35,7 @@ const dummyTemplates: Template[] = [
 ];
 
 async function fetchGallery(): Promise<{ templates?: Template[] }> {
-  const response = await fetch(`${config.HTTP_URL}/templates/public`, {
+  const response = await fetch(`http://${window.location.host}/templates/public`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
