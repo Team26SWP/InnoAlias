@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as config from './config';
 
 const { HTTP_URL } = config;
@@ -17,6 +17,7 @@ export function Leaderboard() {
   const [deckName, setDeckName] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const isPrivate = useRef(false);
   const [allTags, setAllTags] = useState<string[]>([]);
 
   useEffect(() => {
@@ -51,20 +52,13 @@ export function Leaderboard() {
 
   useEffect(() => {
     if (!isModalOpen) { return; }
-    const token = localStorage.getItem('access_token');
-    if (!token) { return; }
-    (async () => {
-      try {
-        const resp = await fetch(`${HTTP_URL}/profile/deck/tags`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!resp.ok) return;
-        const data = (await resp.json()) as { tags: string[] };
-        setAllTags(data.tags);
-      } catch (e) {
-        console.error('Failed to fetch tag suggestions', e);
-      }
-    })();
+    const profile = config.getProfile();
+    if (!profile) { return; }
+    let supp: string[] = [];
+    profile.decks.forEach((deck) => {
+      supp = supp.concat(deck.tags.filter((tag) => !supp.includes(tag)));
+    });
+    setAllTags(supp);
   }, [isModalOpen]);
 
   const openModal = () => setIsModalOpen(true);
@@ -94,6 +88,12 @@ export function Leaderboard() {
       alert('You must be logged in to save a deck.');
       return;
     }
+    const profile = config.getProfile();
+    if (!profile) { return; }
+    if (profile.decks.map((deck) => deck.name.toLowerCase()).includes(deckName.toLowerCase())) {
+      alert('Deck with this name already exists');
+      return;
+    }
     let words: string[] = [];
     try {
       const deckResp = await fetch(`${HTTP_URL}/game/deck/${config.getArgs().code}`);
@@ -118,6 +118,7 @@ export function Leaderboard() {
           deck_name: deckName,
           words,
           tags,
+          isPrivate,
         }),
       });
       if (saveResp.ok) {
@@ -138,11 +139,6 @@ export function Leaderboard() {
     const name = prompt('Input the name of the file');
     const profile = config.getProfile();
     if (!deckName || !profile) { return; }
-
-    if (profile.decks.map((deck) => deck.name.toLowerCase()).includes(deckName.toLowerCase())) {
-      alert('Deck with this name already exists');
-      return;
-    }
 
     const response = await fetch(`${HTTP_URL}/game/leaderboard/${config.getArgs().code}/export`, {
       method: 'GET',
@@ -189,19 +185,28 @@ export function Leaderboard() {
       <h1 className="text-3xl font-bold text-[#3171a6] mb-6">Leaderboard</h1>
 
       <div className="bg-[#d9d9d9] rounded-xl w-full max-w-3xl p-4 max-h-[400px] overflow-y-auto flex flex-col gap-2 mb-8">
-        {Object.keys(teams).map((team, idx) => (
+        {Object.keys(teams).map((team, index) => (
           <div key={team}>
-            <div className="bg-[#bfbfbf] rounded-lg px-4 py-2 flex justify-between items-center text-[#3171a6] font-bold text-lg">
-              <span>{idx + 1}</span>
+            {Object.keys(teams).length !== 1 && (
+            <div
+              key={team}
+              className="bg-[#bfbfbf] rounded-lg px-4 py-2 flex justify-between items-center text-[#3171a6] font-bold text-lg"
+            >
+              <span>
+                {index + 1}
+              </span>
               <span>{team}</span>
               <span>{teams[team].total_score}</span>
             </div>
-            {Object.keys(teams[team].players).map((player, pIdx) => (
-              <div key={player} className="bg-[#bfbfbf] rounded-lg px-4 py-2 ml-10 mt-2 flex justify-between items-center text-[#3171a6] font-bold text-lg">
+            )}
+            {Object.keys(teams[team].players).map((player, indexP) => (
+              <div
+                key={player}
+                className={`bg-[#bfbfbf] rounded-lg px-4 py-2 ${Object.keys(teams).length !== 1 && 'ml-10'} mt-2 flex justify-between items-center text-[#3171a6] font-bold text-lg`}
+              >
                 <span>
-                  {idx + 1}
-                  .
-                  {pIdx + 1}
+                  {Object.keys(teams).length !== 1 && `${index + 1}.`}
+                  {indexP + 1}
                 </span>
                 <span>{player}</span>
                 <span>{teams[team].players[player]}</span>
@@ -250,6 +255,14 @@ export function Leaderboard() {
                 </div>
               </label>
             </div>
+            <label htmlFor="public" className="mr-10">
+              <input type="radio" id="public" name="isPublic" className="mr-2" defaultChecked onClick={() => { isPrivate.current = false; }} />
+              Public
+            </label>
+            <label htmlFor="private" className="mr-10">
+              <input type="radio" id="private" name="isPublic" className="mr-2" onClick={() => { isPrivate.current = true; }} />
+              Private
+            </label>
             <div className="mb-4 relative">
               <label htmlFor="tagInput" className="block text-sm text-[#3171a6] font-medium mb-1">
                 <span className="font-bold w-36 inline-block">Tags</span>
@@ -262,6 +275,8 @@ export function Leaderboard() {
                     onKeyDown={(e) => e.key === 'Enter' && addTag()}
                     className="flex-1 border rounded px-3 py-2"
                     placeholder="Add a tag and press Enter"
+                    list="tag-suggestions"
+                    disabled={tags.length >= 5}
                   />
                   <button type="button" onClick={() => addTag()} className="px-4 py-2 bg-[#3171a6] text-white rounded">
                     Add
@@ -269,19 +284,13 @@ export function Leaderboard() {
                 </div>
 
                 {filteredSuggestions.length > 0 && (
-                <ul className="absolute z-10 bg-white border rounded mt-1 w-full max-h-40 overflow-y-auto">
+                <datalist id="tag-suggestions" className="absolute z-10 bg-white border rounded mt-1 w-full max-h-40 overflow-y-auto">
                   {filteredSuggestions.map((sug) => (
-                    <li key={sug}>
-                      <button
-                        type="button"
-                        onClick={() => addTag(sug)}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-200 cursor-pointer text-sm text-[#3171a6]"
-                      >
-                        {sug}
-                      </button>
-                    </li>
+                    <option key={sug} value={sug}>
+                      {sug}
+                    </option>
                   ))}
-                </ul>
+                </datalist>
                 )}
               </label>
 
