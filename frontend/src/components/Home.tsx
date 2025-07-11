@@ -16,26 +16,13 @@ interface CreateParams {
   templateId: string
 }
 
-const dummyTemplates: Template[] = [
-  {
-    id: 'd1', name: 'Animals', termCount: 5, ownerName: 'Gay', terms: ['Cat', 'Dog', 'Elephant', 'Lion', 'Tiger'], tags: ['pets', 'wild', 'nature'],
-  },
-  {
-    id: 'd2', name: 'Films', termCount: 4, ownerName: 'Alex', terms: ['Inception', 'Titanic', 'Matrix', 'Avatar'], tags: ['film', 'films'],
-  },
-  {
-    id: 'd3', name: 'Fruits', termCount: 6, ownerName: 'Matvei', terms: ['Apple', 'Banana', 'Orange', 'Kiwi', 'Mango', 'Pear'], tags: ['tasty', 'fruit'],
-  },
-  {
-    id: 'd4', name: 'Cities', termCount: 5, ownerName: 'Zahkar', terms: ['London', 'Paris', 'Tokyo', 'New York', 'Berlin'], tags: ['Japan', 'USA', 'Europe'],
-  },
-  {
-    id: 'd5', name: 'Towns', termCount: 5, ownerName: 'Masha', terms: ['London', 'Paris', 'Tokyo', 'New York', 'Berlin'], tags: ['Towns'],
-  },
-];
+interface GalleryResponse {
+  decks: Template[]
+  total_count: number
+}
 
-async function fetchGallery(): Promise<{ templates?: Template[] }> {
-  const response = await fetch(`http://${window.location.host}/templates/public`, {
+async function fetchGallery(page: number = 1): Promise<GalleryResponse> {
+  const response = await fetch(`${config.HTTP_URL}/gallery/decks?number=${page}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -45,12 +32,31 @@ async function fetchGallery(): Promise<{ templates?: Template[] }> {
   return response.json();
 }
 
+async function saveDeck(deckId: string): Promise<string> {
+  const response = await fetch(`${config.HTTP_URL}/gallery/decks/${deckId}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to save deck');
+  }
+  const result = await response.json();
+  return result.id;
+}
+
 function Home() {
   const [apiGallery, setApiGallery] = useState<Template[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [visibleCount, setVisibleCount] = useState<number>(8);
   const [showGallery, setShowGallery] = useState<boolean>(false);
   const [selectedDeck, setSelectedDeck] = useState<Template | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [saveLoading, setSaveLoading] = useState<boolean>(false);
 
   const isLoggedIn = Boolean(localStorage.getItem('access_token'));
 
@@ -65,11 +71,51 @@ function Home() {
     };
   }, [handleScroll]);
 
-  const loadGallery = useCallback(async (): Promise<void> => {
-    const data = await fetchGallery();
-    const templates = (data.templates ?? []) as Template[];
-    setApiGallery([...templates].reverse());
+  const loadGallery = useCallback(async (page: number = 1): Promise<void> => {
+    try {
+      setIsLoading(true);
+      const data = await fetchGallery(page);
+      const templates = data.decks as Template[];
+      setApiGallery([...templates].reverse());
+      setTotalCount(data.total_count);
+    } catch (error) {
+      console.error('Failed to load gallery:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  const loadMoreGallery = useCallback(async (): Promise<void> => {
+    try {
+      const nextPage = currentPage + 1;
+      const data = await fetchGallery(nextPage);
+      const templates = data.decks as Template[];
+      setApiGallery(prev => [...prev, ...templates]);
+      setCurrentPage(nextPage);
+    } catch (error) {
+      console.error('Failed to load more gallery:', error);
+    }
+  }, [currentPage]);
+
+  const handleSaveDeck = useCallback(async (deckId: string): Promise<void> => {
+    if (!isLoggedIn) {
+      config.navigateTo(config.Page.Login);
+      return;
+    }
+    
+    try {
+      setSaveLoading(true);
+      await saveDeck(deckId);
+      const profile = config.getProfile();
+      if (profile) {
+        await loadProfile();
+      }
+    } catch (error) {
+      console.error('Failed to save deck:', error);
+    } finally {
+      setSaveLoading(false);
+    }
+  }, [isLoggedIn]);
 
   const loadProfile = async () => {
     const response = await fetch(`${config.HTTP_URL}/profile/me`, {
@@ -105,16 +151,14 @@ function Home() {
     gameLoad();
   }, [loadGallery]);
 
-  const fullGallery = useMemo<Template[]>(() => [...dummyTemplates, ...apiGallery], [apiGallery]);
-
   const filtered = useMemo<Template[]>(() => {
     const term = searchTerm.trim().toLowerCase();
-    return fullGallery.filter((t) => {
+    return apiGallery.filter((t) => {
       const inName = t.name.toLowerCase().includes(term);
       const inTags = t.tags.some((tag) => tag.toLowerCase().includes(term));
       return inName || inTags;
     });
-  }, [fullGallery, searchTerm]);
+  }, [apiGallery, searchTerm]);
 
   const handleCreateGame = useCallback((): void => {
     config.navigateTo(isLoggedIn ? config.Page.Create : config.Page.Login);
@@ -223,6 +267,15 @@ function Home() {
           Show more
         </button>
         )}
+        {apiGallery.length > 0 && visibleCount >= filtered.length && currentPage * 50 < totalCount && (
+        <button
+          type="button"
+          onClick={loadMoreGallery}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Loading...' : 'Load more'}
+        </button>
+        )}
       </div>
       {selectedDeck && (
         <>
@@ -237,7 +290,7 @@ function Home() {
             role="dialog"
             aria-modal="true"
           >
-            <div className="bg-gray-300 rounded-lg max-w-md w-full p-6 space-y-4 z-60  onClick={(e) => e.stopPropagation()">
+            <div className="bg-gray-300 rounded-lg max-w-md w-full p-6 space-y-4 z-60" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-3xl font-bold">{selectedDeck.name}</h3>
               <ul className="max-h-48 overflow-y-auto list-disc list-inside space-y-1">
                 {selectedDeck.terms.map((term) => (
@@ -254,6 +307,15 @@ function Home() {
                 >
                   Cancel
                 </button>
+                {isLoggedIn && (
+                  <button
+                    type="button"
+                    onClick={() => handleSaveDeck(selectedDeck.id)}
+                    disabled={saveLoading}
+                  >
+                    {saveLoading ? 'Saving...' : 'Save to profile'}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={useThisDeck}
