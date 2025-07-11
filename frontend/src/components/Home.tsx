@@ -120,6 +120,10 @@ function Home() {
     config.navigateTo(isLoggedIn ? config.Page.Create : config.Page.Login);
   }, [isLoggedIn]);
 
+  const handleCreateAiGame = useCallback((): void => {
+    config.navigateTo(isLoggedIn ? config.Page.AiCreate : config.Page.Login);
+  }, [isLoggedIn]);
+
   const handleJoinGame = useCallback((): void => {
     config.navigateTo(isLoggedIn ? config.Page.Join : config.Page.Login);
   }, [isLoggedIn]);
@@ -157,7 +161,7 @@ function Home() {
             onClick={handleCreateGame}
             className="bg-[#1E6DB9] text-[#FAF6DB] font-adlam px-6 py-3 rounded-lg text-lg font-medium hover:opacity-90 transition"
           >
-            Create game
+            Create lobby
           </button>
           <button
             type="button"
@@ -165,6 +169,13 @@ function Home() {
             className="border border-[#1E6DB9] bg-transparent text-[#1E6DB9] font-adlam px-6 py-3 rounded-lg text-lg font-medium hover:opacity-90 transition"
           >
             Join game
+          </button>
+          <button
+            type="button"
+            onClick={handleCreateAiGame}
+            className="bg-[#1E6DB9] text-[#FAF6DB] font-adlam px-6 py-3 rounded-lg text-lg font-medium hover:opacity-90 transition"
+          >
+            Singleplayer
           </button>
         </div>
       </div>

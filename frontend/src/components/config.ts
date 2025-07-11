@@ -2,6 +2,7 @@ export enum Page {
   Home = 'Home',
   Join = 'Join',
   Create = 'Create',
+  AiCreate = 'AiCreate',
   Quiz = 'Quiz',
   Lobby = 'Lobby',
   Leaderboard = 'Leaderboard',
@@ -103,6 +104,7 @@ export interface GameCreationState {
 
 let hostSocket: WebSocket | null = null;
 let playerSocket: WebSocket | null = null;
+let aiSocket: WebSocket | null = null;
 
 let initialHostGameState: HostGameState | null = null;
 let initialPlayerGameState: PlayerGameState | null = null;
@@ -114,7 +116,7 @@ const creationState: GameCreationState = {
   words: [],
 };
 
-const HOST = window.location.host;
+const HOST = 'localhost:8000'; // in development, will change later
 export const WS_URL = `ws://${HOST}/api`;
 export const HTTP_URL = `http://${HOST}/api`;
 
@@ -132,6 +134,13 @@ export function connectSocketPlayer(playerName: string, gameCode: string) {
   return playerSocket;
 }
 
+export function connectSocketAi(gameCode: string) {
+  if (!aiSocket) {
+    aiSocket = new WebSocket(`${WS_URL}/aigame/${gameCode}`);
+  }
+  return aiSocket;
+}
+
 export function closeConnection() {
   if (hostSocket && hostSocket.readyState === WebSocket.OPEN) {
     hostSocket.close();
@@ -140,6 +149,10 @@ export function closeConnection() {
   if (playerSocket && playerSocket.readyState === WebSocket.OPEN) {
     playerSocket.close();
     playerSocket = null;
+  }
+  if (aiSocket && aiSocket.readyState === WebSocket.OPEN) {
+    aiSocket.close();
+    aiSocket = null;
   }
   initialHostGameState = null;
   initialPlayerGameState = null;

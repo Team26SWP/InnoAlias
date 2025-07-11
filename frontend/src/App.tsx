@@ -26,7 +26,9 @@ function App() {
       case config.Page.Join:
         return <JoinGamePage />;
       case config.Page.Create:
-        return <CreateGamePage />;
+        return <CreateGamePage aiGame={false} />;
+      case config.Page.AiCreate:
+        return <CreateGamePage aiGame />;
       case config.Page.Lobby:
         return <LobbyPage />;
       case config.Page.Quiz:
