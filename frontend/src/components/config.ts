@@ -66,7 +66,8 @@ export interface UserProfile {
   name: string;
   surname: string;
   email: string;
-  decks: Deck[],
+  decks: Deck[];
+  isAdmin: boolean;
 }
 export class Settings {
   time: number;

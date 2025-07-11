@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import * as config from './config';
+import AdminPanelMenu from './AdminPanelMenu';
 
 type DeckWithWords = config.Deck & { words: string[] };
 
 function Profile() {
+  //test flag
+  const isadmintest = true;
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -239,6 +242,7 @@ function Profile() {
 
   return (
     <div className="min-h-screen bg-[#FAF6E9] dark:bg-[#1A1A1A] px-10 py-0.5 font-adlam text-[#1E6DB9]">
+      {(profile.isAdmin || isadmintest) && <AdminPanelMenu />}
       {!deckLoad && (
         <>
           <div className="flex justify-between items-center mb-6 mt-5">
