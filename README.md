@@ -1,15 +1,23 @@
-<h1 align="center">InnoAlias</h1>
+
+[![GitHub contributors][contributors-pic]](contributors-url)
+[![Issues][issues-pic]](issues-url)
+[![Milestones][milestones-pic]](milestones-url)
+[![Licence][license-pic]](license-url)
+[![Release][release-pic]](release-url)
+
+
+<h1 align="center">Alias</h1>
 
 <p align="center">
    The best web-application for learning terminology! </br>
-   <a href="http://217.199.253.164/">Check this out!</a></br>
+   <a href="http://217.199.253.164/">Check this out!</a>
    <a href="https://drive.google.com/file/d/1oolvEd4Spec83L30ltrqCgKBHdhIibCs/view?usp=drive_link">View demo</a>
 </p>
 
 ## About us
 
-Memorizing new terminology can be tedious and boring, I am sure we've all faced this problem. And there are many tools that aim to fix it, take flashcards, for example. However, they can also fail to be engaging. That is where our solution comes in.
-InnoAlias is an Alias-like game, where players explain words to eachother, gaining points for each correct guess. Our app will help you learn new terminology, while also having fun with your friends. With it, you can:
+Memorizing new terminology can be tedious and boring, we are sure we've all faced this problem. And there are many tools that aim to fix it, take flashcards, for example. However, they can also fail to be engaging. That is where our solution comes in.
+Alias is a game where players explain words to eachother, gaining points for each correct guess. Our app will help you learn new terminology, while also having fun with your friends, also improving the understanding of said terminology. With it, you can:
 - Combine buisness with pleasure
 - Actually understand new words, not simply memorize them
 - Have a unique experience tailored specifically to your needs
@@ -123,4 +131,13 @@ After build, you can use app on localhost.
 - [Architecture](https://github.com/Team26SWP/InnoAlias/blob/main/docs/architecture/achitecture.md)
 
 
-
+[contributors-pic]: https://img.shields.io/github/contributors/Team26SWP/InnoAlias
+[contributors-url]: https://github.com/Team26SWP/InnoAlias/graphs/contributors
+[issues-pic]: https://img.shields.io/github/issues/Team26SWP/InnoAlias
+[issues-url]: https://github.com/Team26SWP/InnoAlias/issues
+[milestones-pic]: https://img.shields.io/github/milestones/open/Team26SWP/InnoAlias
+[milestones-url]: https://github.com/Team26SWP/InnoAlias/milestones
+[license-pic]: https://img.shields.io/github/license/Team26SWP/InnoAlias
+[license-url]: https://github.com/Team26SWP/InnoAlias/blob/main/LICENSE
+[release-pic]: https://img.shields.io/github/v/release/Team26SWP/InnoAlias?include_prereleases
+[release-url]: https://github.com/Team26SWP/InnoAlias/releases/tag/mvp_v2
