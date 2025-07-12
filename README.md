@@ -2,7 +2,7 @@
 [![GitHub contributors][contributors-pic]](contributors-url)
 [![Issues][issues-pic]](issues-url)
 [![Milestones][milestones-pic]](milestones-url)
-[![Licence][license-pic]](license-url)
+[![Licence][license-pic]](https://github.com/Team26SWP/InnoAlias/blob/main/LICENSE)
 [![Release][release-pic]](release-url)
 
 
