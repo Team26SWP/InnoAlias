@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as config from './config';
 
-export function CreateGame() {
+interface CreateProp {
+  aiGame: boolean;
+}
+
+export function CreateGame(prop: CreateProp) {
   const [words, setWords] = useState<string[]>(config.loadCreationState().words);
   const [currentWord, setCurrentWord] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -9,6 +13,7 @@ export function CreateGame() {
   const [hostId, setHostId] = useState<string>('');
   const [settings] = useState<config.Settings>(config.loadCreationState().settings);
   const socketRef = useRef<WebSocket | null>(null);
+  const { aiGame } = prop;
 
   useEffect(() => {
     const profile = config.getProfile();
@@ -46,7 +51,7 @@ export function CreateGame() {
   };
 
   const loadDeck = () => {
-    config.saveCreationState(settings, words);
+    config.saveCreationState(settings, words, aiGame);
     config.setDeckChoice(true);
     config.navigateTo(config.Page.Profile);
   };
@@ -66,33 +71,65 @@ export function CreateGame() {
   const handleCreateGame = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${config.HTTP_URL}/game/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          host_id: hostId,
-          deck: words,
-          words_amount: (settings.deckLimit === 0) ? words.length
-            : settings.deckLimit,
-          time_for_guessing: settings.time,
-          tries_per_player: settings.attemptsLimit,
-          right_answers_to_advance: settings.answersLimit,
-          rotate_masters: settings.rotateMasters,
-          number_of_teams: settings.numberOfTeams,
-        }),
-      });
+      let response: Response;
+      if (!aiGame) {
+        response = await fetch(`${config.HTTP_URL}/game/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            host_id: hostId,
+            deck: words,
+            words_amount: (settings.deckLimit === 0) ? words.length
+              : settings.deckLimit,
+            time_for_guessing: settings.time,
+            tries_per_player: settings.attemptsLimit,
+            right_answers_to_advance: settings.answersLimit,
+            rotate_masters: settings.rotateMasters,
+            number_of_teams: settings.numberOfTeams,
+          }),
+        });
+      } else {
+        response = await fetch(`${config.HTTP_URL}/aigame/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deck: words,
+            settings: {
+              time_for_guessing: settings.time,
+              word_amount: settings.deckLimit,
+            },
+          }),
+        });
+      }
 
       if (!response.ok) throw new Error();
       const data = await response.json();
-      const gameCode = data.id;
+      let gameCode: string;
+      if (aiGame) {
+        gameCode = data.game_id;
+      } else {
+        gameCode = data.id;
+      }
 
-      const socket = config.connectSocketHost(hostId, gameCode);
+      let socket: WebSocket;
+      if (!aiGame) {
+        socket = config.connectSocketHost(hostId, gameCode);
+      } else {
+        socket = config.connectSocketAi(gameCode);
+      }
       socketRef.current = socket;
 
-      socket.onopen = () => {
-        config.setRotation(settings.rotateMasters);
-        config.navigateTo(config.Page.Lobby, { name: hostId, code: gameCode, isHost: true });
-      };
+      if (!aiGame) {
+        socket.onopen = () => {
+          config.setRotation(settings.rotateMasters);
+          config.navigateTo(config.Page.Lobby, { name: hostId, code: gameCode, isHost: true });
+        };
+      } else {
+        socket.onmessage = (msg) => {
+          config.setInitialAiState(JSON.parse(msg.data));
+          config.navigateTo(config.Page.AiGame);
+        };
+      }
 
       socket.onerror = () => {
         setIsLoading(false);
@@ -235,52 +272,58 @@ export function CreateGame() {
               />
               <span className="text-sm">cards</span>
             </div>
-            <span className="font-bold text-left">Limit of attempts:</span>
-            <div />
-            <div />
-            <div className="flex items-center gap-2">
-              <input
-                id="attempts"
-                type="number"
-                placeholder={String(settings.attemptsLimit)}
-                className="w-12 p-2 rounded-md"
-                onChange={(e) => {
-                  e.target.value = String(
-                    downToRange(parseInt(e.target.value, 10), 1, 100),
-                  );
-                }}
-              />
-              <span className="text-sm">tries</span>
-            </div>
+            {!aiGame && (
+              <>
+                <span className="font-bold text-left">Limit of attempts:</span>
+                <div />
+                <div />
+                <div className="flex items-center gap-2">
+                  <input
+                    id="attempts"
+                    type="number"
+                    placeholder={String(settings.attemptsLimit)}
+                    className="w-12 p-2 rounded-md"
+                    onChange={(e) => {
+                      e.target.value = String(
+                        downToRange(parseInt(e.target.value, 10), 1, 100),
+                      );
+                    }}
+                  />
+                  <span className="text-sm">tries</span>
+                </div>
 
-            <span className="font-bold text-left">Limit of correct answers:</span>
-            <div />
-            <div />
-            <div className="flex items-center gap-2">
-              <input
-                id="answers"
-                type="number"
-                placeholder={String(settings.answersLimit)}
-                className="w-12 p-2 rounded-md"
-                onChange={(e) => {
-                  e.target.value = downToRange(Number.parseInt(e.target.value, 10), 1, 100)
-                    .toString();
-                }}
-              />
-              <span className="text-sm">teams</span>
-            </div>
+                <span className="font-bold text-left">Limit of correct answers:</span>
+                <div />
+                <div />
+                <div className="flex items-center gap-2">
+                  <input
+                    id="answers"
+                    type="number"
+                    placeholder={String(settings.answersLimit)}
+                    className="w-12 p-2 rounded-md"
+                    onChange={(e) => {
+                      e.target.value = downToRange(Number.parseInt(e.target.value, 10), 1, 100)
+                        .toString();
+                    }}
+                  />
+                  <span className="text-sm">teams</span>
+                </div>
+              </>
+            )}
           </div>
 
-          <div className="flex items-center gap-5 mt-10">
-            <label htmlFor="single-master" className="flex items-center gap-2">
-              <input type="radio" id="single-master" name="master-mode" value="single" defaultChecked={!settings.rotateMasters} />
-              <span className="font-bold w-36">Single Master</span>
-            </label>
-            <label htmlFor="different-master" className="flex items-center gap-2">
-              <input type="radio" id="different-master" name="master-mode" value="different" defaultChecked={settings.rotateMasters} />
-              <span className="font-bold w-36">Different Masters</span>
-            </label>
-          </div>
+          {!aiGame && (
+            <div className="flex items-center gap-5 mt-10">
+              <label htmlFor="single-master" className="flex items-center gap-2">
+                <input type="radio" id="single-master" name="master-mode" value="single" defaultChecked={!settings.rotateMasters} />
+                <span className="font-bold w-36">Single Master</span>
+              </label>
+              <label htmlFor="different-master" className="flex items-center gap-2">
+                <input type="radio" id="different-master" name="master-mode" value="different" defaultChecked={settings.rotateMasters} />
+                <span className="font-bold w-36">Different Masters</span>
+              </label>
+            </div>
+          )}
 
           <div className="flex justify-center w-full mt-6">
             <button
