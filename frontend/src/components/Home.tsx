@@ -3,7 +3,7 @@ import React, {
 } from 'react';
 import * as config from './config';
 
-interface Template {
+interface Deck {
   id: string
   name: string
   termCount: number
@@ -13,11 +13,11 @@ interface Template {
 }
 
 interface CreateParams {
-  templateId: string
+  deckId: string
 }
 
 interface GalleryResponse {
-  decks: Template[]
+  decks: Deck[]
   total_count: number
 }
 
@@ -48,11 +48,11 @@ async function saveDeck(deckId: string): Promise<string> {
 }
 
 function Home() {
-  const [apiGallery, setApiGallery] = useState<Template[]>([]);
+  const [apiGallery, setApiGallery] = useState<Deck[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [visibleCount, setVisibleCount] = useState<number>(8);
   const [showGallery, setShowGallery] = useState<boolean>(false);
-  const [selectedDeck, setSelectedDeck] = useState<Template | null>(null);
+  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -75,8 +75,8 @@ function Home() {
     try {
       setIsLoading(true);
       const data = await fetchGallery(page);
-      const templates = data.decks as Template[];
-      setApiGallery([...templates].reverse());
+      const decks = data.decks as Deck[];
+      setApiGallery([...decks].reverse());
       setTotalCount(data.total_count);
     } catch (error) {
       console.error('Failed to load gallery:', error);
@@ -89,34 +89,13 @@ function Home() {
     try {
       const nextPage = currentPage + 1;
       const data = await fetchGallery(nextPage);
-      const templates = data.decks as Template[];
-      setApiGallery(prev => [...prev, ...templates]);
+      const decks = data.decks as Deck[];
+      setApiGallery((prev) => [...prev, ...decks]);
       setCurrentPage(nextPage);
     } catch (error) {
       console.error('Failed to load more gallery:', error);
     }
   }, [currentPage]);
-
-  const handleSaveDeck = useCallback(async (deckId: string): Promise<void> => {
-    if (!isLoggedIn) {
-      config.navigateTo(config.Page.Login);
-      return;
-    }
-    
-    try {
-      setSaveLoading(true);
-      await saveDeck(deckId);
-      const profile = config.getProfile();
-      if (profile) {
-        await loadProfile();
-      }
-    } catch (error) {
-      console.error('Failed to save deck:', error);
-    } finally {
-      setSaveLoading(false);
-    }
-  }, [isLoggedIn]);
-
   const loadProfile = async () => {
     const response = await fetch(`${config.HTTP_URL}/profile/me`, {
       method: 'GET',
@@ -130,6 +109,24 @@ function Home() {
       config.setProfile(profile);
     }
   };
+  const handleSaveDeck = useCallback(async (deckId: string): Promise<void> => {
+    if (!isLoggedIn) {
+      config.navigateTo(config.Page.Login);
+      return;
+    }
+    try {
+      setSaveLoading(true);
+      await saveDeck(deckId);
+      const profile = config.getProfile();
+      if (profile) {
+        await loadProfile();
+      }
+    } catch (error) {
+      console.error('Failed to save deck:', error);
+    } finally {
+      setSaveLoading(false);
+    }
+  }, [isLoggedIn]);
 
   useEffect(() => {
     loadGallery();
@@ -151,7 +148,7 @@ function Home() {
     gameLoad();
   }, [loadGallery]);
 
-  const filtered = useMemo<Template[]>(() => {
+  const filtered = useMemo<Deck[]>(() => {
     const term = searchTerm.trim().toLowerCase();
     return apiGallery.filter((t) => {
       const inName = t.name.toLowerCase().includes(term);
@@ -183,7 +180,7 @@ function Home() {
   const useThisDeck = useCallback((): void => {
     if (!selectedDeck) return;
     // @ts-expect-error extra args
-    config.navigateTo(config.Page.Create, { templateId: selectedDeck.id } as CreateParams);
+    config.navigateTo(config.Page.Create, { deckId: selectedDeck.id } as CreateParams);
     // нужно правильно настроить
   }, [selectedDeck]);
 
