@@ -4,12 +4,12 @@ import React, {
 import * as config from './config';
 
 interface Deck {
-  id: string
+  _id: string
   name: string
-  termCount: number
-  ownerName: string
-  terms: string[]
+  words: string[]
   tags: string[]
+  ownerids?: string[]
+  private?: boolean
 }
 
 interface CreateParams {
@@ -17,8 +17,8 @@ interface CreateParams {
 }
 
 interface GalleryResponse {
-  decks: Deck[]
-  total_count: number
+  gallery: Deck[]
+  total_decks: number
 }
 
 async function fetchGallery(page: number = 1): Promise<GalleryResponse> {
@@ -33,6 +33,9 @@ async function fetchGallery(page: number = 1): Promise<GalleryResponse> {
 }
 
 async function saveDeck(deckId: string): Promise<string> {
+  if (!deckId || deckId === 'undefined') {
+    throw new Error('Invalid deck ID provided');
+  }
   const response = await fetch(`${config.HTTP_URL}/gallery/decks/${deckId}`, {
     method: 'PUT',
     headers: {
@@ -41,10 +44,12 @@ async function saveDeck(deckId: string): Promise<string> {
     },
   });
   if (!response.ok) {
-    throw new Error('Failed to save deck');
+    const errorText = await response.text();
+    console.error('Response error:', errorText);
+    throw new Error(`Failed to save deck: ${response.status} ${errorText}`);
   }
   const result = await response.json();
-  return result.id;
+  return result.saved_deckid;
 }
 
 function Home() {
@@ -75,9 +80,15 @@ function Home() {
     try {
       setIsLoading(true);
       const data = await fetchGallery(page);
-      const decks = data.decks as Deck[];
+      const decks = data.gallery as Deck[];
+      // Validate deck structure
+      decks.forEach((deck, index) => {
+        if (!deck._id) {
+          console.error(`Deck at index ${index} has no _id:`, deck);
+        }
+      });
       setApiGallery([...decks].reverse());
-      setTotalCount(data.total_count);
+      setTotalCount(data.total_decks);
     } catch (error) {
       console.error('Failed to load gallery:', error);
     } finally {
@@ -89,7 +100,7 @@ function Home() {
     try {
       const nextPage = currentPage + 1;
       const data = await fetchGallery(nextPage);
-      const decks = data.decks as Deck[];
+      const decks = data.gallery as Deck[];
       setApiGallery((prev) => [...prev, ...decks]);
       setCurrentPage(nextPage);
     } catch (error) {
@@ -114,9 +125,13 @@ function Home() {
       config.navigateTo(config.Page.Login);
       return;
     }
+    if (!deckId || deckId === 'undefined') {
+      console.error('Invalid deck ID:', deckId);
+      return;
+    }
     try {
       setSaveLoading(true);
-      await saveDeck(deckId);
+      const result = await saveDeck(deckId);
       const profile = config.getProfile();
       if (profile) {
         await loadProfile();
@@ -179,8 +194,10 @@ function Home() {
 
   const useThisDeck = useCallback((): void => {
     if (!selectedDeck) return;
+    const deckId = selectedDeck._id;
+    if (!deckId) return;
     // @ts-expect-error extra args
-    config.navigateTo(config.Page.Create, { deckId: selectedDeck.id } as CreateParams);
+    config.navigateTo(config.Page.Create, { deckId } as CreateParams);
     // нужно правильно настроить
   }, [selectedDeck]);
 
@@ -240,18 +257,18 @@ function Home() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
           {filtered.slice(0, visibleCount).map((item) => (
             <button
-              key={item.id}
+              key={item._id}
               type="button"
               onClick={() => setSelectedDeck(item)}
               className="bg-gray-300 p-4 rounded-lg hover:opacity-90 transition text-left"
             >
               <h3 className="font-semibold mb-1">{item.name}</h3>
               <p className="text-xs text-gray-400">
-                {item.termCount}
+                {item.words.length}
                 {' '}
                 terms
               </p>
-              <p className="text-xs text-gray-400">{item.ownerName}</p>
+              <p className="text-xs text-gray-400">Public Deck</p>
             </button>
           ))}
         </div>
@@ -289,10 +306,11 @@ function Home() {
           >
             <div className="bg-gray-300 rounded-lg max-w-md w-full p-6 space-y-4 z-60" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-3xl font-bold">{selectedDeck.name}</h3>
+              <p className="text-sm text-gray-600">Deck ID: {selectedDeck._id}</p>
               <ul className="max-h-48 overflow-y-auto list-disc list-inside space-y-1">
-                {selectedDeck.terms.map((term) => (
-                  <li key={`${selectedDeck.id}-${term}`} className="text-xl">
-                    {term}
+                {selectedDeck.words.map((word: string) => (
+                  <li key={`${selectedDeck._id}-${word}`} className="text-xl">
+                    {word}
                   </li>
                 ))}
               </ul>
@@ -304,11 +322,17 @@ function Home() {
                 >
                   Cancel
                 </button>
-                {isLoggedIn && (
+                {isLoggedIn && selectedDeck && selectedDeck._id && (
                   <button
                     type="button"
-                    onClick={() => handleSaveDeck(selectedDeck.id)}
+                    onClick={() => {
+                      const deckId = selectedDeck._id;
+                      if (deckId) {
+                        handleSaveDeck(deckId);
+                      }
+                    }}
                     disabled={saveLoading}
+                    className="px-4 py-2 bg-[#1E6DB9] text-[#FAF6E9] rounded hover:opacity-90 transition"
                   >
                     {saveLoading ? 'Saving...' : 'Save to profile'}
                   </button>
