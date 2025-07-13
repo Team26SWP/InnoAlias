@@ -48,11 +48,11 @@ async def get_logs(current_user=Depends(get_current_user)):
     show_logs = await logs.find().to_list(length=None)
     if not show_logs:
         raise HTTPException(status_code=404, detail="No logs")
-    formatted_logs = []
+    response_logs = []
     for log in show_logs:
         log["_id"] = str(log["_id"])
-        formatted_logs.append(log)
-    return {"logs": formatted_logs}
+        response_logs.append(log)
+    return {"logs": response_logs}
 
 
 @router.delete("/delete/deck/{deck_id}")
