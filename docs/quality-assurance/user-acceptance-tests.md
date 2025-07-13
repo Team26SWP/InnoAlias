@@ -1,5 +1,3 @@
-## Old user tests
-
 ### Test1
 Given
 - the registration page (no prerequisites)
@@ -53,9 +51,7 @@ https://github.com/Team26SWP/InnoAlias/issues/70
 https://github.com/Team26SWP/InnoAlias/issues/69
 https://github.com/Team26SWP/InnoAlias/issues/68
 
-## New user tests
-
-### Test4
+### Test4: deck editing
 Given
 - a logged in user
 - a saved deck in user's profile
@@ -75,7 +71,7 @@ https://github.com/Team26SWP/InnoAlias/issues/130
 https://github.com/Team26SWP/InnoAlias/issues/131
 https://github.com/Team26SWP/InnoAlias/issues/132
 
-### Test5
+### Test5: teams game mode
 Given
 - a set (3+) of logged in users
 
@@ -90,3 +86,18 @@ Issues:
 https://github.com/Team26SWP/InnoAlias/issues/65
 https://github.com/Team26SWP/InnoAlias/issues/66
 https://github.com/Team26SWP/InnoAlias/issues/67
+
+### Test6: deck gallery
+Given 
+- a logged in user
+- a completed game
+
+When
+- the user pick "public" on deck saving
+
+Then
+- the deck is added into the gallery in the database
+- the deck is now available to all users
+
+Issues:
+https://github.com/Team26SWP/InnoAlias/issues/164
