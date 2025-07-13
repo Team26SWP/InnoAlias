@@ -46,35 +46,7 @@ function Home() {
   const handleScroll = useCallback((): void => {
     setShowGallery(window.scrollY > 0);
   }, []);
-    useEffect(() => {
-      const fetchProfile = async () => {
-        // setLoading(true);
-        // setError(null);
-        try {
-          const token = localStorage.getItem('access_token');
-          const response = await fetch(`${config.HTTP_URL}/profile/me`, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-          if (!response.ok) {
-            // setError('Failed to fetch profile.');
-            // setLoading(false);
-            return;
-          }
-          const data: config.UserProfile = await response.json();
-          setProfile(data);
-          config.setProfile(data);
-        } catch (err) {
-          // setError('An unexpected error occurred.');
-        } finally {
-        // setLoading(false);
-        }
-      };
-      fetchProfile();
-    }, []);  
+
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
@@ -107,9 +79,10 @@ function Home() {
         'Content-Type': 'application/json',
       },
     });
-    const profile = await response.json();
+    const newProfile = await response.json();
     if (response.ok) {
-      config.setProfile(profile);
+      setProfile(newProfile);
+      config.setProfile(newProfile);
     }
   };
   const handleSaveDeck = useCallback(async (deckId: string): Promise<void> => {
@@ -152,12 +125,12 @@ function Home() {
         await loadProfile();
       }
       const code = new URLSearchParams(window.location.search).get('code');
-      const profile = config.getProfile();
-      if (!profile && code) {
+      const newProfile = config.getProfile();
+      if (!newProfile && code) {
         config.navigateTo(config.Page.Login);
       }
-      if (profile && code) {
-        config.navigateTo(config.Page.Join, { name: profile.name, code, isHost: false });
+      if (newProfile && code) {
+        config.navigateTo(config.Page.Join, { name: newProfile.name, code, isHost: false });
       }
     }
     gameLoad();
@@ -301,10 +274,12 @@ function Home() {
           >
             <div className="bg-gray-300 rounded-lg max-w-md w-full p-6 space-y-4 z-60 onClick={(e) => e.stopPropagation()}">
               <h3 className="text-3xl font-bold">{selectedDeck.name}</h3>
-              {profile.isAdmin && <p className="text-sm text-gray-600">
+              {profile.isAdmin && (
+              <p className="text-sm text-gray-600">
                 Deck ID:
                 {selectedDeck._id}
-              </p>}
+              </p>
+              )}
               <p className="text-sm text-gray-600">
                 Tags:
                 {selectedDeck.tags.map((tag) => (
