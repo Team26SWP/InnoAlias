@@ -13,31 +13,32 @@ router = APIRouter(prefix="", tags=["admin"])
 logs = db.logs
 
 
-@router.delete("/delete/user/{user_id}")
+@router.delete("/delete/user/{email}")
 async def delete_user(
-    user_id: str,
+    email: str,
     reason: str,
     current_user=Depends(get_current_user),
 ):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
-    user = await users.find_one({"_id": user_id})
+    user = await users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     log = {
         "action": "DELETE_USER",
         "admin_id": current_user.id,
-        "target_user_id": user_id,
+        "target_user_id": user["id"],
+        "target_user_email": email,
         "reason": reason,
         "timestamp": datetime.now().isoformat(),
     }
-    await users.delete_one({"_id": user_id})
+    await users.delete_one({"email": email})
     await decks.update_many(
         {"owner_ids": user["_id"]}, {"$pull": {"owner_ids": user["_id"]}}
     )
     await logs.insert_one(log)
 
-    return {"message": f"{user_id} deleted. Reason: {reason}."}
+    return {"message": f" User {email} deleted. Reason: {reason}."}
 
 
 @router.get("/logs")
@@ -71,46 +72,48 @@ async def delete_deck(deck_id, reason: str, current_user=Depends(get_current_use
     return {"message": f"{deck_id} deleted. Reason: {reason}"}
 
 
-@router.put("/add/{user_id}")
+@router.put("/add/{email}")
 async def add_admin(
-    user_id: str,
+    email: str,
     current_user=Depends(get_current_user),
 ):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
-    user = await users.find_one({"_id": user_id})
+    user = await users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    await users.update_one({"_id": user_id}, {"$set": {"isAdmin": True}})
+    await users.update_one({"email": email}, {"$set": {"isAdmin": True}})
     log = {
         "action": "ADD_ADMIN",
         "admin_id": current_user.id,
         "target_user_id": user["_id"],
+        "target_user_email": email,
         "timestamp": datetime.now().isoformat(),
     }
     await logs.insert_one(log)
-    return {"message": f"User {user["_id"]} is now admin."}
+    return {"message": f"User {email} is now admin."}
 
 
-@router.put("/remove/{user_id}")
+@router.put("/remove/{email}")
 async def remove_admin(
-    user_id: str,
+    email: str,
     current_user=Depends(get_current_user),
 ):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
-    user = await users.find_one({"_id": user_id})
+    user = await users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    await users.update_one({"_id": user_id}, {"$set": {"isAdmin": False}})
+    await users.update_one({"email": email}, {"$set": {"isAdmin": False}})
     log = {
         "action": "REMOVE_ADMIN",
         "admin_id": current_user.id,
         "target_user_id": user["_id"],
+        "target_user_email": email,
         "timestamp": datetime.now().isoformat(),
     }
     await logs.insert_one(log)
-    return {"message": f"User {user["_id"]} is no more admin."}
+    return {"message": f"User {email} is no more admin."}
 
 
 @router.delete("/delete/tag/{tag}")
