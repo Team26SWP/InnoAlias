@@ -45,7 +45,7 @@ function Profile() {
           return;
         }
         const data: config.UserProfile = await response.json();
-        console.log(data)
+        console.log(data);
         setProfile(data);
         config.setProfile(data);
         setDecks(data.decks);

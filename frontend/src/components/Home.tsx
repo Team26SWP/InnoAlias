@@ -266,10 +266,20 @@ function Home() {
             role="dialog"
             aria-modal="true"
           >
-            <div className="bg-gray-300 rounded-lg max-w-md w-full p-6 space-y-4 z-60" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gray-300 rounded-lg max-w-md w-full p-6 space-y-4 z-60 onClick={(e) => e.stopPropagation()}">
               <h3 className="text-3xl font-bold">{selectedDeck.name}</h3>
-              <p className="text-sm text-gray-600">Deck ID: {selectedDeck.id}</p>
-              <p className="text-sm text-gray-600">Tags: {selectedDeck.tags.map((tag,index) => (<li key = {index} > {tag} </li>))}</p>
+              <p className="text-sm text-gray-600">
+                Deck ID:
+                {selectedDeck.id}
+              </p>
+              <p className="text-sm text-gray-600">
+                Tags:
+                {selectedDeck.tags.map((tag) => (
+                  <li key={`tag-${tag}`}>
+                    {tag}
+                  </li>
+                ))}
+              </p>
               <ul className="max-h-48 overflow-y-auto list-disc list-inside space-y-1">
                 {selectedDeck.words.map((word: string) => (
                   <li key={`${selectedDeck.id}-${word}`} className="text-xl">
