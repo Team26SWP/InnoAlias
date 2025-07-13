@@ -45,11 +45,14 @@ async def delete_user(
 async def get_logs(current_user=Depends(get_current_user)):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
-    # change fix do smth
     show_logs = await logs.find().to_list(length=None)
     if not show_logs:
         raise HTTPException(status_code=404, detail="No logs")
-    return {"logs": show_logs}
+    formatted_logs = []
+    for log in show_logs:
+        log['_id'] = str(log['_id'])
+        formatted_logs.append(log)
+    return {"logs": formatted_logs}
 
 
 @router.delete("/delete/deck/{deck_id}")
