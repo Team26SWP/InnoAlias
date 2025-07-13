@@ -9,6 +9,13 @@ from backend.app.services.game_service import decks
 
 router = APIRouter(prefix="", tags=["gallery"])
 
+def transform_deck(deck: dict) -> dict:
+    """Convert MongoDB _id to id and remove _id."""
+    if not deck:
+        return deck
+    deck["id"] = str(deck["_id"])
+    del deck["_id"]
+    return deck
 
 @router.get("/decks")
 async def get_gallery(number: int):
@@ -21,8 +28,9 @@ async def get_gallery(number: int):
         .sort("name", DESCENDING)
         .to_list()
     )
+    transformed_decks = [transform_deck(deck) for deck in cursor]
     return {
-        "gallery": cursor,
+        "gallery": transformed_decks,
         "total_decks": await decks.count_documents({"private": False}),
     }
 
