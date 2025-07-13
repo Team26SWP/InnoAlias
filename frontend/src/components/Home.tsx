@@ -33,6 +33,7 @@ async function fetchGallery(page: number = 1): Promise<GalleryResponse> {
 }
 
 function Home() {
+  const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [apiGallery, setApiGallery] = useState<Deck[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [visibleCount, setVisibleCount] = useState<number>(8);
@@ -45,7 +46,35 @@ function Home() {
   const handleScroll = useCallback((): void => {
     setShowGallery(window.scrollY > 0);
   }, []);
-
+    useEffect(() => {
+      const fetchProfile = async () => {
+        // setLoading(true);
+        // setError(null);
+        try {
+          const token = localStorage.getItem('access_token');
+          const response = await fetch(`${config.HTTP_URL}/profile/me`, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          if (!response.ok) {
+            // setError('Failed to fetch profile.');
+            // setLoading(false);
+            return;
+          }
+          const data: config.UserProfile = await response.json();
+          setProfile(data);
+          config.setProfile(data);
+        } catch (err) {
+          // setError('An unexpected error occurred.');
+        } finally {
+        // setLoading(false);
+        }
+      };
+      fetchProfile();
+    }, []);  
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
@@ -172,6 +201,10 @@ function Home() {
     // нужно правильно настроить
   }, [selectedDeck]);
 
+  if (!profile) {
+    return <div>No profile data available</div>;
+  }
+
   return (
     <div className="bg-[#FAF6E9] dark:bg-[#1A1A1A] text-[#1E6DB9]">
       <div className="relative h-screen flex flex-col items-center justify-center px-6">
@@ -268,10 +301,10 @@ function Home() {
           >
             <div className="bg-gray-300 rounded-lg max-w-md w-full p-6 space-y-4 z-60 onClick={(e) => e.stopPropagation()}">
               <h3 className="text-3xl font-bold">{selectedDeck.name}</h3>
-              <p className="text-sm text-gray-600">
+              {profile.isAdmin && <p className="text-sm text-gray-600">
                 Deck ID:
                 {selectedDeck._id}
-              </p>
+              </p>}
               <p className="text-sm text-gray-600">
                 Tags:
                 {selectedDeck.tags.map((tag) => (
