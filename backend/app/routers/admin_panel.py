@@ -80,7 +80,7 @@ async def add_admin(
     user = await users.find_one({"user_id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    await users.update_one({"user_id": user_id}, {"$set": {"is_admin": True}})
+    await users.update_one({"user_id": user_id}, {"$set": {"isAdmin": True}})
     log = {
         "action": "ADD_ADMIN",
         "admin_id": current_user.id,
@@ -101,7 +101,7 @@ async def remove_admin(
     user = await users.find_one({"user_id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    await users.update_one({"user_id": user_id}, {"$set": {"is_admin": False}})
+    await users.update_one({"user_id": user_id}, {"$set": {"isAdmin": False}})
     log = {
         "action": "REMOVE_ADMIN",
         "admin_id": current_user.id,
