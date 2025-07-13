@@ -234,7 +234,7 @@ export function CreateGame(prop: CreateProp) {
           </button>
 
           <div className="grid md:grid-cols-[35ch_auto_auto_minmax(0,1fr)] lg:grid-cols-[40ch_auto_auto_minmax(0,1fr)] gap-x-2 gap-y-4 items-center">
-            <span className="font-bold text-left">Time:</span>
+            <span className="font-bold text-left">Time for one word:</span>
             <input
               id="minutes"
               type="number"
