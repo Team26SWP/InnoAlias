@@ -4,7 +4,7 @@ import React, {
 import * as config from './config';
 
 interface Deck {
-  id: string
+  _id: string
   name: string
   words: string[]
   tags: string[]
@@ -59,8 +59,8 @@ function Home() {
       const decks = data.gallery as Deck[];
       // Validate deck structure
       decks.forEach((deck, index) => {
-        if (!deck.id) {
-          console.error(`Deck at index ${index} has no id:`, deck);
+        if (!deck._id) {
+          console.error(`Deck at index ${index} has no _id:`, deck);
         }
         console.log(deck);
       });
@@ -165,7 +165,7 @@ function Home() {
 
   const useThisDeck = useCallback((): void => {
     if (!selectedDeck) return;
-    const deckId = selectedDeck.id;
+    const deckId = selectedDeck._id;
     if (!deckId) return;
     // @ts-expect-error extra args
     config.navigateTo(config.Page.Create, { deckId } as CreateParams);
@@ -228,7 +228,7 @@ function Home() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
           {filtered.slice(0, visibleCount).map((item) => (
             <button
-              key={item.id}
+              key={item._id}
               type="button"
               onClick={() => setSelectedDeck(item)}
               className="bg-gray-300 p-4 rounded-lg hover:opacity-90 transition text-left"
@@ -270,7 +270,7 @@ function Home() {
               <h3 className="text-3xl font-bold">{selectedDeck.name}</h3>
               <p className="text-sm text-gray-600">
                 Deck ID:
-                {selectedDeck.id}
+                {selectedDeck._id}
               </p>
               <p className="text-sm text-gray-600">
                 Tags:
@@ -282,7 +282,7 @@ function Home() {
               </p>
               <ul className="max-h-48 overflow-y-auto list-disc list-inside space-y-1">
                 {selectedDeck.words.map((word: string) => (
-                  <li key={`${selectedDeck.id}-${word}`} className="text-xl">
+                  <li key={`${selectedDeck._id}-${word}`} className="text-xl">
                     {word}
                   </li>
                 ))}
@@ -295,11 +295,11 @@ function Home() {
                 >
                   Cancel
                 </button>
-                {isLoggedIn && selectedDeck && selectedDeck.id && (
+                {isLoggedIn && selectedDeck && selectedDeck._id && (
                   <button
                     type="button"
                     onClick={() => {
-                      const deckId = selectedDeck.id;
+                      const deckId = selectedDeck._id;
                       if (deckId) {
                         handleSaveDeck(deckId);
                       }
