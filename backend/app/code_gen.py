@@ -37,6 +37,7 @@ async def generate_user_id():
         if not await users.find_one({"_id": user_id}):
             return user_id
 
+
 async def generate_log_id():
     while True:
         log_id = "".join(choice(ascii_lowercase + digits) for _ in range(12))
