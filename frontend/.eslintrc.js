@@ -34,6 +34,7 @@ module.exports = {
     },
   },
   rules: {
+    "max-len": ["error", { "code": 300, "comments": 100 }],
     'react/react-in-jsx-scope': 'off',
     'import/extensions': [
       'error',
@@ -44,6 +45,7 @@ module.exports = {
     ],
     'linebreak-style': 'off',
     'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+    'no-underscore-dangle': 'off',
   },
   ignorePatterns: ['node_modules/', 'dist/'],
 };
