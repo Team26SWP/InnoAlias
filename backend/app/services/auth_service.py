@@ -44,6 +44,7 @@ async def get_user(email: str) -> Optional[UserInDB]:
             name=user["name"],
             surname=user["surname"],
             id=user["_id"],
+            isAdmin=user["isAdmin"],
         )
     return None
 
