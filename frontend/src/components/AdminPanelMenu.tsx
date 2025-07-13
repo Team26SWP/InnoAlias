@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { HTTP_URL } from './config';
 
+/*
+// In MongoDB shell or MongoDB Compass
+db.users.updateOne(
+  { "email": "admin@krut.ru" },
+  { $set: { "isAdmin": true } }
+)
+*/
+
 function AdminPanelMenu() {
   const [userId, setUserId] = useState('');
   const [deckId, setDeckId] = useState('');

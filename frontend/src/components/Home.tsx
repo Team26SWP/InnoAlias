@@ -62,6 +62,7 @@ function Home() {
         if (!deck.id) {
           console.error(`Deck at index ${index} has no id:`, deck);
         }
+        console.log(deck);
       });
       setApiGallery([...decks].reverse());
     } catch (error) {
@@ -104,6 +105,7 @@ function Home() {
         throw new Error(`Failed to save deck: ${response.status} ${errorText}`);
       }
       const result = await response.json();
+      // eslint-disable-next-line consistent-return
       return result.saved_deckid;
     } catch (error) {
       console.error('Failed to save deck:', error);
@@ -267,6 +269,7 @@ function Home() {
             <div className="bg-gray-300 rounded-lg max-w-md w-full p-6 space-y-4 z-60" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-3xl font-bold">{selectedDeck.name}</h3>
               <p className="text-sm text-gray-600">Deck ID: {selectedDeck.id}</p>
+              <p className="text-sm text-gray-600">Tags: {selectedDeck.tags.map((tag,index) => (<li key = {index} > {tag} </li>))}</p>
               <ul className="max-h-48 overflow-y-auto list-disc list-inside space-y-1">
                 {selectedDeck.words.map((word: string) => (
                   <li key={`${selectedDeck.id}-${word}`} className="text-xl">
