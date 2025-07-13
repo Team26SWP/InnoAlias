@@ -29,6 +29,7 @@ async def create_user(user: User):
         "surname": user.surname,
         "email": user.email,
         "hashed_password": hashed_password,
+        "isAdmin": False,
     }
     await users.insert_one(user_credentials)
     return user_credentials
@@ -43,6 +44,7 @@ async def get_user(email: str) -> Optional[UserInDB]:
             name=user["name"],
             surname=user["surname"],
             id=user["_id"],
+            isAdmin=user["isAdmin"],
         )
     return None
 
