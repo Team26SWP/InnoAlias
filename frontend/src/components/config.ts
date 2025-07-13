@@ -143,8 +143,8 @@ const creationState: GameCreationState = {
   aiGame: false,
 };
 
-// const HOST = window.location.hostname;
-const HOST = 'localhost:8000';
+const HOST = window.location.hostname;
+// const HOST = 'localhost:8000';
 export const WS_URL = `ws://${HOST}/api`;
 export const HTTP_URL = `http://${HOST}/api`;
 
