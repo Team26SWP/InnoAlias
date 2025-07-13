@@ -21,7 +21,7 @@ async def delete_user(
 ):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
-    user = await users.find_one({"user_id": user_id})
+    user = await users.find_one({"_id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     log = {
@@ -31,7 +31,7 @@ async def delete_user(
         "reason": reason,
         "timestamp": datetime.now().isoformat(),
     }
-    await users.delete_one({"user_id": user_id})
+    await users.delete_one({"_id": user_id})
     await decks.update_many(
         {"owner_ids": user["_id"]}, {"$pull": {"owner_ids": user["_id"]}}
     )
@@ -44,7 +44,8 @@ async def delete_user(
 async def get_logs(current_user=Depends(get_current_user)):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
-    show_logs = await logs.find()
+    #change fix do smth    
+    show_logs = await logs.find().to_list(length=None)
     if not show_logs:
         raise HTTPException(status_code=404, detail="No logs")
     return {"logs": show_logs}
@@ -54,10 +55,10 @@ async def get_logs(current_user=Depends(get_current_user)):
 async def delete_deck(deck_id, reason: str, current_user=Depends(get_current_user)):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
-    deck = await decks.find_one({"deck_id": deck_id})
+    deck = await decks.find_one({"_id": deck_id})
     if not deck:
         raise HTTPException(status_code=404, detail="Deck not found")
-    await decks.delete_one({"deck_id": deck_id})
+    await decks.delete_one({"_id": deck_id})
     await users.update_many({"deck_ids": deck_id}, {"$pull": {"deck_ids": deck_id}})
     log = {
         "action": "DELETE_DECK",
@@ -77,10 +78,10 @@ async def add_admin(
 ):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
-    user = await users.find_one({"user_id": user_id})
+    user = await users.find_one({"_id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    await users.update_one({"user_id": user_id}, {"$set": {"isAdmin": True}})
+    await users.update_one({"_id": user_id}, {"$set": {"isAdmin": True}})
     log = {
         "action": "ADD_ADMIN",
         "admin_id": current_user.id,
@@ -98,10 +99,10 @@ async def remove_admin(
 ):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
-    user = await users.find_one({"user_id": user_id})
+    user = await users.find_one({"_id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    await users.update_one({"user_id": user_id}, {"$set": {"isAdmin": False}})
+    await users.update_one({"_id": user_id}, {"$set": {"isAdmin": False}})
     log = {
         "action": "REMOVE_ADMIN",
         "admin_id": current_user.id,

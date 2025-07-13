@@ -4,7 +4,7 @@ import { HTTP_URL } from './config';
 /*
 // In MongoDB shell or MongoDB Compass
 db.users.updateOne(
-  { "email": "admin@krut.ru" },
+  { "email": "admin@sigma.com" },
   { $set: { "isAdmin": true } }
 )
 */
@@ -44,7 +44,7 @@ function AdminPanelMenu() {
     }
   };
 
-  const getLogs = async () => {
+  /* const getLogs = async () => {
     setLoading(true);
     setResult(null);
     setLogs(null);
@@ -60,7 +60,7 @@ function AdminPanelMenu() {
     } finally {
       setLoading(false);
     }
-  };
+  }; */
 
   const deleteDeck = async () => {
     setLoading(true);
@@ -134,7 +134,7 @@ function AdminPanelMenu() {
     }
   };
 
-  const clearLogs = async () => {
+  /* const clearLogs = async () => {
     setLoading(true);
     setResult(null);
     setLogs(null);
@@ -150,7 +150,7 @@ function AdminPanelMenu() {
     } finally {
       setLoading(false);
     }
-  };
+  }; */
 
   return (
     <div
@@ -173,12 +173,10 @@ function AdminPanelMenu() {
       }}
       >
         <li><button type="button" onClick={deleteUser} disabled={loading}>DELETE user</button></li>
-        <li><button type="button" onClick={getLogs} disabled={loading}>GET logs</button></li>
         <li><button type="button" onClick={deleteDeck} disabled={loading}>DELETE deck</button></li>
         <li><button type="button" onClick={addAdmin} disabled={loading}>ADD admin</button></li>
         <li><button type="button" onClick={removeAdmin} disabled={loading}>REMOVE admin</button></li>
         <li><button type="button" onClick={deleteTag} disabled={loading}>DELETE tag</button></li>
-        <li><button type="button" onClick={clearLogs} disabled={loading}>CLEAR logs</button></li>
       </ul>
       {loading && <div style={{ color: '#b00', fontSize: 12 }}>Loading...</div>}
       {result && <div style={{ color: '#b00', fontSize: 12, marginTop: 5 }}>{result}</div>}
