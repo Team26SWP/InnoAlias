@@ -27,7 +27,7 @@ async def delete_user(
     log = {
         "action": "DELETE_USER",
         "admin_id": current_user.id,
-        "target_user_id": user["id"],
+        "target_user_id": user["_id"],
         "target_user_email": email,
         "reason": reason,
         "timestamp": datetime.now().isoformat(),

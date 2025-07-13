@@ -10,7 +10,7 @@ db.users.updateOne(
 */
 
 function AdminPanelMenu() {
-  const [userId, setUserId] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [deckId, setDeckId] = useState('');
   const [tag, setTag] = useState('');
   const [reason, setReason] = useState('');
@@ -31,7 +31,7 @@ function AdminPanelMenu() {
     setResult(null);
     setLogs(null);
     try {
-      const res = await fetch(`${HTTP_URL}/admin/delete/user/${userId}?reason=${encodeURIComponent(reason)}`, {
+      const res = await fetch(`${HTTP_URL}/admin/delete/user/${userEmail}?reason=${encodeURIComponent(reason)}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
@@ -44,7 +44,7 @@ function AdminPanelMenu() {
     }
   };
 
-  /* const getLogs = async () => {
+  const getLogs = async () => {
     setLoading(true);
     setResult(null);
     setLogs(null);
@@ -60,7 +60,7 @@ function AdminPanelMenu() {
     } finally {
       setLoading(false);
     }
-  }; */
+  };
 
   const deleteDeck = async () => {
     setLoading(true);
@@ -85,7 +85,7 @@ function AdminPanelMenu() {
     setResult(null);
     setLogs(null);
     try {
-      const res = await fetch(`${HTTP_URL}/admin/add/${userId}`, {
+      const res = await fetch(`${HTTP_URL}/admin/add/${userEmail}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
       });
@@ -103,7 +103,7 @@ function AdminPanelMenu() {
     setResult(null);
     setLogs(null);
     try {
-      const res = await fetch(`${HTTP_URL}/admin/remove/${userId}`, {
+      const res = await fetch(`${HTTP_URL}/admin/remove/${userEmail}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
       });
@@ -134,7 +134,7 @@ function AdminPanelMenu() {
     }
   };
 
-  /* const clearLogs = async () => {
+  const clearLogs = async () => {
     setLoading(true);
     setResult(null);
     setLogs(null);
@@ -150,7 +150,7 @@ function AdminPanelMenu() {
     } finally {
       setLoading(false);
     }
-  }; */
+  };
 
   return (
     <div
@@ -163,7 +163,7 @@ function AdminPanelMenu() {
     >
       <h3 style={{ color: '#b00', fontWeight: 'bold', fontSize: 18 }}>Admin Panel</h3>
       <div style={{ marginBottom: 8 }}>
-        <input placeholder="user_id" value={userId} onChange={(e) => setUserId(e.target.value)} />
+        <input placeholder="user_email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} />
         <input placeholder="deck_id" value={deckId} onChange={(e) => setDeckId(e.target.value)} />
         <input placeholder="tag" value={tag} onChange={(e) => setTag(e.target.value)} />
         <input placeholder="reason" value={reason} onChange={(e) => setReason(e.target.value)} />
@@ -177,6 +177,9 @@ function AdminPanelMenu() {
         <li><button type="button" onClick={addAdmin} disabled={loading}>ADD admin</button></li>
         <li><button type="button" onClick={removeAdmin} disabled={loading}>REMOVE admin</button></li>
         <li><button type="button" onClick={deleteTag} disabled={loading}>DELETE tag</button></li>
+        <li><button type="button" onClick={getLogs} disabled={loading}>GET logs</button></li>
+        <li><button type="button" onClick={clearLogs} disabled={loading}>CLEAR logs</button></li>
+
       </ul>
       {loading && <div style={{ color: '#b00', fontSize: 12 }}>Loading...</div>}
       {result && <div style={{ color: '#b00', fontSize: 12, marginTop: 5 }}>{result}</div>}
