@@ -29,6 +29,7 @@ async def create_user(user: User):
         "surname": user.surname,
         "email": user.email,
         "hashed_password": hashed_password,
+        "isAdmin": False,
     }
     await users.insert_one(user_credentials)
     return user_credentials
