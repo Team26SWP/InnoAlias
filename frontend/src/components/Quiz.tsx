@@ -158,7 +158,7 @@ function Quiz() {
 
   if (args.current.name === gameState.current_master) { // Quiz-card for the game master
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#ffefe3] font-adlam text-[#3171a6]">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#FAF6E9] dark:bg-[#1A1A1A] font-adlam text-[#3171a6]">
         <div className="text-xl mb-2">
           Words remaining:
           {' '}

@@ -3,6 +3,7 @@ import HomePage from './components/Home';
 import CreateGamePage from './components/CreateGame';
 import JoinGamePage from './components/JoinGame';
 import QuizPage from './components/Quiz';
+import AiQuizPage from './components/AiQuiz';
 import LobbyPage from './components/Lobby';
 import LeaderboardPage from './components/Leaderboard';
 import LoginPage from './components/Login';
@@ -26,11 +27,15 @@ function App() {
       case config.Page.Join:
         return <JoinGamePage />;
       case config.Page.Create:
-        return <CreateGamePage />;
+        return <CreateGamePage aiGame={false} />;
+      case config.Page.AiCreate:
+        return <CreateGamePage aiGame />;
       case config.Page.Lobby:
         return <LobbyPage />;
       case config.Page.Quiz:
         return <QuizPage />;
+      case config.Page.AiGame:
+        return <AiQuizPage />;
       case config.Page.Leaderboard:
         return <LeaderboardPage />;
       case config.Page.Login:

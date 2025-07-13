@@ -202,15 +202,20 @@ function Profile() {
     return deck.name.toLowerCase().includes(searchString.toLowerCase());
   }
 
-  function toPage(page : 'Home' | 'Create' | 'Join') {
+  function toPage(page : 'Home' | 'Create' | 'Join' | 'Ai') {
     if (page === 'Home') { config.navigateTo(config.Page.Home); }
     if (page === 'Create') { config.navigateTo(config.Page.Create); }
     if (page === 'Join') { config.navigateTo(config.Page.Join); }
+    if (page === 'Ai') { config.navigateTo(config.Page.AiCreate); }
   }
 
   const selectDeck = async () => {
     if (!draft || !draft.words) { return; }
     config.addWords(draft.words);
+    if (config.loadCreationState().aiGame) {
+      toPage('Ai');
+      return;
+    }
     toPage('Create');
   };
 
@@ -261,7 +266,7 @@ function Profile() {
       )}
 
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        {deckLoad && (<button type="button" onClick={() => { toPage('Create'); }} className="px-4 py-2 bg-[#1E6DB9] text-white rounded-md hover:bg-gray-300 transition">Cancel deck load</button>)}
+        {deckLoad && (<button type="button" onClick={() => { if (config.loadCreationState().aiGame) { toPage('Ai'); return; } toPage('Create'); }} className="px-4 py-2 bg-[#1E6DB9] text-white rounded-md hover:bg-gray-300 transition">Cancel deck load</button>)}
         <input
           onChange={searchInput}
           type="text"
