@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import HTTPException, Depends
 from fastapi import APIRouter
 
+from backend.app.code_gen import generate_log_id
 from backend.app.db import db
 from backend.app.services.auth_service import users, get_current_user
 from backend.app.services.game_service import decks
@@ -24,7 +25,9 @@ async def delete_user(
     user = await users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    log_id = generate_log_id()
     log = {
+        "id": log_id,
         "action": "DELETE_USER",
         "admin_id": current_user.id,
         "target_user_id": user["id"],
@@ -61,7 +64,9 @@ async def delete_deck(deck_id, reason: str, current_user=Depends(get_current_use
         raise HTTPException(status_code=404, detail="Deck not found")
     await decks.delete_one({"_id": deck_id})
     await users.update_many({"deck_ids": deck_id}, {"$pull": {"deck_ids": deck_id}})
+    log_id = generate_log_id()
     log = {
+        "id": log_id,
         "action": "DELETE_DECK",
         "admin_id": current_user.id,
         "target_deck_id": deck_id,
@@ -83,7 +88,9 @@ async def add_admin(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     await users.update_one({"email": email}, {"$set": {"isAdmin": True}})
+    log_id = generate_log_id()
     log = {
+        "id": log_id,
         "action": "ADD_ADMIN",
         "admin_id": current_user.id,
         "target_user_id": user["_id"],
@@ -105,7 +112,9 @@ async def remove_admin(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     await users.update_one({"email": email}, {"$set": {"isAdmin": False}})
+    log_id = generate_log_id()
     log = {
+        "id": log_id,
         "action": "REMOVE_ADMIN",
         "admin_id": current_user.id,
         "target_user_id": user["_id"],
@@ -125,7 +134,9 @@ async def delete_tag(
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
     await decks.update_many({"tags": tag}, {"$pull": {"tags": tag}})
+    log_id = generate_log_id()
     log = {
+        "id": log_id,
         "action": "DELETE_TAG",
         "admin_id": current_user.id,
         "target_tag": tag,
@@ -141,7 +152,9 @@ async def clear_logs(current_user=Depends(get_current_user)):
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
     await db.drop_collection("logs")
+    log_id = generate_log_id()
     log = {
+        "id": log_id,
         "action": "CLEAR_LOGS",
         "admin_id": current_user.id,
         "timestamp": datetime.now().isoformat(),

@@ -2,6 +2,7 @@ from random import choice
 from string import ascii_uppercase, digits, ascii_lowercase
 
 from backend.app.db import db
+from backend.app.routers.admin_panel import logs
 from backend.app.services.game_service import decks
 from backend.app.services.game_service import games
 
@@ -35,3 +36,9 @@ async def generate_user_id():
         user_id = "".join(choice(ascii_lowercase + digits) for _ in range(8))
         if not await users.find_one({"_id": user_id}):
             return user_id
+
+async def generate_log_id():
+    while True:
+        log_id = "".join(choice(ascii_lowercase + digits) for _ in range(12))
+        if not await logs.find_one({"id": log_id}):
+            return log_id
