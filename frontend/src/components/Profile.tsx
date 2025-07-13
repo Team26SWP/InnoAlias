@@ -5,7 +5,7 @@ import AdminPanelMenu from './AdminPanelMenu';
 type DeckWithWords = config.Deck & { words: string[] };
 
 function Profile() {
-  //test flag
+  // test flag
   const isadmintest = true;
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [loading, setLoading] = useState(true);

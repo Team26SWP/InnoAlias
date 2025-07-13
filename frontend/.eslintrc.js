@@ -34,6 +34,7 @@ module.exports = {
     },
   },
   rules: {
+    "max-len": ["error", { "code": 300, "comments": 100 }],
     'react/react-in-jsx-scope': 'off',
     'import/extensions': [
       'error',

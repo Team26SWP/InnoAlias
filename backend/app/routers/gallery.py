@@ -9,6 +9,13 @@ from backend.app.services.game_service import decks
 
 router = APIRouter(prefix="", tags=["gallery"])
 
+def transform_deck(deck: dict) -> dict:
+    """Convert MongoDB _id to id and remove _id."""
+    if not deck:
+        return deck
+    deck["id"] = str(deck["_id"])
+    del deck["_id"]
+    return deck
 
 @router.get("/decks")
 async def get_gallery(number: int):
@@ -21,8 +28,9 @@ async def get_gallery(number: int):
         .sort("name", DESCENDING)
         .to_list()
     )
+    transformed_decks = [transform_deck(deck) for deck in cursor]
     return {
-        "gallery": cursor,
+        "gallery": transformed_decks,
         "total_decks": await decks.count_documents({"private": False}),
     }
 
@@ -38,15 +46,15 @@ async def save_deck_from_gallery(
         raise HTTPException(status_code=404, detail="User not found")
     if not temp_deck:
         raise HTTPException(status_code=404, detail="Deck not found")
-    if current_user.id in await temp_deck.get("owner_ids"):
+    if current_user.id in temp_deck.get("owner_ids"):
         raise HTTPException(status_code=404, detail="Already have this deck")
-    if await temp_deck.get("private"):
+    if temp_deck.get("private"):
         raise HTTPException(status_code=403, detail="Forbidden")
-    new_deck_id = generate_deck_id()
+    new_deck_id = await generate_deck_id()
     deck = {
         "_id": new_deck_id,
         "name": temp_deck["name"],
-        "owner_id": temp_user.id,
+        "owner_ids": [temp_user["_id"]],
         "words": temp_deck["words"],
         "tags": temp_deck["tags"],
         "private": temp_deck["private"],
@@ -55,4 +63,4 @@ async def save_deck_from_gallery(
     await users.update_one(
         {"_id": current_user.id}, {"$addToSet": {"deck_ids": new_deck_id}}
     )
-    return {"saved_deck_id": deck_id}
+    return {"saved_deck_id": new_deck_id}
