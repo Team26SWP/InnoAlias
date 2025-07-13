@@ -50,7 +50,7 @@ async def get_logs(current_user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="No logs")
     formatted_logs = []
     for log in show_logs:
-        log['_id'] = str(log['_id'])
+        log["_id"] = str(log["_id"])
         formatted_logs.append(log)
     return {"logs": formatted_logs}
 
