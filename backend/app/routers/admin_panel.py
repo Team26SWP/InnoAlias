@@ -24,9 +24,11 @@ async def delete_user(
     user = await users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if not reason:
+        reason = "No reason provided"
     log = {
         "action": "DELETE_USER",
-        "admin_id": current_user.id,
+        "admin_email": current_user.email,
         "target_user_id": user["_id"],
         "target_user_email": email,
         "reason": reason,
@@ -37,7 +39,6 @@ async def delete_user(
         {"owner_ids": user["_id"]}, {"$pull": {"owner_ids": user["_id"]}}
     )
     await logs.insert_one(log)
-
     return {"message": f" User {email} deleted. Reason: {reason}."}
 
 
@@ -64,9 +65,11 @@ async def delete_deck(deck_id, reason: str, current_user=Depends(get_current_use
         raise HTTPException(status_code=404, detail="Deck not found")
     await decks.delete_one({"_id": deck_id})
     await users.update_many({"deck_ids": deck_id}, {"$pull": {"deck_ids": deck_id}})
+    if not reason:
+        reason = "No reason provided"
     log = {
         "action": "DELETE_DECK",
-        "admin_id": current_user.id,
+        "admin_email": current_user.email,
         "target_deck_id": deck_id,
         "reason": reason,
         "timestamp": datetime.now().isoformat(),
@@ -88,7 +91,7 @@ async def add_admin(
     await users.update_one({"email": email}, {"$set": {"isAdmin": True}})
     log = {
         "action": "ADD_ADMIN",
-        "admin_id": current_user.id,
+        "admin_email": current_user.email,
         "target_user_id": user["_id"],
         "target_user_email": email,
         "timestamp": datetime.now().isoformat(),
@@ -110,7 +113,7 @@ async def remove_admin(
     await users.update_one({"email": email}, {"$set": {"isAdmin": False}})
     log = {
         "action": "REMOVE_ADMIN",
-        "admin_id": current_user.id,
+        "admin_email": current_user.email,
         "target_user_id": user["_id"],
         "target_user_email": email,
         "timestamp": datetime.now().isoformat(),
@@ -128,9 +131,11 @@ async def delete_tag(
     if not current_user.isAdmin:
         raise HTTPException(status_code=403, detail="Forbidden")
     await decks.update_many({"tags": tag}, {"$pull": {"tags": tag}})
+    if not reason:
+        reason = "No reason provided"
     log = {
         "action": "DELETE_TAG",
-        "admin_id": current_user.id,
+        "admin_email": current_user.email,
         "target_tag": tag,
         "reason": reason,
         "timestamp": datetime.now().isoformat(),
@@ -146,7 +151,7 @@ async def clear_logs(current_user=Depends(get_current_user)):
     await db.drop_collection("logs")
     log = {
         "action": "CLEAR_LOGS",
-        "admin_id": current_user.id,
+        "admin_email": current_user.email,
         "timestamp": datetime.now().isoformat(),
     }
     await logs.insert_one(log)
