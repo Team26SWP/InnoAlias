@@ -33,6 +33,7 @@ async function fetchGallery(page: number = 1): Promise<GalleryResponse> {
 }
 
 function Home() {
+  const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [apiGallery, setApiGallery] = useState<Deck[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [visibleCount, setVisibleCount] = useState<number>(8);
@@ -78,9 +79,10 @@ function Home() {
         'Content-Type': 'application/json',
       },
     });
-    const profile = await response.json();
+    const newProfile = await response.json();
     if (response.ok) {
-      config.setProfile(profile);
+      setProfile(newProfile);
+      config.setProfile(newProfile);
     }
   };
   const handleSaveDeck = useCallback(async (deckId: string): Promise<void> => {
@@ -123,12 +125,12 @@ function Home() {
         await loadProfile();
       }
       const code = new URLSearchParams(window.location.search).get('code');
-      const profile = config.getProfile();
-      if (!profile && code) {
+      const newProfile = config.getProfile();
+      if (!newProfile && code) {
         config.navigateTo(config.Page.Login);
       }
-      if (profile && code) {
-        config.navigateTo(config.Page.Join, { name: profile.name, code, isHost: false });
+      if (newProfile && code) {
+        config.navigateTo(config.Page.Join, { name: newProfile.name, code, isHost: false });
       }
     }
     gameLoad();
@@ -171,6 +173,10 @@ function Home() {
     config.navigateTo(config.Page.Create, { deckId } as CreateParams);
     // нужно правильно настроить
   }, [selectedDeck]);
+
+  if (!profile) {
+    return <div>No profile data available</div>;
+  }
 
   return (
     <div className="bg-[#FAF6E9] dark:bg-[#1A1A1A] text-[#1E6DB9]">
@@ -268,10 +274,12 @@ function Home() {
           >
             <div className="bg-gray-300 rounded-lg max-w-md w-full p-6 space-y-4 z-60 onClick={(e) => e.stopPropagation()}">
               <h3 className="text-3xl font-bold">{selectedDeck.name}</h3>
+              {profile.isAdmin && (
               <p className="text-sm text-gray-600">
                 Deck ID:
                 {selectedDeck._id}
               </p>
+              )}
               <p className="text-sm text-gray-600">
                 Tags:
                 {selectedDeck.tags.map((tag) => (

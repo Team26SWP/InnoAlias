@@ -234,7 +234,7 @@ export function CreateGame(prop: CreateProp) {
           </button>
 
           <div className="grid md:grid-cols-[35ch_auto_auto_minmax(0,1fr)] lg:grid-cols-[40ch_auto_auto_minmax(0,1fr)] gap-x-2 gap-y-4 items-center">
-            <span className="font-bold text-left">Time:</span>
+            <span className="font-bold text-left">Time for one word:</span>
             <input
               id="minutes"
               type="number"
@@ -274,7 +274,7 @@ export function CreateGame(prop: CreateProp) {
             </div>
             {!aiGame && (
               <>
-                <span className="font-bold text-left">Limit of attempts:</span>
+                <span className="font-bold text-left">Amount Of Guesses:</span>
                 <div />
                 <div />
                 <div className="flex items-center gap-2">
@@ -292,7 +292,7 @@ export function CreateGame(prop: CreateProp) {
                   <span className="text-sm">tries</span>
                 </div>
 
-                <span className="font-bold text-left">Limit of correct answers:</span>
+                <span className="font-bold text-left">Limit Of Correct Answers For The Card:</span>
                 <div />
                 <div />
                 <div className="flex items-center gap-2">
@@ -306,7 +306,7 @@ export function CreateGame(prop: CreateProp) {
                         .toString();
                     }}
                   />
-                  <span className="text-sm">teams</span>
+                  <span className="text-sm">answers</span>
                 </div>
               </>
             )}
