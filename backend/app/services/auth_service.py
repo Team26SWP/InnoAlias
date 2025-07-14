@@ -10,7 +10,7 @@ from backend.app.code_gen import generate_user_id
 from backend.app.config import (
     SECRET_KEY,
     ACCESS_TOKEN_EXPIRE_MINUTES,
-    ALGORITHM,
+    ALGORITHM, REFRESH_TOKEN_EXPIRE_DAYS,
 )
 from backend.app.models import User, UserInDB
 from backend.app.db import db
@@ -33,6 +33,31 @@ async def create_user(user: User):
     }
     await users.insert_one(user_credentials)
     return user_credentials
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    expires_delta = expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    expires = datetime.now(timezone.utc) + expires_delta
+
+    to_encode.update({"exp": expires})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+async def verify_refresh_token(token: str) -> UserInDB:
+    credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    user = await get_user(email)
+    if user is None:
+        raise credentials_exception
+    return user
 
 
 async def get_user(email: str) -> Optional[UserInDB]:
