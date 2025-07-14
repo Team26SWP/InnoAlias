@@ -41,7 +41,7 @@ function Home() {
   const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
 
-  const isLoggedIn = Boolean(localStorage.getItem('access_token'));
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(localStorage.getItem('access_token')));
 
   const handleScroll = useCallback((): void => {
     setShowGallery(window.scrollY > 0);
@@ -58,13 +58,6 @@ function Home() {
     try {
       const data = await fetchGallery(page);
       const decks = data.gallery as Deck[];
-      // Validate deck structure
-      decks.forEach((deck, index) => {
-        if (!deck._id) {
-          console.error(`Deck at index ${index} has no _id:`, deck);
-        }
-        console.log(deck);
-      });
       setApiGallery([...decks].reverse());
     } catch (error) {
       console.error('Failed to load gallery:', error);
@@ -83,6 +76,23 @@ function Home() {
     if (response.ok) {
       setProfile(newProfile);
       config.setProfile(newProfile);
+    } else if (response.status === 401) {
+      const refresh = await fetch(`${config.HTTP_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
+      });
+      const newToken = await refresh.json();
+      if (refresh.ok) {
+        localStorage.setItem('access_token', newToken.access_token);
+        localStorage.setItem('refresh_token', newToken.refresh_token);
+        loadProfile();
+      } else if (response.status === 401) {
+        localStorage.removeItem('access_token');
+        setIsLoggedIn(false);
+      }
     }
   };
   const handleSaveDeck = useCallback(async (deckId: string): Promise<void> => {
@@ -173,10 +183,6 @@ function Home() {
     config.navigateTo(config.Page.Create, { deckId } as CreateParams);
     // нужно правильно настроить
   }, [selectedDeck]);
-
-  if (!profile) {
-    return <div>No profile data available</div>;
-  }
 
   return (
     <div className="bg-[#FAF6E9] dark:bg-[#1A1A1A] text-[#1E6DB9]">
@@ -274,7 +280,7 @@ function Home() {
           >
             <div className="bg-gray-300 rounded-lg max-w-md w-full p-6 space-y-4 z-60 onClick={(e) => e.stopPropagation()}">
               <h3 className="text-3xl font-bold">{selectedDeck.name}</h3>
-              {profile.isAdmin && (
+              {profile && profile.isAdmin && (
               <p className="text-sm text-gray-600">
                 Deck ID:
                 {selectedDeck._id}
