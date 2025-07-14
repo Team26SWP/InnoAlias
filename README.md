@@ -24,7 +24,7 @@ Alias is a game where players explain words to eachother, gaining points for eac
 
 ## Project context diagram
 
-![Context diagram](./images/context-diagram.svg)
+![Context diagram](docs/images/context-diagram.svg)
 
 ## Feature roadmap
 - [x] Single game master mode
