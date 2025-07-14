@@ -44,6 +44,7 @@ def test_register_new_user_succeeds(sync_client, monkeypatch):
         and data["refresh_token"] == "refresh"
     )
 
+
 def test_register_existing_email_fails(sync_client, monkeypatch):
     mock_get_user = AsyncMock(return_value={"_id": "1"})
     monkeypatch.setattr("backend.app.routers.auth.get_user", mock_get_user)
@@ -89,6 +90,7 @@ def test_login_correct_credentials(sync_client, monkeypatch):
         and body["refresh_token"] == "refresh"
     )
 
+
 def test_refresh_token_endpoint(sync_client, monkeypatch):
     user = UserInDB(id="u1", name="A", surname="B", email="a@b.c", hashed_password="h")
     mock_verify_refresh = AsyncMock(return_value=user)
@@ -116,6 +118,7 @@ def test_refresh_token_endpoint(sync_client, monkeypatch):
         "refresh_token": "newrefresh",
         "token_type": "bearer",
     }
+
 
 def test_login_bad_credentials(sync_client, monkeypatch):
     monkeypatch.setattr(
