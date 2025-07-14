@@ -50,6 +50,7 @@ function Register() {
       const data = await response.json();
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('token_type', data.token_type);
+      localStorage.setItem('refresh_token', data.refresh_token);
 
       try {
         const token = data.access_token;

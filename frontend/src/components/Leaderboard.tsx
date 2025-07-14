@@ -85,7 +85,6 @@ export function Leaderboard() {
   const saveDeck = async () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      alert('You must be logged in to save a deck.');
       return;
     }
     const profile = config.getProfile();
@@ -118,7 +117,7 @@ export function Leaderboard() {
           deck_name: deckName,
           words,
           tags,
-          isPrivate,
+          private: isPrivate.current,
         }),
       });
       if (saveResp.ok) {
@@ -126,7 +125,19 @@ export function Leaderboard() {
       } else if (saveResp.status === 404) {
         alert('User record not found.');
       } else if (saveResp.status === 401) {
-        alert('Unauthorized. Please log in again.');
+        const refresh = await fetch(`${config.HTTP_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
+        });
+        const newToken = await refresh.json();
+        if (refresh.ok) {
+          localStorage.setItem('access_token', newToken.access_token);
+          localStorage.setItem('refresh_token', newToken.refresh_token);
+          saveDeck();
+        }
       } else {
         alert('Failed to save deck.');
       }

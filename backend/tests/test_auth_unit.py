@@ -9,10 +9,14 @@ def test_register_new_user_succeeds(sync_client, monkeypatch):
     mock_get_user = AsyncMock(return_value=None)
     mock_create_user = AsyncMock()
     mock_create_access_token = MagicMock(return_value="tok")
+    mock_create_refresh_token = MagicMock(return_value="refresh")
     monkeypatch.setattr("backend.app.routers.auth.get_user", mock_get_user)
     monkeypatch.setattr("backend.app.routers.auth.create_user", mock_create_user)
     monkeypatch.setattr(
         "backend.app.routers.auth.create_access_token", mock_create_access_token
+    )
+    monkeypatch.setattr(
+        "backend.app.routers.auth.create_refresh_token", mock_create_refresh_token
     )
 
     payload = {
@@ -22,16 +26,23 @@ def test_register_new_user_succeeds(sync_client, monkeypatch):
         "password": "pw",
     }
     response = sync_client.post("/api/auth/register", json=payload)
-
     assert response.status_code == 200
     mock_create_user.assert_called_once()
     assert mock_create_user.call_args.args[0].email == payload["email"]
     mock_create_access_token.assert_called_once()
+    mock_create_refresh_token.assert_called_once()
     assert mock_create_access_token.call_args.kwargs["data"] == {
         "sub": payload["email"]
     }
+    assert mock_create_refresh_token.call_args.kwargs["data"] == {
+        "sub": payload["email"]
+    }
     data = response.json()
-    assert data["token_type"] == "bearer" and data["access_token"]
+    assert (
+        data["token_type"] == "bearer"
+        and data["access_token"]
+        and data["refresh_token"] == "refresh"
+    )
 
 
 def test_register_existing_email_fails(sync_client, monkeypatch):
@@ -54,9 +65,13 @@ def test_login_correct_credentials(sync_client, monkeypatch):
     user = UserInDB(id="u1", name="A", surname="B", email="a@b.c", hashed_password="h")
     mock_auth = AsyncMock(return_value=user)
     mock_create_access_token = MagicMock(return_value="tok")
+    mock_create_refresh_token = MagicMock(return_value="refresh")
     monkeypatch.setattr("backend.app.routers.auth.authenticate_user", mock_auth)
     monkeypatch.setattr(
         "backend.app.routers.auth.create_access_token", mock_create_access_token
+    )
+    monkeypatch.setattr(
+        "backend.app.routers.auth.create_refresh_token", mock_create_refresh_token
     )
 
     response = sync_client.post(
@@ -65,9 +80,44 @@ def test_login_correct_credentials(sync_client, monkeypatch):
 
     assert response.status_code == 200
     mock_create_access_token.assert_called_once()
+    mock_create_refresh_token.assert_called_once()
     assert mock_create_access_token.call_args.kwargs["data"] == {"sub": user.email}
+    assert mock_create_refresh_token.call_args.kwargs["data"] == {"sub": user.email}
     body = response.json()
-    assert body["token_type"] == "bearer" and body["access_token"]
+    assert (
+        body["token_type"] == "bearer"
+        and body["access_token"]
+        and body["refresh_token"] == "refresh"
+    )
+
+
+def test_refresh_token_endpoint(sync_client, monkeypatch):
+    user = UserInDB(id="u1", name="A", surname="B", email="a@b.c", hashed_password="h")
+    mock_verify_refresh = AsyncMock(return_value=user)
+    mock_create_access_token = MagicMock(return_value="newtok")
+    mock_create_refresh_token = MagicMock(return_value="newrefresh")
+    monkeypatch.setattr(
+        "backend.app.routers.auth.verify_refresh_token", mock_verify_refresh
+    )
+    monkeypatch.setattr(
+        "backend.app.routers.auth.create_access_token", mock_create_access_token
+    )
+    monkeypatch.setattr(
+        "backend.app.routers.auth.create_refresh_token", mock_create_refresh_token
+    )
+
+    response = sync_client.post("/api/auth/refresh", json={"refresh_token": "r"})
+
+    assert response.status_code == 200
+    mock_verify_refresh.assert_called_once_with("r")
+    mock_create_access_token.assert_called_once_with(data={"sub": user.email})
+    mock_create_refresh_token.assert_called_once_with(data={"sub": user.email})
+    body = response.json()
+    assert body == {
+        "access_token": "newtok",
+        "refresh_token": "newrefresh",
+        "token_type": "bearer",
+    }
 
 
 def test_login_bad_credentials(sync_client, monkeypatch):

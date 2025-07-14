@@ -14,7 +14,8 @@ All architectural views (static, dynamic, deployment) are fully documented with 
 **🔧 Required Environment Variables:**
 - `SECRET_KEY`: JWT signing secret
 - `ALGORITHM`: JWT algorithm (default: HS256)
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: Access token expiration time
+- `REFRESH_TOKEN_EXPIRE_DAYS`: Refresh token expiration time
 - `DOCKERHUB_USER`: user in docker hub with images of containers (used for CI/CD, only used in docker-compose.yml)
 - `GEMINI_API_KEY`: API key for Gemini LLM - needed for AI single player game
 - `GEMINI_MODEL_NAME`: Gemini LLM model ID (you have to choose among the available in Google AIStudio)

@@ -32,31 +32,54 @@ Creates a new user account.
 - `password`: string
 
 **Response**
-- `200 OK`: Returns an access token upon successful registration.
+- `200 OK`: Returns an access token and a refresh token upon successful registration.
   ```json
   {
-    "access_token": "your_jwt_token",
+    "access_token": "your_jwt_access_token",
+    "refresh_token": "your_jwt_refresh_token",
     "token_type": "bearer"
   }
   ```
 - `400 Bad Request`: If the email is already registered.
 
 ### POST `/api/auth/login`
-Authenticates a user and provides an access token.
+Authenticates a user and provides an access token and a refresh token.
 
 **Body** (`application/x-www-form-urlencoded`)
 - `username`: The user's email address.
 - `password`: The user's password.
 
 **Response**
-- `200 OK`: Returns an access token.
+- `200 OK`: Returns an access token and a refresh token.
   ```json
   {
-    "access_token": "your_jwt_token",
+    "access_token": "your_jwt_access_token",
+    "refresh_token": "your_jwt_refresh_token",
     "token_type": "bearer"
   }
   ```
 - `400 Bad Request`: If credentials are incorrect.
+
+### POST `/api/auth/refresh`
+Refreshes an expired access token using a valid refresh token.
+
+**Body** (`application/json`)
+```json
+{
+  "refresh_token": "your_jwt_refresh_token"
+}
+```
+
+**Response**
+- `200 OK`: Returns a new access token and a new refresh token.
+  ```json
+  {
+    "access_token": "new_jwt_access_token",
+    "refresh_token": "new_jwt_refresh_token",
+    "token_type": "bearer"
+  }
+  ```
+- `401 Unauthorized`: If the refresh token is invalid, expired, or has been revoked.
 
 ---
 
