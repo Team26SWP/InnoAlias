@@ -8,77 +8,72 @@ function Profile() {
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [decks, setDecks] = useState<config.Deck[]>([
-    {
-      id: 'Aboba',
-      name: 'Abobny',
-      words_count: 10,
-      tags: [],
-    },
-  ]);
+  const [decks, setDecks] = useState<config.Deck[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchString, setSearchString] = useState<string | null>(null);
   const [deckLoad, setDeckLoad] = useState<boolean>(false);
+  const [deckCreate, setDeckCreate] = useState<boolean>(false);
 
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isEditingAll, setIsEditingAll] = useState<boolean>(false);
   const [draft, setDraft] = useState<DeckWithWords | null>(null);
   const [newWordText, setNewWordText] = useState<string>('');
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${config.HTTP_URL}/profile/me`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        if (!response.ok) {
-          if (response.status === 401) {
-            const refresh = await fetch(`${config.HTTP_URL}/auth/refresh`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
-            });
-            const newToken = await refresh.json();
-            if (refresh.ok) {
-              localStorage.setItem('access_token', newToken.access_token);
-              localStorage.setItem('refresh_token', newToken.refresh_token);
-              await fetchProfile();
-              return;
-            }
-          }
-          setError('Failed to fetch profile.');
-          setLoading(false);
-          return;
-        }
-        const data: config.UserProfile = await response.json();
-        setProfile(data);
-        config.setProfile(data);
-        setDecks(data.decks);
-        const supp: string[] = [];
-        data.decks.forEach((deck) => {
-          deck.tags.forEach((tag) => {
-            if (!supp.includes(tag)) {
-              supp.push(tag);
-            }
+  const fetchProfile = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${config.HTTP_URL}/profile/me`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        if (response.status === 401) {
+          const refresh = await fetch(`${config.HTTP_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
           });
-        });
-        setTags(supp);
-      } catch (err) {
-        setError('An unexpected error occurred.');
-      } finally {
+          const newToken = await refresh.json();
+          if (refresh.ok) {
+            localStorage.setItem('access_token', newToken.access_token);
+            localStorage.setItem('refresh_token', newToken.refresh_token);
+            await fetchProfile();
+            return;
+          }
+        }
+        setError('Failed to fetch profile.');
         setLoading(false);
+        return;
       }
-    };
+      const data: config.UserProfile = await response.json();
+      setProfile(data);
+      config.setProfile(data);
+      setDecks(data.decks);
+      const supp: string[] = [];
+      data.decks.forEach((deck) => {
+        deck.tags.forEach((tag) => {
+          if (!supp.includes(tag)) {
+            supp.push(tag);
+          }
+        });
+      });
+      setTags(supp);
+    } catch (err) {
+      setError('An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfile();
     setDeckLoad(config.getDeckChoice());
   }, []);
@@ -100,16 +95,28 @@ function Profile() {
   };
 
   const openModal = async (index: number) => {
-    const deckId = decks[index].id;
+    if (index === -1) {
+      setDeckCreate(true);
+      setDraft({
+        id: '',
+        name: '',
+        words_count: 0,
+        tags: [],
+        words: [],
+      });
+      setIsEditingAll(true);
+    } else {
+      const deckId = decks[index].id;
 
-    const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const data = await response.json();
+      const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      setDraft({ ...decks[index], words: data.words });
+      setIsEditingAll(false);
+    }
     setActiveIndex(index);
-    setDraft({ ...decks[index], words: data.words });
-    setIsEditingAll(false);
     setNewWordText('');
   };
 
@@ -236,6 +243,25 @@ function Profile() {
     toPage('Create');
   };
 
+  const createDeck = async () => {
+    if (!draft) { return; }
+    await fetch(`${config.HTTP_URL}/profile/deck/save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+      },
+      body: JSON.stringify({
+        deck_name: draft.name,
+        words: draft.words,
+        tags: draft.tags,
+      }),
+    });
+    setIsEditingAll(false);
+    setDraft(null);
+    fetchProfile();
+  };
+
   function logOut() {
     localStorage.removeItem('access_token');
     config.setProfile(null);
@@ -309,6 +335,15 @@ function Profile() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 md:grid-cols-3 gap-4 mt-8">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => openModal(-1)}
+          onKeyDown={(e) => e.key === 'Enter' && openModal(-1)}
+          className="cursor-pointer bg-[#d9d9d9] hover:bg-[#c9c9c9] text-[#1E6DB9] font-bold text-sm py-5 px-4 rounded-lg shadow-sm transition"
+        >
+          <div>Create a deck</div>
+        </div>
         {decks.filter((deck) => checkDeck(deck)).map((deck, idx) => (
           <div
             key={deck.id}
@@ -346,7 +381,7 @@ function Profile() {
               <div className="flex space-x-2">
                 {isEditingAll ? (
                   <>
-                    <button type="button" onClick={saveAll} className="px-2 py-1 text-[#1E6DB9] rounded text-sm">Save</button>
+                    <button type="button" onClick={deckCreate ? createDeck : saveAll} className="px-2 py-1 text-[#1E6DB9] rounded text-sm">{deckCreate ? 'Create' : 'Save'}</button>
                     <button type="button" onClick={cancelAll} className="px-2 py-1 text-gray-500 rounded text-sm">Cancel</button>
                   </>
                 ) : (
