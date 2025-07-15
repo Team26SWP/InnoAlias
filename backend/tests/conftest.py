@@ -37,7 +37,4 @@ async def client(test_db):
         yield c
 
 
-@pytest.fixture
-def sync_client(test_db):
-    with TestClient(fastapi_app) as c:
-        yield c
+
