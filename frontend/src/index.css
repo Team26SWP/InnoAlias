@@ -2,8 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply font-adlam;
+@layer base {
+  body {
+    @apply font-adlam;
+  }
 }
 
 .hide-scrollbar::-webkit-scrollbar {
