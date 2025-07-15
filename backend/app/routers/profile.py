@@ -1,6 +1,6 @@
-from fastapi import HTTPException, Depends, APIRouter
+from fastapi import HTTPException, Depends, APIRouter, Query
 from pymongo import DESCENDING
-from typing import Any
+from typing import Any, Dict
 
 from backend.app.code_gen import generate_deck_id
 from backend.app.db import db
@@ -18,12 +18,18 @@ router = APIRouter(prefix="", tags=["profile"])
 
 
 @router.get("/me", response_model=ProfileResponse)
-async def get_my_profile(current_user: UserInDB = Depends(get_current_user)):
-    return await get_profile(current_user.id, current_user)
+async def get_my_profile(
+    search: str = Query(None), current_user: UserInDB = Depends(get_current_user)
+):
+    return await get_profile(current_user.id, current_user, search)
 
 
 @router.get("/{user_id}", response_model=ProfileResponse)
-async def get_profile(user_id: str, current_user: UserInDB = Depends(get_current_user)):
+async def get_profile(
+    user_id: str,
+    current_user: UserInDB = Depends(get_current_user),
+    search: str = Query(None),
+):
     if user_id != current_user.id:
         raise HTTPException(403, "Forbidden")
 
@@ -35,9 +41,13 @@ async def get_profile(user_id: str, current_user: UserInDB = Depends(get_current
     decks = []
 
     if deck_ids:
-        cursor = db.decks.find(
-            {"_id": {"$in": deck_ids}}, {"name": 1, "words": 1, "tags": 1}
-        ).sort("name", DESCENDING)
+        query: Dict[str, Any] = {"_id": {"$in": deck_ids}}
+        if search:
+            query["$text"] = {"$search": search}
+
+        cursor = db.decks.find(query, {"name": 1, "words": 1, "tags": 1}).sort(
+            "name", DESCENDING
+        )
 
         decks = await cursor.to_list(length=100)
 

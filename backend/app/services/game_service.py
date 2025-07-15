@@ -24,7 +24,7 @@ class ConnectionManager:
         self.players: dict[str, list[Tuple[WebSocket, str, str]]] = {}
         self.locks: dict[str, Lock] = {}
 
-    async def connect_host(self, websocket: WebSocket, game_id: str, name: str) -> bool:
+    async def connect_host(self, websocket: WebSocket, game_id: str) -> bool:
         if game_id in self.hosts:
             await websocket.close(code=1008, reason="Host already connected")
             return False

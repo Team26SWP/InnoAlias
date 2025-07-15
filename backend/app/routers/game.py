@@ -112,7 +112,7 @@ async def handle_game(websocket: WebSocket, game_id: str):
 
     assert host_id is not None
 
-    if not await manager.connect_host(websocket, game_id, host_id):
+    if not await manager.connect_host(websocket, game_id):
         return
 
     timer_task = asyncio.create_task(check_timers(game_id))
