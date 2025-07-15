@@ -154,7 +154,7 @@ export function CreateGame(prop: CreateProp) {
       settings.time = parseInt((minutes.value !== '') ? minutes.value : minutes.placeholder, 10) * 60
         + parseInt((seconds.value !== '') ? seconds.value : seconds.placeholder, 10);
       if (settings.time === 0) settings.time = 1;
-      settings.deckLimit = parseInt((deckLimit.value !== '') ? deckLimit.value : deckLimit.placeholder, 10);
+      settings.deckLimit = parseInt((deckLimit.value !== '') ? deckLimit.value : '0', 10);
       settings.attemptsLimit = parseInt((attemptLimit.value !== '') ? attemptLimit.value : attemptLimit.placeholder, 10);
       settings.answersLimit = parseInt((answerLimit.value !== '') ? answerLimit.value : answerLimit.placeholder, 10);
       settings.numberOfTeams = parseInt((numberTeams.value !== '') ? numberTeams.value : numberTeams.placeholder, 10);
@@ -260,14 +260,14 @@ export function CreateGame(prop: CreateProp) {
               <span className="text-sm">sec</span>
             </div>
 
-            <span className="font-bold text-left">Deck limit:</span>
+            <span className="font-bold text-left">Cards in game (leave empty for all cards):</span>
             <div />
             <div />
             <div className="flex items-center gap-2">
               <input
                 id="deck-length"
                 type="number"
-                placeholder={settings.deckLimit.toString()}
+                placeholder={settings.deckLimit === 0 ? '' : settings.deckLimit.toString()}
                 className="w-12 p-2 rounded-md"
               />
               <span className="text-sm">cards</span>
@@ -289,7 +289,7 @@ export function CreateGame(prop: CreateProp) {
                       );
                     }}
                   />
-                  <span className="text-sm">tries</span>
+                  <span className="text-sm">guesses</span>
                 </div>
 
                 <span className="font-bold text-left">Limit Of Correct Answers For The Card:</span>
@@ -307,6 +307,23 @@ export function CreateGame(prop: CreateProp) {
                     }}
                   />
                   <span className="text-sm">answers</span>
+                </div>
+
+                <span className="font-bold text-left">Number of teams:</span>
+                <div />
+                <div />
+                <div className="flex items-center gap-2">
+                  <input
+                    id="teams"
+                    type="number"
+                    placeholder={settings.numberOfTeams.toString()}
+                    className="w-12 p-2 rounded-md"
+                    onChange={(e) => {
+                      e.target.value = downToRange(Number.parseInt(e.target.value, 10), 1, 100)
+                        .toString();
+                    }}
+                  />
+                  <span className="text-sm">teams</span>
                 </div>
               </>
             )}

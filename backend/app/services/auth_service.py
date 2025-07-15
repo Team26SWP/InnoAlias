@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime, timezone
 from typing import Optional
 from fastapi import HTTPException, Depends, status
-from jose import JWTError, jwt  # type: ignore
+from jose import JWTError, jwt, ExpiredSignatureError  # type: ignore
 
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext  # type: ignore
@@ -11,6 +11,7 @@ from backend.app.config import (
     SECRET_KEY,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
+    REFRESH_TOKEN_EXPIRE_DAYS,
 )
 from backend.app.models import User, UserInDB
 from backend.app.db import db
@@ -33,6 +34,52 @@ async def create_user(user: User):
     }
     await users.insert_one(user_credentials)
     return user_credentials
+
+
+def _create_token(data: dict, expires_delta: timedelta) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + expires_delta
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    delta = expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    return _create_token(data, delta)
+
+
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    delta = expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    return _create_token(data, delta)
+
+
+async def verify_refresh_token(token: str) -> UserInDB:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    expired_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Refresh token has expired",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+
+        if email is None:
+            raise credentials_exception
+    except ExpiredSignatureError:
+        raise expired_exception
+    except JWTError:
+        raise credentials_exception
+
+    user = await get_user(email)
+    if user is None:
+        raise credentials_exception
+    return user
 
 
 async def get_user(email: str) -> Optional[UserInDB]:
@@ -58,14 +105,6 @@ async def authenticate_user(email: str, password: str) -> Optional[UserInDB]:
     if not user or not verify_password(password, user.hashed_password):
         return None
     return user
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    expire_delta = expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    expire = datetime.now(timezone.utc) + expire_delta
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):

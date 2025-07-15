@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     image: docker.io/${DOCKERHUB_USER}/innoalias-backend:latest

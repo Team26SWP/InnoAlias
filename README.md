@@ -24,7 +24,7 @@ Alias is a game where players explain words to eachother, gaining points for eac
 
 ## Project context diagram
 
-![Context diagram](./images/context-diagram.svg)
+![Context diagram](docs/images/context-diagram.svg)
 
 ## Feature roadmap
 - [x] Single game master mode
@@ -34,8 +34,8 @@ Alias is a game where players explain words to eachother, gaining points for eac
 - [x] User profiles support
 - [x] Deck saveability & usability
 - [x] Teams game mode
-- [ ] Deck gallery
-- [ ] Singleplayer
+- [x] Deck gallery
+- [x] Singleplayer
 
 ## Usage   
 
@@ -57,7 +57,6 @@ Alias is a game where players explain words to eachother, gaining points for eac
 
 ### 2. Running locally (via Docker)
 
-The **`docker-compose.yml`** in the repo is wired for our CI/CD pipeline, which normally **pulls** pre-built images from Docker Hub.  
 If you want to **build and run everything from source on your own computer**, follow the steps below.
 
 #### 2.1  Prerequisites
@@ -84,42 +83,12 @@ cp .env.example .env # Secret key you can generate via command "openssl rand -ba
 nano .env
 ```
 
-The .env file already contains safe defaults (no production secrets). Adjust anything you need—e.g. SMTP creds—before starting the stack.
+The .env file already contains safe defaults (no production secrets). Adjust anything you need.
 
-#### 2.4 Change docker-compose.yml
-
-Just replace each `image:` line with a `build:` block that points at the directory containing the relevant Dockerfile:
-
-```diff
- services:
-   backend:
--    image: docker.io/${DOCKERHUB_USER}/innoalias-backend:latest
-+    build:
-+      context: ./backend
-```
-
-```diff
- services:
-   frontend:
--    image: docker.io/${DOCKERHUB_USER}/innoalias-frontend:latest
-+    build:
-+      context: ./frontend
-```
-
-```diff
- services:
-   nginx:
--    image: docker.io/${DOCKERHUB_USER}/innoalias-nginx:latest
-+    build:
-+      context: ./nginx
-```
-
-This step is necessary because right now docker-compose is configured for automatic deployment via CI/CD, but changing the strings will allow the project to be built locally.
-
-#### 2.5 Launch the building!
+#### 2.4 Launch the building!
 
 ```bash
-docker-compose up -d --build
+docker-compose up -f docker-compose-dev.yml -d --build
 ```
 
 After build, you can use app on localhost.

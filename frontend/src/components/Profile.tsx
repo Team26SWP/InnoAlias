@@ -40,12 +40,27 @@ function Profile() {
           },
         });
         if (!response.ok) {
+          if (response.status === 401) {
+            const refresh = await fetch(`${config.HTTP_URL}/auth/refresh`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
+            });
+            const newToken = await refresh.json();
+            if (refresh.ok) {
+              localStorage.setItem('access_token', newToken.access_token);
+              localStorage.setItem('refresh_token', newToken.refresh_token);
+              await fetchProfile();
+              return;
+            }
+          }
           setError('Failed to fetch profile.');
           setLoading(false);
           return;
         }
         const data: config.UserProfile = await response.json();
-        console.log(data);
         setProfile(data);
         config.setProfile(data);
         setDecks(data.decks);

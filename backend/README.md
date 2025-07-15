@@ -8,13 +8,13 @@ This folder contains a FastAPI backend for a game.
    ```bash
    pip install -r backend/requirements.txt
    ```
-2. Copy `.env.example` from the repository root to `.env`:
+2. Copy `.env.example` **from the repository root** to `.env`:
    ```bash
-   cp .env.example .env
+   cp .env.example .env # it must be under InnoAlias/.env
    ```
 3. Modify .env:
    ```bash
-   nano .env # specify SECRET_KEY, ALGORITHM and ACCESS_TOKEN_EXPIRE_MINUTES
+   nano .env # specify all entries
    ```
    The backend uses MongoDB. Set `MONGO_URI` to point at your database instance
    (default is `mongodb://localhost:27017/`).
@@ -31,7 +31,7 @@ Install test dependencies and run:
 pytest -q
 ```
 
-Additional API documentation can be found under `backend/docs/README.md`.
+Additional API documentation can be found under `backend/docs/API.md`.
 
 
 ## Structure
@@ -40,7 +40,7 @@ Additional API documentation can be found under `backend/docs/README.md`.
 backend/
     requirements.txt  # project dependencies
     Dockerfile        # dockerfile for building the backend container
-    .env.example      # file with environment variables (look at the Usage section)
+    
     app/
         main.py       # FastAPI application
         db.py         # database connection
@@ -50,14 +50,5 @@ backend/
         routers/      # API and websocket routers
         models/       # Pydantic models
 
-    docs/
-        README.md     # API documentation
-
-    tests/
-        _test_setup.py             # initialiazing for tests
-        conftest.py                # configuration for tests
-        test_auth_unit.py          # unit tests for auth
-        test_code_gen_unit.py      # unit tests for code generation
-        test_game_service_unit.py  # unit tests for game services
-        test_integration.py        # integration tests
+    tests/            # unit and integration tests
 ```

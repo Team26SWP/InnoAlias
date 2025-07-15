@@ -150,6 +150,9 @@ To keep our application secure and maintainable, we follow these rules for handl
 
       # how many minutes auth token will live
       ACCESS_TOKEN_EXPIRE_MINUTES=30
+     
+     # how many days refresh token will live
+     REFRESH_TOKEN_EXPIRE_DAYS=7
 
       # user in docker hub (for CI/CD)
       DOCKERHUB_USER=user

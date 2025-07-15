@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Depends, APIRouter
+from fastapi import HTTPException, Depends, APIRouter, Body
 from fastapi.security import OAuth2PasswordRequestForm
 
 from backend.app.models import User, Token
@@ -7,6 +7,8 @@ from backend.app.services.auth_service import (
     get_user,
     create_user,
     authenticate_user,
+    create_refresh_token,
+    verify_refresh_token,
 )
 
 router = APIRouter(prefix="", tags=["auth"])
@@ -19,7 +21,12 @@ async def register(user: User):
         raise HTTPException(status_code=400, detail="Email already registered")
     await create_user(user)
     access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(data={"sub": user.email})
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
 
 
 @router.post("/login", response_model=Token)
@@ -28,4 +35,21 @@ async def login(data: OAuth2PasswordRequestForm = Depends()):
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     token = create_access_token(data={"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(data={"sub": user.email})
+    return {
+        "access_token": token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
+
+
+@router.post("/refresh", response_model=Token)
+async def refresh(refresh_token: str = Body(..., embed=True)):
+    user = await verify_refresh_token(refresh_token)
+    new_access = create_access_token(data={"sub": user.email})
+    new_refresh = create_refresh_token(data={"sub": user.email})
+    return {
+        "access_token": new_access,
+        "refresh_token": new_refresh,
+        "token_type": "bearer",
+    }
