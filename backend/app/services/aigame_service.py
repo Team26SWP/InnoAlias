@@ -94,7 +94,8 @@ async def process_new_word(game_id: str):
         },
     )
 
-    first_clue = await generate_clue(new_word)
+    context_words = random.sample(game["deck"], k=min(len(game["deck"]), 3))
+    first_clue = await generate_clue(new_word, context_words=context_words)
     await aigames.update_one({"_id": game_id}, {"$push": {"clues": first_clue}})
 
     updated_game = await aigames.find_one({"_id": game_id})
@@ -102,23 +103,28 @@ async def process_new_word(game_id: str):
         await manager.send_state(game_id, updated_game)
 
 
-async def generate_clue(word: str, previous_clues: list[str] | None = None) -> str:
+async def generate_clue(
+    word: str, previous_clues: list[str] | None = None, context_words: list[str] | None = None
+) -> str:
     if previous_clues is None:
         previous_clues = []
-    prompt = f"Explain the word '{word}' in a single sentence."
+    if context_words is None:
+        context_words = []
+
+    prompt = f"WORD: {word}\n"
+    prompt += f"OTHER WORDS IN DECK: {', '.join(context_words)}\n"
     if previous_clues:
-        prompt += " Here are the previous clues, don't repeat them: " + ", ".join(
-            previous_clues
-        )
+        prompt += "PREVIOUS CLUES:" + ", ".join(previous_clues)
 
     response = client.models.generate_content(
         model=GEMINI_MODEL_NAME,
         contents=prompt,
         config=GenerateContentConfig(
+            stop_sequences=['.', '?', '!', '\n'],
             system_instruction=system_instructions,
             temperature=0.8,
             max_output_tokens=50,
-            top_p=1.0,
+            top_p=0.95,
         ),
     )
     return response.text or ""
@@ -133,7 +139,10 @@ async def handle_guess(game_id: str, guess: str):
         await aigames.update_one({"_id": game_id}, {"$inc": {"score": 1}})
         await process_new_word(game_id)
     else:
-        new_clue = await generate_clue(game["current_word"], game.get("clues", []))
+        context_words = random.sample(game["deck"], k=min(len(game["deck"]), 3))
+        new_clue = await generate_clue(
+            game["current_word"], game.get("clues", []), context_words=context_words
+        )
         await aigames.update_one({"_id": game_id}, {"$push": {"clues": new_clue}})
         updated_game = await aigames.find_one({"_id": game_id})
         if updated_game:
