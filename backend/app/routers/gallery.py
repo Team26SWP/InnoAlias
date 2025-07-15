@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from typing import Dict, Any
+from fastapi import APIRouter, HTTPException, Query
 from pymongo import DESCENDING
 from fastapi import Depends
 
@@ -11,19 +12,22 @@ router = APIRouter(prefix="", tags=["gallery"])
 
 
 @router.get("/decks")
-async def get_gallery(number: int):
+async def get_gallery(number: int, search: str = Query(None, min_length=1)):
     if number < 1:
         raise HTTPException(status_code=404, detail="Invalid number")
-    cursor = (
-        await decks.find({"private": False})
-        .skip(number * 50 - 50)
-        .limit(50)
-        .sort("name", DESCENDING)
-        .to_list()
-    )
+
+    query: Dict[str, Any] = {"private": False}
+    if search:
+        query["$text"] = {"$search": search}
+
+    cursor = decks.find(query).skip(number * 50 - 50).limit(50).sort("name", DESCENDING)
+
+    gallery_decks = await cursor.to_list(length=50)
+    total_decks = await decks.count_documents(query)
+
     return {
-        "gallery": cursor,
-        "total_decks": await decks.count_documents({"private": False}),
+        "gallery": gallery_decks,
+        "total_decks": total_decks,
     }
 
 
