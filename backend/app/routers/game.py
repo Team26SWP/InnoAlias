@@ -4,7 +4,7 @@ from fastapi.responses import Response
 from pymongo import ReturnDocument
 import asyncio
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
-from typing import Any
+from typing import Any, Dict
 
 from backend.app.code_gen import generate_game_code
 from backend.app.models import Game
@@ -303,7 +303,7 @@ async def _handle_switch_team(
             f"teams.{team_id}.player_attempts.{player_name}": "",
         }
         
-        update_pipeline = {"$pull": pull_query, "$unset": unset_query}
+        update_pipeline: Dict[str, Dict[str, Any]] = {"$pull": pull_query, "$unset": unset_query}
 
         if team.get("current_master") == player_name:
             players = team.get("players", [])
@@ -317,7 +317,7 @@ async def _handle_switch_team(
 
         # Add to new team
         push_query = {f"teams.{new_team_id}.players": player_name}
-        set_query = {f"teams.{new_team_id}.scores.{player_name}": 0}
+        set_query: Dict[str, Any] = {f"teams.{new_team_id}.scores.{player_name}": 0}
         
         new_team_players = game["teams"][new_team_id].get("players", [])
         if not game.get("rotate_masters") and not game["teams"][new_team_id].get("current_master") and not new_team_players:
