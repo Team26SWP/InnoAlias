@@ -44,16 +44,19 @@ class ConnectionManager:
             del self.hosts[game_id]
             self.locks.pop(game_id, None)
             return None
+        return self._remove_player_connection(game_id, websocket)
 
+    def _remove_player_connection(self, game_id: str, websocket: WebSocket) -> Optional[str]:
         removed_player = None
         if game_id in self.players:
-            remaining_players = []
-            for conn in self.players[game_id]:
+            initial_players = self.players[game_id]
+            self.players[game_id] = [
+                conn for conn in initial_players if conn[0] is not websocket
+            ]
+            for conn in initial_players:
                 if conn[0] is websocket:
                     removed_player = conn[1]
-                else:
-                    remaining_players.append(conn)
-            self.players[game_id] = remaining_players
+                    break
         return removed_player
 
     def switch_player_team(
@@ -66,6 +69,10 @@ class ConnectionManager:
                     break
 
     async def broadcast_state(self, game_id: str, game: Dict[str, Any]) -> None:
+        await self._broadcast_host_state(game_id, game)
+        await self._broadcast_player_state(game_id, game)
+
+    async def _broadcast_host_state(self, game_id: str, game: Dict[str, Any]) -> None:
         if host_ws := self.hosts.get(game_id):
             host_teams_state = {
                 team_id: TeamStateForHost(
@@ -81,6 +88,7 @@ class ConnectionManager:
             ).model_dump(mode="json")
             await host_ws.send_json(host_state)
 
+    async def _broadcast_player_state(self, game_id: str, game: Dict[str, Any]) -> None:
         all_teams_scores = {
             t["name"]: sum(t.get("scores", {}).values())
             for t in game.get("teams", {}).values()
@@ -192,17 +200,19 @@ def determine_winning_team(game: Dict[str, Any]) -> Optional[str]:
     if len(winning_teams) == 1:
         return winning_teams[0]
     else:
-        # Handle ties by checking remaining words, fewest wins
-        min_remaining_words = float("inf")
-        final_winner = None
-        for team_id in winning_teams:
-            remaining_words_count = len(
-                game.get("teams", {}).get(team_id, {}).get("remaining_words", [])
-            )
-            if remaining_words_count < min_remaining_words:
-                min_remaining_words = remaining_words_count
-                final_winner = team_id
-        return final_winner
+        return _handle_tie_breaking(game, winning_teams)
+
+def _handle_tie_breaking(game: Dict[str, Any], winning_teams: list[str]) -> Optional[str]:
+    min_remaining_words = float("inf")
+    final_winner = None
+    for team_id in winning_teams:
+        remaining_words_count = len(
+            game.get("teams", {}).get(team_id, {}).get("remaining_words", [])
+        )
+        if remaining_words_count < min_remaining_words:
+            min_remaining_words = remaining_words_count
+            final_winner = team_id
+    return final_winner
 
 
 async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, Any]:
@@ -229,10 +239,7 @@ async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, An
         }
     )
 
-    if game.get("rotate_masters") and team_state["players"]:
-        team_state["current_master"] = choice(team_state["players"])
-    elif not team_state.get("current_master") and team_state["players"]:
-        team_state["current_master"] = team_state["players"][0]
+    _assign_current_master(game, team_state)
 
     updated_game = cast(
         Dict[str, Any],
@@ -243,6 +250,17 @@ async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, An
         ),
     )
 
+    updated_game = await _check_and_set_game_finished(game_id, updated_game)
+
+    return updated_game
+
+def _assign_current_master(game: Dict[str, Any], team_state: Dict[str, Any]):
+    if game.get("rotate_masters") and team_state["players"]:
+        team_state["current_master"] = choice(team_state["players"])
+    elif not team_state.get("current_master") and team_state["players"]:
+        team_state["current_master"] = team_state["players"][0]
+
+async def _check_and_set_game_finished(game_id: str, updated_game: Dict[str, Any]) -> Dict[str, Any]:
     if all(
         t.get("state") == "finished" for t in updated_game.get("teams", {}).values()
     ):
@@ -252,5 +270,4 @@ async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, An
             {"$set": {"game_state": "finished", "winning_team": winning_team_id}},
         )
         updated_game = cast(Dict[str, Any], await games.find_one({"_id": game_id}))
-
     return updated_game

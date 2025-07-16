@@ -5,8 +5,9 @@ import mongomock_motor
 import backend.tests._test_setup  # noqa: F401
 from backend.app.main import app as fastapi_app
 import backend.app.services.auth_service as auth_service
-import backend.app.routers.profile as profile_router
+
 import backend.app.db as db_module
+import backend.app.services.profile_service as profile_service
 import backend.app.services.game_service as game_service
 import backend.app.routers.game as game_router
 import backend.app.code_gen as code_gen
@@ -21,7 +22,8 @@ async def test_db(monkeypatch):
     monkeypatch.setattr(game_service, "games", test_db.games)
     monkeypatch.setattr(game_service, "decks", test_db.decks)
     monkeypatch.setattr(game_router, "games", test_db.games)
-    monkeypatch.setattr(profile_router, "db", test_db)
+    monkeypatch.setattr(profile_service, "users", test_db.users)
+    monkeypatch.setattr(profile_service, "decks", test_db.decks)
     monkeypatch.setattr(code_gen, "games", test_db.games)
     monkeypatch.setattr(code_gen, "decks", test_db.decks)
     monkeypatch.setattr(code_gen, "users", test_db.users)

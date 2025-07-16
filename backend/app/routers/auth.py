@@ -16,6 +16,10 @@ router = APIRouter(prefix="", tags=["auth"])
 
 @router.post("/register", response_model=Token)
 async def register(user: User):
+    """
+    Registers a new user.
+    Raises HTTPException 400 if the email is already registered.
+    """
     existing_user = await get_user(user.email)
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -31,6 +35,10 @@ async def register(user: User):
 
 @router.post("/login", response_model=Token)
 async def login(data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Authenticates a user and returns access and refresh tokens.
+    Raises HTTPException 400 for incorrect email or password.
+    """
     user = await authenticate_user(data.username, data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
@@ -45,6 +53,9 @@ async def login(data: OAuth2PasswordRequestForm = Depends()):
 
 @router.post("/refresh", response_model=Token)
 async def refresh(refresh_token: str = Body(..., embed=True)):
+    """
+    Refreshes an access token using a refresh token.
+    """
     user = await verify_refresh_token(refresh_token)
     new_access = create_access_token(data={"sub": user.email})
     new_refresh = create_refresh_token(data={"sub": user.email})
