@@ -1,27 +1,27 @@
-import pytest
-from datetime import timedelta, datetime, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from fastapi import HTTPException, status
 from jose import jwt
 
-from backend.app.services.auth_service import (
-    create_user,
-    verify_password,
-    create_access_token,
-    create_refresh_token,
-    _decode_token,
-    get_user,
-    authenticate_user,
-    verify_refresh_token,
-    get_current_user,
+from backend.app.config import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    ALGORITHM,
+    REFRESH_TOKEN_EXPIRE_DAYS,
+    SECRET_KEY,
 )
 from backend.app.models import User
-from backend.app.config import (
-    SECRET_KEY,
-    ALGORITHM,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    REFRESH_TOKEN_EXPIRE_DAYS,
+from backend.app.services.auth_service import (
+    _decode_token,
+    authenticate_user,
+    create_access_token,
+    create_refresh_token,
+    create_user,
+    get_current_user,
+    get_user,
+    verify_password,
+    verify_refresh_token,
 )
 
 
@@ -40,8 +40,9 @@ def mock_user_data():
         "name": "Test",
         "surname": "User",
         "email": "test@example.com",
-        "password": "testpassword",
+        "password": "TestPassword1!",
     }
+
 
 @pytest.fixture
 def mock_user_in_db_data():
@@ -80,7 +81,6 @@ def test_verify_password():
         assert verify_password("wrongpassword", hashed_password) is False
 
 
-
 def test_create_access_token():
     data = {"sub": "test@example.com"}
     token = create_access_token(data)
@@ -88,7 +88,7 @@ def test_create_access_token():
     assert decoded_payload["sub"] == data["sub"]
     assert "exp" in decoded_payload
     # Check if expiration is roughly correct (within a small margin)
-    expected_exp_time = datetime.now(timezone.utc) + timedelta(
+    expected_exp_time = datetime.now(UTC) + timedelta(
         minutes=ACCESS_TOKEN_EXPIRE_MINUTES
     )
     assert (
@@ -103,9 +103,7 @@ def test_create_refresh_token():
     assert decoded_payload["sub"] == data["sub"]
     assert "exp" in decoded_payload
     # Check if expiration is roughly correct (within a small margin)
-    expected_exp_time = datetime.now(timezone.utc) + timedelta(
-        days=REFRESH_TOKEN_EXPIRE_DAYS
-    )
+    expected_exp_time = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     assert (
         decoded_payload["exp"] - expected_exp_time.timestamp() < 5
     )  # Allow for a few seconds difference
@@ -262,3 +260,56 @@ async def test_get_current_user_user_not_found(mock_auth_service_users):
         with pytest.raises(HTTPException) as exc_info:
             await get_current_user("valid_access_token")
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_user_password_validation():
+    # Test password too short
+    with pytest.raises(ValueError, match="Password must be at least 8 characters long"):
+        User(name="Test", surname="User", email="test@example.com", password="Short1!")
+
+    # Test password missing number
+    with pytest.raises(ValueError, match="Password must contain at least one number"):
+        User(
+            name="Test", surname="User", email="test@example.com", password="NoNumbers!"
+        )
+
+    # Test password missing uppercase
+    with pytest.raises(
+        ValueError, match="Password must contain at least one uppercase letter"
+    ):
+        User(
+            name="Test",
+            surname="User",
+            email="test@example.com",
+            password="nouppercase1!",
+        )
+
+    # Test password missing lowercase
+    with pytest.raises(
+        ValueError, match="Password must contain at least one lowercase letter"
+    ):
+        User(
+            name="Test",
+            surname="User",
+            email="test@example.com",
+            password="NOLOWERCASE1!",
+        )
+
+    # Test password missing special character
+    with pytest.raises(
+        ValueError, match="Password must contain at least one special character"
+    ):
+        User(
+            name="Test", surname="User", email="test@example.com", password="NoSpecial1"
+        )
+
+    # Test valid password
+    try:
+        User(
+            name="Test",
+            surname="User",
+            email="test@example.com",
+            password="ValidPassword1!",
+        )
+    except ValueError as e:
+        pytest.fail(f"Valid password raised ValueError: {e}")

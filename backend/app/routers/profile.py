@@ -1,12 +1,13 @@
-from fastapi import Depends, APIRouter, Query
-from backend.app.models import UserInDB, ProfileResponse, DeckIn, DeckUpdate, DeckDetail
+from fastapi import APIRouter, Depends, Query
+
+from backend.app.models import DeckDetail, DeckIn, DeckUpdate, ProfileResponse, UserInDB
 from backend.app.services.auth_service import get_current_user
 from backend.app.services.profile_service import (
-    get_profile_service,
-    save_deck_service,
+    delete_deck_service,
     edit_deck_service,
     get_deck_detail_service,
-    delete_deck_service,
+    get_profile_service,
+    save_deck_service,
 )
 
 router = APIRouter(prefix="", tags=["profile"])

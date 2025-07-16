@@ -1,13 +1,13 @@
-from fastapi import HTTPException, Depends, APIRouter, Body
+from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
-from backend.app.models import User, Token
+from backend.app.models import Token, User
 from backend.app.services.auth_service import (
-    create_access_token,
-    get_user,
-    create_user,
     authenticate_user,
+    create_access_token,
     create_refresh_token,
+    create_user,
+    get_user,
     verify_refresh_token,
 )
 
@@ -72,7 +72,6 @@ async def login(data: OAuth2PasswordRequestForm = Depends()):
     token = create_access_token(data={"sub": user.email})
     refresh_token = create_refresh_token(data={"sub": user.email})
 
-    
     return {
         "access_token": token,
         "refresh_token": refresh_token,
@@ -98,7 +97,7 @@ async def refresh(refresh_token: str = Body(..., embed=True)):
     # Generate new access and refresh tokens.
     new_access = create_access_token(data={"sub": user.email})
     new_refresh = create_refresh_token(data={"sub": user.email})
-    
+
     return {
         "access_token": new_access,
         "refresh_token": new_refresh,

@@ -1,15 +1,15 @@
 import asyncio
-from datetime import datetime, timedelta, timezone
 import random
-from typing import Dict
+from datetime import UTC, datetime, timedelta
+
 from fastapi import WebSocket
 from google import genai
 from google.genai.types import GenerateContentConfig
 
+from backend.app.code_gen import generate_aigame_code
+from backend.app.config import GEMINI_API_KEY, GEMINI_MODEL_NAME, system_instructions
 from backend.app.db import db
 from backend.app.models import AIGame
-from backend.app.config import GEMINI_API_KEY, GEMINI_MODEL_NAME, system_instructions
-from backend.app.code_gen import generate_aigame_code
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -22,7 +22,7 @@ class AIGameConnectionManager:
     """
 
     def __init__(self) -> None:
-        self.active_connections: Dict[str, WebSocket] = {}
+        self.active_connections: dict[str, WebSocket] = {}
 
     async def connect(self, websocket: WebSocket, game_id: str) -> None:
         """
@@ -43,12 +43,12 @@ class AIGameConnectionManager:
         Converts 'expires_at' to ISO format if present.
         """
         if game_id in self.active_connections:
-            if "expires_at" in game_data and game_data["expires_at"]:
+            if game_data.get("expires_at"):
                 expires_at = game_data["expires_at"]
                 if expires_at.tzinfo is None:
-                    expires_at = expires_at.replace(tzinfo=timezone.utc)
+                    expires_at = expires_at.replace(tzinfo=UTC)
                 else:
-                    expires_at = expires_at.astimezone(timezone.utc)
+                    expires_at = expires_at.astimezone(UTC)
                 game_data["expires_at"] = expires_at.isoformat()
             await self.active_connections[game_id].send_json(game_data)
 
@@ -109,7 +109,7 @@ async def process_new_word(game_id: str):
         return
 
     new_word = game["remaining_words"].pop(0)
-    expires_at = datetime.now(timezone.utc) + timedelta(
+    expires_at = datetime.now(UTC) + timedelta(
         seconds=game["settings"]["time_for_guessing"]
     )
 
@@ -213,9 +213,9 @@ async def check_timer(game_id: str):
 
         expires_at = game["expires_at"]
         if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
+            expires_at = expires_at.replace(tzinfo=UTC)
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if now >= expires_at:
             await process_new_word(game_id)
 

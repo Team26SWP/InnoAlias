@@ -9,7 +9,7 @@ async def test_register_and_login_success(client: AsyncClient, test_db):
         "name": "Integration",
         "surname": "Test",
         "email": "integration@example.com",
-        "password": "integrationpassword",
+        "password": "IntegrationPassword1!",
     }
     response = await client.post("/api/auth/register", json=register_data)
     assert response.status_code == 200
@@ -26,7 +26,7 @@ async def test_register_and_login_success(client: AsyncClient, test_db):
     # Test login with the registered user
     login_data = {
         "username": "integration@example.com",
-        "password": "integrationpassword",
+        "password": "IntegrationPassword1!",
     }
     response = await client.post("/api/auth/login", data=login_data)
     assert response.status_code == 200
@@ -43,7 +43,7 @@ async def test_register_existing_email(client: AsyncClient, test_db):
         "name": "Existing",
         "surname": "User",
         "email": "existing@example.com",
-        "password": "password123",
+        "password": "ExistingPassword1!",
     }
     await client.post("/api/auth/register", json=register_data)
 
@@ -66,7 +66,7 @@ async def test_login_incorrect_credentials(client: AsyncClient, test_db):
         "name": "Login",
         "surname": "Test",
         "email": "login@example.com",
-        "password": "loginpassword",
+        "password": "LoginPassword1!",
     }
     await client.post("/api/auth/register", json=register_data)
 
@@ -84,7 +84,7 @@ async def test_refresh_token_success(client: AsyncClient, test_db):
         "name": "Refresh",
         "surname": "User",
         "email": "refresh@example.com",
-        "password": "refreshpassword",
+        "password": "RefreshPassword1!",
     }
     response = await client.post("/api/auth/register", json=register_data)
     refresh_token = response.json()["refresh_token"]
@@ -112,8 +112,9 @@ async def test_refresh_token_invalid(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_refresh_token_expired(client: AsyncClient, test_db):
     # Manually create an expired refresh token for a dummy user
-    from backend.app.services.auth_service import create_refresh_token
     from datetime import timedelta
+
+    from backend.app.services.auth_service import create_refresh_token
 
     expired_refresh_token = create_refresh_token(
         {"sub": "dummy@example.com"}, expires_delta=timedelta(days=-1)

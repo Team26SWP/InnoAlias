@@ -34,6 +34,7 @@ jobs:
 
       - name: Check formatting & lint
         run: |
+          ruff format --check backend
           ruff check backend
 
   typechecker-python:

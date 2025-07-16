@@ -1,11 +1,10 @@
 """Utility functions for generating unique identifiers used across the app."""
 
 from random import choice
-from string import ascii_uppercase, digits, ascii_lowercase
+from string import ascii_lowercase, ascii_uppercase, digits
 
 from backend.app.db import db
-from backend.app.services.game_service import decks
-from backend.app.services.game_service import games
+from backend.app.services.game_service import decks, games
 
 users = db.users
 aigames = db.aigames

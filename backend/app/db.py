@@ -1,6 +1,7 @@
 """Database connection utilities for the application."""
 
 from os import getenv
+
 from motor.motor_asyncio import AsyncIOMotorClient
 
 # Determine the MongoDB connection URI.
