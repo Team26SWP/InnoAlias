@@ -50,9 +50,7 @@ class ConnectionManager:
     ) -> None:
         """Add a player connection to the manager."""
         await websocket.accept()
-        self.players.setdefault(game_id, []).append(
-            (websocket, player_name, team_id)
-        )
+        self.players.setdefault(game_id, []).append((websocket, player_name, team_id))
 
     def disconnect(self, game_id: str, websocket: WebSocket) -> Optional[str]:
         """Remove a connection and return the player name if applicable."""
@@ -92,24 +90,18 @@ class ConnectionManager:
                     self.players[game_id][i] = (ws, name, new_team_id)
                     break
 
-    async def broadcast_state(
-        self, game_id: str, game: Dict[str, Any]
-    ) -> None:
+    async def broadcast_state(self, game_id: str, game: Dict[str, Any]) -> None:
         """Send the updated game state to all connected clients."""
         await self._broadcast_host_state(game_id, game)
         await self._broadcast_player_state(game_id, game)
 
-    async def _broadcast_host_state(
-        self, game_id: str, game: Dict[str, Any]
-    ) -> None:
+    async def _broadcast_host_state(self, game_id: str, game: Dict[str, Any]) -> None:
         """Send the game state tailored for the host."""
         if host_ws := self.hosts.get(game_id):
             host_teams_state = {
                 team_id: TeamStateForHost(
                     **team_data,
-                    remaining_words_count=len(
-                        team_data.get("remaining_words", [])
-                    ),
+                    remaining_words_count=len(team_data.get("remaining_words", [])),
                 )
                 for team_id, team_data in game.get("teams", {}).items()
             }
@@ -120,9 +112,7 @@ class ConnectionManager:
             ).model_dump(mode="json")
             await host_ws.send_json(host_state)
 
-    async def _broadcast_player_state(
-        self, game_id: str, game: Dict[str, Any]
-    ) -> None:
+    async def _broadcast_player_state(self, game_id: str, game: Dict[str, Any]) -> None:
         """Send each player their personalised view of the game state."""
         all_teams_scores = {
             t["name"]: sum(t.get("scores", {}).values())
@@ -144,9 +134,7 @@ class ConnectionManager:
                 team_id=p_team_id,
                 team_name=team_data.get("name"),
                 expires_at=team_data.get("expires_at"),
-                remaining_words_count=len(
-                    team_data.get("remaining_words", [])
-                ),
+                remaining_words_count=len(team_data.get("remaining_words", [])),
                 tries_left=tries_left,
                 current_word=team_data.get("current_word"),
                 current_master=team_data.get("current_master"),
@@ -185,9 +173,7 @@ async def add_player_to_game(game_id: str, player_name: str, team_id: str):
     return await games.find_one({"_id": game_id})
 
 
-async def remove_player_from_game(
-    game_id: str, player_name: str, team_id: str
-):
+async def remove_player_from_game(game_id: str, player_name: str, team_id: str):
     """Remove a player from the team and reassign the master if needed."""
     game = cast(Dict[str, Any], await games.find_one({"_id": game_id}))
     if not game:
@@ -266,9 +252,7 @@ def _handle_tie_breaking(
     return final_winner
 
 
-async def process_new_word(
-    game_id: str, team_id: str, sec: int
-) -> Dict[str, Any]:
+async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, Any]:
     """Move the team to the next word and update timers."""
     game = cast(Dict[str, Any], await games.find_one({"_id": game_id}))
     team_state = game["teams"][team_id]
@@ -322,8 +306,7 @@ async def _check_and_set_game_finished(
 ) -> Dict[str, Any]:
     """Update game state to finished if all teams are done."""
     if all(
-        t.get("state") == "finished"
-        for t in updated_game.get("teams", {}).values()
+        t.get("state") == "finished" for t in updated_game.get("teams", {}).values()
     ):
         winning_team_id = determine_winning_team(updated_game)
         await games.update_one(
@@ -335,7 +318,5 @@ async def _check_and_set_game_finished(
                 }
             },
         )
-        updated_game = cast(
-            Dict[str, Any], await games.find_one({"_id": game_id})
-        )
+        updated_game = cast(Dict[str, Any], await games.find_one({"_id": game_id}))
     return updated_game

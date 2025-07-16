@@ -69,7 +69,8 @@ async def remove_admin(
     current_user=Depends(admin_required),
 ):
     """
-    Revokes administrator privileges from a user by email. Requires administrator privileges.
+    Revokes administrator privileges from a user by email.
+    Requires administrator privileges.
     """
     return await remove_admin_service(email, current_user.email)
 

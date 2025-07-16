@@ -105,14 +105,12 @@ async def get_game_deck(game_id: str):
 @router.websocket("/{game_id}")
 async def _handle_start_game_action(game_id: str, game: dict[str, Any]):
     """Transition the game to the in-progress state and send updates."""
-    await games.update_one(
-        {"_id": game_id}, {"$set": {"game_state": "in_progress"}}
-    )
+    await games.update_one({"_id": game_id}, {"$set": {"game_state": "in_progress"}})
     game["game_state"] = "in_progress"
     for tid in game["teams"]:
-        if game["teams"][tid].get("state") == "pending" and game["teams"][
-            tid
-        ].get("remaining_words"):
+        if game["teams"][tid].get("state") == "pending" and game["teams"][tid].get(
+            "remaining_words"
+        ):
             await process_new_word(game_id, tid, game["time_for_guessing"])
     refreshed = await games.find_one({"_id": game_id})
     if isinstance(refreshed, dict):
@@ -193,9 +191,7 @@ async def handle_game(websocket: WebSocket, game_id: str):
                     code=1000,
                     reason="Host disconnected, closing player connection",
                 )
-            manager.players.pop(
-                game_id, None
-            )  # Remove all players for this game
+            manager.players.pop(game_id, None)  # Remove all players for this game
 
         # Delete the game from the database
         await games.delete_one({"_id": game_id})
@@ -235,13 +231,11 @@ async def check_timers(game_id: str):
                         current_game = await games.find_one({"_id": game_id})
                         if not isinstance(current_game, dict):
                             continue
-                        current_expires_at = current_game["teams"][
-                            team_id
-                        ].get("expires_at")
-                        if (
-                            current_expires_at
-                            and now
-                            >= current_expires_at.replace(tzinfo=timezone.utc)
+                        current_expires_at = current_game["teams"][team_id].get(
+                            "expires_at"
+                        )
+                        if current_expires_at and now >= current_expires_at.replace(
+                            tzinfo=timezone.utc
                         ):
                             new_state = await process_new_word(
                                 game_id,
@@ -286,11 +280,7 @@ async def get_leaderboard(game_id: str):
     detailed_leaderboard = {}
     for team_name, total_score in sorted_teams.items():
         team_id = next(
-            (
-                tid
-                for tid, tdata in game["teams"].items()
-                if tdata["name"] == team_name
-            ),
+            (tid for tid, tdata in game["teams"].items() if tdata["name"] == team_name),
             None,
         )
         if team_id:
@@ -373,9 +363,7 @@ async def _handle_switch_team(
     return new_team_id
 
 
-async def _handle_skip_action(
-    game_id: str, team_id: str, time_for_guessing: int
-):
+async def _handle_skip_action(game_id: str, team_id: str, time_for_guessing: int):
     """Skip the current word and send the next one."""
     async with manager.locks[game_id]:
         new_state = await process_new_word(game_id, team_id, time_for_guessing)
@@ -428,17 +416,13 @@ async def _handle_guess_action(
                         f"teams.{team_id}.scores.{player_name}": 1,
                         f"teams.{team_id}.current_correct": 1,
                     },
-                    "$addToSet": {
-                        f"teams.{team_id}.correct_players": player_name
-                    },
+                    "$addToSet": {f"teams.{team_id}.correct_players": player_name},
                 },
                 return_document=ReturnDocument.AFTER,
             )
-            if isinstance(updated_game, dict) and updated_game["teams"][
-                team_id
-            ]["current_correct"] >= required_to_advance(
-                updated_game["teams"][team_id]
-            ):
+            if isinstance(updated_game, dict) and updated_game["teams"][team_id][
+                "current_correct"
+            ] >= required_to_advance(updated_game["teams"][team_id]):
                 updated_game = await process_new_word(
                     game_id, team_id, game["time_for_guessing"]
                 )
@@ -450,9 +434,7 @@ async def _handle_guess_action(
                 await manager.broadcast_state(game_id, refreshed)
 
 
-async def _handle_player_disconnect(
-    game_id: str, player_name: str, team_id: str
-):
+async def _handle_player_disconnect(game_id: str, player_name: str, team_id: str):
     """Clean up state when a player disconnects."""
     game = await games.find_one({"_id": game_id})
     if isinstance(game, dict):
@@ -478,9 +460,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
     player_name = websocket.query_params.get("name")
     team_id = websocket.query_params.get("team_id")
     if not player_name or not team_id:
-        await websocket.close(
-            code=1008, reason="Missing player's name or team ID"
-        )
+        await websocket.close(code=1008, reason="Missing player's name or team ID")
         return
 
     game_data = await games.find_one({"_id": game_id})
@@ -541,14 +521,10 @@ async def handle_player(websocket: WebSocket, game_id: str):
                 action == "skip"
                 and game["teams"][team_id].get("current_master") == player_name
             ):
-                await _handle_skip_action(
-                    game_id, team_id, game["time_for_guessing"]
-                )
+                await _handle_skip_action(game_id, team_id, game["time_for_guessing"])
 
             elif action == "guess":
-                await _handle_guess_action(
-                    game_id, player_name, team_id, data, game
-                )
+                await _handle_guess_action(game_id, player_name, team_id, data, game)
 
     except (WebSocketDisconnect, Exception) as e:
         print(f"Player {player_name} disconnected or error: {e}")

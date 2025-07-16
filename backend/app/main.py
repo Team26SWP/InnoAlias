@@ -17,7 +17,8 @@ from backend.app.routers.admin_panel import router as admin_router
 async def lifespan(app: FastAPI):
     """
     Context manager for application startup and shutdown events.
-    During startup, it creates a text index on the 'decks' collection for efficient searching.
+    During startup, it creates a text index on the 'decks' collection
+    for efficient searching.
     """
     # Create a text index on the 'name' and 'tags' fields of the 'decks' collection
     # Enables full-text search.

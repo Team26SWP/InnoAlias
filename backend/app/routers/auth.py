@@ -20,7 +20,8 @@ async def register(user: User):
     Registers a new user in the system.
 
     Args:
-        user (User): The user registration data, including name, surname, email, and password.
+        user (User): The user registration data,
+        including name, surname, email, and password.
 
     Raises:
         HTTPException: 400 if a user with the provided email already exists.
