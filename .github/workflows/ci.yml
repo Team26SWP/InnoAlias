@@ -6,7 +6,6 @@ on:
     paths:
       - 'backend/**'
       - 'frontend/**'
-      - 'nginx/**'
       - '.github/workflows/ci.yml'
 
 concurrency:
@@ -31,16 +30,14 @@ jobs:
 
       - name: Install Black & Flake8 & mypy
         run: |
-          pip install --upgrade pip
-          pip install black flake8
+          pip install ruff
 
       - name: Check formatting & lint
         run: |
-          black --check backend
-          flake8 backend
+          ruff check backend
 
   typechecker-python:
-    name: 🐍 Type checking for Python
+    name: 🐍 Type checking Python
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,9 +48,8 @@ jobs:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
 
-      - name: Install Black & Flake8 & mypy
+      - name: Install mypy
         run: |
-          pip install --upgrade pip
           pip install -r backend/requirements.txt
           pip install mypy
 
@@ -76,7 +72,7 @@ jobs:
       - name: Install deps & run ESLint
         working-directory: frontend
         run: |
-          npm ci --force
+          npm install
           npm run lint
 
   test-backend:
@@ -111,5 +107,5 @@ jobs:
       - name: Install deps & run vitest
         working-directory: frontend
         run: |
-          npm ci --force
+          npm install
           npm run test -- --run

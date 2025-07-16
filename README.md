@@ -34,8 +34,8 @@ Alias is a game where players explain words to eachother, gaining points for eac
 - [x] User profiles support
 - [x] Deck saveability & usability
 - [x] Teams game mode
-- [ ] Deck gallery
-- [ ] Singleplayer
+- [x] Deck gallery
+- [x] Singleplayer
 
 ## Usage   
 

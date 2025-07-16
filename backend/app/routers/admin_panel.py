@@ -1,158 +1,95 @@
-from datetime import datetime
-
-from fastapi import HTTPException, Depends
-from fastapi import APIRouter
-
-from backend.app.db import db
-from backend.app.services.auth_service import users, get_current_user
-from backend.app.services.game_service import decks
+from fastapi import HTTPException, Depends, APIRouter
+from backend.app.services.auth_service import get_current_user
+from backend.app.services.admin_service import (
+    delete_user_service,
+    get_logs_service,
+    delete_deck_service,
+    add_admin_service,
+    remove_admin_service,
+    delete_tag_service,
+    clear_logs_service,
+)
 
 router = APIRouter(prefix="", tags=["admin"])
 
 
-logs = db.logs
+async def admin_required(current_user=Depends(get_current_user)):
+    """
+    Dependency to ensure the current user is an administrator.
+    Raises HTTPException 403 if the user is not an admin.
+    """
+    if not current_user.isAdmin:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return current_user
 
 
 @router.delete("/delete/user/{email}")
 async def delete_user(
     email: str,
     reason: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(admin_required),
 ):
-    if not current_user.isAdmin:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    user = await users.find_one({"email": email})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    if not reason:
-        reason = "No reason provided"
-    log = {
-        "action": "DELETE_USER",
-        "admin_email": current_user.email,
-        "target_user_id": user["_id"],
-        "target_user_email": email,
-        "reason": reason,
-        "timestamp": datetime.now().isoformat(),
-    }
-    await users.delete_one({"email": email})
-    await decks.update_many(
-        {"owner_ids": user["_id"]}, {"$pull": {"owner_ids": user["_id"]}}
-    )
-    await logs.insert_one(log)
-    return {"message": f" User {email} deleted. Reason: {reason}."}
+    """
+    Deletes a user by email. Requires administrator privileges.
+    """
+    return await delete_user_service(email, reason, current_user.email)
 
 
 @router.get("/logs")
-async def get_logs(current_user=Depends(get_current_user)):
-    if not current_user.isAdmin:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    show_logs = await logs.find().to_list(length=None)
-    if not show_logs:
-        raise HTTPException(status_code=404, detail="No logs")
-    response_logs = []
-    for log in show_logs:
-        log["_id"] = str(log["_id"])
-        response_logs.append(log)
-    return {"logs": response_logs}
+async def get_logs(current_user=Depends(admin_required)):
+    """
+    Retrieves all admin logs. Requires administrator privileges.
+    """
+    return await get_logs_service()
 
 
 @router.delete("/delete/deck/{deck_id}")
-async def delete_deck(deck_id, reason: str, current_user=Depends(get_current_user)):
-    if not current_user.isAdmin:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    deck = await decks.find_one({"_id": deck_id})
-    if not deck:
-        raise HTTPException(status_code=404, detail="Deck not found")
-    await decks.delete_one({"_id": deck_id})
-    await users.update_many({"deck_ids": deck_id}, {"$pull": {"deck_ids": deck_id}})
-    if not reason:
-        reason = "No reason provided"
-    log = {
-        "action": "DELETE_DECK",
-        "admin_email": current_user.email,
-        "target_deck_id": deck_id,
-        "reason": reason,
-        "timestamp": datetime.now().isoformat(),
-    }
-    await logs.insert_one(log)
-    return {"message": f"{deck_id} deleted. Reason: {reason}"}
+async def delete_deck(deck_id: str, reason: str, current_user=Depends(admin_required)):
+    """
+    Deletes a deck by its ID. Requires administrator privileges.
+    """
+    return await delete_deck_service(deck_id, reason, current_user.email)
 
 
 @router.put("/add/{email}")
 async def add_admin(
     email: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(admin_required),
 ):
-    if not current_user.isAdmin:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    user = await users.find_one({"email": email})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    await users.update_one({"email": email}, {"$set": {"isAdmin": True}})
-    log = {
-        "action": "ADD_ADMIN",
-        "admin_email": current_user.email,
-        "target_user_id": user["_id"],
-        "target_user_email": email,
-        "timestamp": datetime.now().isoformat(),
-    }
-    await logs.insert_one(log)
-    return {"message": f"User {email} is now admin."}
+    """
+    Grants administrator privileges to a user by email.
+    Requires administrator privileges.
+    """
+    return await add_admin_service(email, current_user.email)
 
 
 @router.put("/remove/{email}")
 async def remove_admin(
     email: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(admin_required),
 ):
-    if not current_user.isAdmin:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    user = await users.find_one({"email": email})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    await users.update_one({"email": email}, {"$set": {"isAdmin": False}})
-    log = {
-        "action": "REMOVE_ADMIN",
-        "admin_email": current_user.email,
-        "target_user_id": user["_id"],
-        "target_user_email": email,
-        "timestamp": datetime.now().isoformat(),
-    }
-    await logs.insert_one(log)
-    return {"message": f"User {email} is no more admin."}
+    """
+    Revokes administrator privileges from a user by email.
+    Requires administrator privileges.
+    """
+    return await remove_admin_service(email, current_user.email)
 
 
 @router.delete("/delete/tag/{tag}")
 async def delete_tag(
     tag: str,
     reason: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(admin_required),
 ):
-    if not current_user.isAdmin:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    await decks.update_many({"tags": tag}, {"$pull": {"tags": tag}})
-    if not reason:
-        reason = "No reason provided"
-    log = {
-        "action": "DELETE_TAG",
-        "admin_email": current_user.email,
-        "target_tag": tag,
-        "reason": reason,
-        "timestamp": datetime.now().isoformat(),
-    }
-    await logs.insert_one(log)
-    return {"message": f"{tag} deleted. Reason: {reason}."}
+    """
+    Deletes a tag from all decks. Requires administrator privileges.
+    """
+    return await delete_tag_service(tag, reason, current_user.email)
 
 
 @router.delete("/clear/logs")
-async def clear_logs(current_user=Depends(get_current_user)):
-    if not current_user.isAdmin:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    await db.drop_collection("logs")
-    log = {
-        "action": "CLEAR_LOGS",
-        "admin_email": current_user.email,
-        "timestamp": datetime.now().isoformat(),
-    }
-    await logs.insert_one(log)
-    return {"message": "Logs cleared."}
+async def clear_logs(current_user=Depends(admin_required)):
+    """
+    Clears all admin logs. Requires administrator privileges.
+    """
+    return await clear_logs_service(current_user.email)
