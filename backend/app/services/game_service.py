@@ -84,7 +84,7 @@ class ConnectionManager:
     ):
         """Update player's team association in manager."""
         if game_id in self.players:
-            for i, (ws, name, team_id) in enumerate(self.players[game_id]):
+            for i, (ws, name, _team_id) in enumerate(self.players[game_id]):
                 if ws is websocket and name == player_name:
                     self.players[game_id][i] = (ws, name, new_team_id)
                     break

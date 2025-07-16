@@ -1,14 +1,15 @@
+# ruff: noqa: I001
 import mongomock_motor
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
+import backend.tests._test_setup  # noqa: F401
 import backend.app.code_gen as code_gen
 import backend.app.db as db_module
 import backend.app.routers.game as game_router
 import backend.app.services.auth_service as auth_service
 import backend.app.services.game_service as game_service
 import backend.app.services.profile_service as profile_service
-import backend.tests._test_setup  # noqa: F401
 from backend.app.main import app as fastapi_app
 
 

@@ -128,7 +128,8 @@ class User(BaseModel):
     password: str = Field(...)
 
     @field_validator("password")
-    def validate_password(self, cls, v):
+    @classmethod
+    def validate_password(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
         if not re.search(r"\d", v):

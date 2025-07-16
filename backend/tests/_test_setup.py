@@ -6,8 +6,8 @@ import mongomock_motor
 
 motor_mock = types.ModuleType("motor")
 motor_asyncio = types.ModuleType("motor.motor_asyncio")
-motor_asyncio.AsyncIOMotorClient = mongomock_motor.AsyncMongoMockClient
-motor_mock.motor_asyncio = motor_asyncio
+motor_asyncio.AsyncIOMotorClient = mongomock_motor.AsyncMongoMockClient  # type: ignore[attr-defined]
+motor_mock.motor_asyncio = motor_asyncio  # type: ignore[attr-defined]
 sys.modules.setdefault("motor", motor_mock)
 sys.modules.setdefault("motor.motor_asyncio", motor_asyncio)
 
