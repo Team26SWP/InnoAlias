@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import * as config from './config';
 import AdminPanelMenu from './AdminPanelMenu';
 
-type DeckWithWords = config.Deck & { words: string[] };
+type DeckWithWords = config.Deck & { words: string[], private: boolean };
 
 function Profile() {
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
@@ -103,6 +103,7 @@ function Profile() {
         words_count: 0,
         tags: [],
         words: [],
+        private: true,
       });
       setIsEditingAll(true);
     } else {
@@ -113,7 +114,7 @@ function Profile() {
         headers: { 'Content-Type': 'application/json' },
       });
       const data = await response.json();
-      setDraft({ ...decks[index], words: data.words });
+      setDraft({ ...decks[index], words: data.words, private: data.private });
       setIsEditingAll(false);
     }
     setActiveIndex(index);
@@ -255,6 +256,7 @@ function Profile() {
         deck_name: draft.name,
         words: draft.words,
         tags: draft.tags,
+        private: draft.private,
       }),
     });
     setIsEditingAll(false);
@@ -395,16 +397,26 @@ function Profile() {
             </div>
 
             {isEditingAll && (
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="text"
-                  placeholder="New word"
-                  value={newWordText}
-                  onChange={(e) => setNewWordText(e.target.value)}
-                  className="flex-1 p-2 border rounded"
-                />
-                <button type="button" onClick={addDraftWord} className="px-4 py-2 bg-[#1E6DB9] text-white rounded hover:bg-[#185a9e] transition">Add</button>
-              </div>
+              <>
+                <label htmlFor="public" className="mr-10">
+                  <input type="radio" id="public" name="isPublic" className="mr-2" defaultChecked onClick={() => { draft.private = false; }} />
+                  Public
+                </label>
+                <label htmlFor="private" className="mr-10">
+                  <input type="radio" id="private" name="isPublic" className="mr-2" onClick={() => { draft.private = true; }} />
+                  Private
+                </label>
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    placeholder="New word"
+                    value={newWordText}
+                    onChange={(e) => setNewWordText(e.target.value)}
+                    className="flex-1 p-2 border rounded"
+                  />
+                  <button type="button" onClick={addDraftWord} className="px-4 py-2 bg-[#1E6DB9] text-white rounded hover:bg-[#185a9e] transition">Add</button>
+                </div>
+              </>
             )}
 
             <ul className="space-y-2">
