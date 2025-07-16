@@ -149,7 +149,7 @@ class UserInDB(BaseModel):
     email: str
     hashed_password: str
     deck_ids: list[str] = Field(default_factory=list)
-    isAdmin: bool | None = Field(default=False)   # noqa: N815
+    isAdmin: bool | None = Field(default=False)  # noqa: N815
 
 
 class ProfileResponse(BaseModel):
@@ -157,7 +157,7 @@ class ProfileResponse(BaseModel):
     name: str
     surname: str
     email: str
-    isAdmin: bool # noqa: N815
+    isAdmin: bool  # noqa: N815
     decks: list[DeckPreview] = Field(default_factory=list)
 
 
