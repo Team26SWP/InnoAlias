@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from random import shuffle, choice
+from random import shuffle
 from fastapi.responses import Response
 from pymongo import ReturnDocument
 import asyncio
@@ -113,8 +113,12 @@ async def _handle_start_game_action(game_id: str, game: dict[str, Any]):
         return
 
     for tid in updated_game.get("teams", {}):
-        if updated_game["teams"][tid].get("state") == "pending" and updated_game["teams"][tid].get("remaining_words"):
-            updated_game = await process_new_word(game_id, tid, updated_game["time_for_guessing"])
+        if updated_game["teams"][tid].get("state") == "pending" and updated_game[
+            "teams"
+        ][tid].get("remaining_words"):
+            updated_game = await process_new_word(
+                game_id, tid, updated_game["time_for_guessing"]
+            )
 
     await manager.broadcast_state(game_id, updated_game)
 
@@ -159,7 +163,7 @@ async def handle_game(websocket: WebSocket, game_id: str):
             current_game = await games.find_one({"_id": game_id})
             if not current_game or current_game.get("game_state") == "finished":
                 break
-            
+
             game_state = current_game.get("game_state")
 
             if action == "start_game" and game_state == "pending":
@@ -184,7 +188,9 @@ async def handle_game(websocket: WebSocket, game_id: str):
                     )
                 manager.players.pop(game_id, None)
             await games.delete_one({"_id": game_id})
-            print(f"Game {game_id} deleted due to host disconnection during pending state.")
+            print(
+                f"Game {game_id} deleted due to host disconnection during pending state."
+            )
 
 
 async def check_timers(game_id: str):
@@ -197,7 +203,7 @@ async def check_timers(game_id: str):
                 continue
 
             now = datetime.now(timezone.utc)
-            
+
             next_expiry = None
             for team in game_data.get("teams", {}).values():
                 if expires_at := team.get("expires_at"):
@@ -205,7 +211,13 @@ async def check_timers(game_id: str):
                         async with manager.locks.get(game_id, asyncio.Lock()):
                             # Re-fetch inside lock to ensure atomicity
                             refreshed_game = await games.find_one({"_id": game_id})
-                            if refreshed_game and refreshed_game["teams"][team["id"]].get("expires_at") == expires_at:
+                            if (
+                                refreshed_game
+                                and refreshed_game["teams"][team["id"]].get(
+                                    "expires_at"
+                                )
+                                == expires_at
+                            ):
                                 new_state = await process_new_word(
                                     game_id,
                                     team["id"],
@@ -214,9 +226,11 @@ async def check_timers(game_id: str):
                                 await manager.broadcast_state(game_id, new_state)
                     elif not next_expiry or expires_at < next_expiry:
                         next_expiry = expires_at
-            
+
             if next_expiry:
-                sleep_duration = (next_expiry.replace(tzinfo=timezone.utc) - now).total_seconds()
+                sleep_duration = (
+                    next_expiry.replace(tzinfo=timezone.utc) - now
+                ).total_seconds()
                 if sleep_duration > 0:
                     await asyncio.sleep(sleep_duration)
             else:
@@ -293,7 +307,7 @@ async def _handle_switch_team(
         # Remove from old team
         team = game["teams"][team_id]
         if player_name not in team.get("players", []):
-            return team_id # Player not in team
+            return team_id  # Player not in team
 
         pull_query = {
             f"teams.{team_id}.players": player_name,
@@ -302,32 +316,44 @@ async def _handle_switch_team(
             f"teams.{team_id}.scores.{player_name}": "",
             f"teams.{team_id}.player_attempts.{player_name}": "",
         }
-        
-        update_pipeline: Dict[str, Dict[str, Any]] = {"$pull": pull_query, "$unset": unset_query}
+
+        update_pipeline: Dict[str, Dict[str, Any]] = {
+            "$pull": pull_query,
+            "$unset": unset_query,
+        }
 
         if team.get("current_master") == player_name:
             players = team.get("players", [])
-            players.remove(player_name)
             new_master = None
-            if players:
-                new_master = choice(players) if game.get("rotate_masters") else players[0]
+            if player_name in players:
+                current_index = players.index(player_name)
+                players.remove(player_name)
+                if players:
+                    if game.get("rotate_masters"):
+                        new_master = players[current_index % len(players)]
+                    else:
+                        new_master = players[0]
             update_pipeline["$set"] = {f"teams.{team_id}.current_master": new_master}
-        
+
         await games.update_one({"_id": game_id}, update_pipeline)
 
         # Add to new team
         push_query = {f"teams.{new_team_id}.players": player_name}
         set_query: Dict[str, Any] = {f"teams.{new_team_id}.scores.{player_name}": 0}
-        
+
         new_team_players = game["teams"][new_team_id].get("players", [])
-        if not game.get("rotate_masters") and not game["teams"][new_team_id].get("current_master") and not new_team_players:
+        if (
+            not game.get("rotate_masters")
+            and not game["teams"][new_team_id].get("current_master")
+            and not new_team_players
+        ):
             set_query[f"teams.{new_team_id}.current_master"] = player_name
 
         await games.update_one(
             {"_id": game_id},
             {"$addToSet": push_query, "$set": set_query},
         )
-        
+
         manager.switch_player_team(game_id, player_name, new_team_id, websocket)
 
     refreshed_state = await games.find_one({"_id": game_id})
@@ -384,7 +410,7 @@ async def _handle_guess_action(
             current_game = await games.find_one({"_id": game_id})
             if not current_game:
                 return
-            
+
             team_state = current_game["teams"][team_id]
             # Check if player has already guessed correctly in another request
             if player_name in team_state.get("correct_players", []):
@@ -401,11 +427,13 @@ async def _handle_guess_action(
                 },
                 return_document=ReturnDocument.AFTER,
             )
-            if updated_game and updated_game["teams"][team_id]["current_correct"] >= required_to_advance(updated_game["teams"][team_id]):
+            if updated_game and updated_game["teams"][team_id][
+                "current_correct"
+            ] >= required_to_advance(updated_game["teams"][team_id]):
                 updated_game = await process_new_word(
                     game_id, team_id, game["time_for_guessing"]
                 )
-            
+
             await manager.broadcast_state(game_id, updated_game)
     else:
         # No need to broadcast on wrong guess, attempt counter is enough
@@ -427,11 +455,13 @@ async def handle_player(websocket: WebSocket, game_id: str):
         return
 
     if game.get("game_state") != "pending":
-        await websocket.close(code=1011, reason="Game is already in progress or finished")
+        await websocket.close(
+            code=1011, reason="Game is already in progress or finished"
+        )
         return
 
     await manager.connect_player(websocket, game_id, player_name, team_id)
-    
+
     updated_game = await add_player_to_game(game_id, player_name, team_id)
 
     try:
@@ -440,7 +470,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
         while True:
             data = await websocket.receive_json()
             action = data.get("action")
-            
+
             current_game = await games.find_one({"_id": game_id})
             if not current_game or current_game.get("game_state") == "finished":
                 break
@@ -449,10 +479,17 @@ async def handle_player(websocket: WebSocket, game_id: str):
                 team_id = await _handle_switch_team(
                     game_id, player_name, team_id, data, websocket
                 )
-            elif action == "skip" and current_game["teams"][team_id].get("current_master") == player_name:
-                await _handle_skip_action(game_id, team_id, current_game["time_for_guessing"])
+            elif (
+                action == "skip"
+                and current_game["teams"][team_id].get("current_master") == player_name
+            ):
+                await _handle_skip_action(
+                    game_id, team_id, current_game["time_for_guessing"]
+                )
             elif action == "guess":
-                await _handle_guess_action(game_id, player_name, team_id, data, current_game)
+                await _handle_guess_action(
+                    game_id, player_name, team_id, data, current_game
+                )
 
     except (WebSocketDisconnect, Exception) as e:
         print(f"Player {player_name} disconnected or error: {e}")

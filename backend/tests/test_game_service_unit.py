@@ -55,7 +55,7 @@ async def test_reassign_master(test_db):
     )
     await reassign_master("game_reassign_master", "team_1")
     game = await test_db.games.find_one({"_id": "game_reassign_master"})
-    assert game["teams"]["team_1"]["current_master"] in ["p1", "p2"]
+    assert game["teams"]["team_1"]["current_master"] == "p2"
 
 
 @pytest.mark.asyncio
@@ -111,3 +111,30 @@ async def test_process_new_word_sets_next_word(test_db):
     assert result["teams"]["team_1"]["current_word"] == "one"
     assert len(result["teams"]["team_1"]["remaining_words"]) == 1
     assert isinstance(result["teams"]["team_1"]["expires_at"], datetime)
+
+@pytest.mark.asyncio
+async def test_reassign_game_master_after_player_removed(test_db):
+    # Setup game with two players in one team
+    game_id = "game_reassign_master_on_remove"
+    team_id = "team_1"
+    player1 = "player1"
+    player2 = "player2"
+
+    await test_db.games.insert_one({
+        "_id": game_id,
+        "teams": {
+            team_id: {
+                "players": [player1, player2],
+                "scores": {player1: 0, player2: 0},
+                "current_master": player1
+            }
+        },
+        "rotate_masters": True
+    })
+
+    # Remove the current game master
+    await remove_player_from_game(game_id, player1, team_id)
+
+    # Verify that the game master is reassigned to the next player
+    game = await test_db.games.find_one({"_id": game_id})
+    assert game["teams"][team_id]["current_master"] == player2

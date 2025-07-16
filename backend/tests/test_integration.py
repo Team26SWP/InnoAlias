@@ -196,12 +196,18 @@ async def test_edit_deck_forbidden_for_non_owner(client, test_db):
         "password": "OwnerPassword1!",
         "isAdmin": "true",
     }
-    attacker = {"name": "H", "surname": "T", "email": "h@example.com", "password": "AttackerPassword1!"}
+    attacker = {
+        "name": "H",
+        "surname": "T",
+        "email": "h@example.com",
+        "password": "AttackerPassword1!",
+    }
     await client.post("/api/auth/register", json=owner)
     await client.post("/api/auth/register", json=attacker)
 
     login_owner = await client.post(
-        "/api/auth/login", data={"username": owner["email"], "password": "OwnerPassword1!"}
+        "/api/auth/login",
+        data={"username": owner["email"], "password": "OwnerPassword1!"},
     )
     owner_token = login_owner.json()["access_token"]
     owner_headers = {"Authorization": f"Bearer {owner_token}"}
@@ -213,7 +219,8 @@ async def test_edit_deck_forbidden_for_non_owner(client, test_db):
     deck_id = save.json()["inserted_id"]
 
     login_attacker = await client.post(
-        "/api/auth/login", data={"username": attacker["email"], "password": "AttackerPassword1!"}
+        "/api/auth/login",
+        data={"username": attacker["email"], "password": "AttackerPassword1!"},
     )
     att_token = login_attacker.json()["access_token"]
     att_headers = {"Authorization": f"Bearer {att_token}"}

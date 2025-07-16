@@ -43,6 +43,7 @@ def mock_user_data():
         "password": "TestPassword1!",
     }
 
+
 @pytest.fixture
 def mock_user_in_db_data():
     return {
@@ -265,27 +266,52 @@ async def test_get_current_user_user_not_found(mock_auth_service_users):
 
 def test_user_password_validation():
     # Test password too short
-    with pytest.raises(ValueError, match='Password must be at least 8 characters long'):
+    with pytest.raises(ValueError, match="Password must be at least 8 characters long"):
         User(name="Test", surname="User", email="test@example.com", password="Short1!")
 
     # Test password missing number
-    with pytest.raises(ValueError, match='Password must contain at least one number'):
-        User(name="Test", surname="User", email="test@example.com", password="NoNumbers!")
+    with pytest.raises(ValueError, match="Password must contain at least one number"):
+        User(
+            name="Test", surname="User", email="test@example.com", password="NoNumbers!"
+        )
 
     # Test password missing uppercase
-    with pytest.raises(ValueError, match='Password must contain at least one uppercase letter'):
-        User(name="Test", surname="User", email="test@example.com", password="nouppercase1!")
+    with pytest.raises(
+        ValueError, match="Password must contain at least one uppercase letter"
+    ):
+        User(
+            name="Test",
+            surname="User",
+            email="test@example.com",
+            password="nouppercase1!",
+        )
 
     # Test password missing lowercase
-    with pytest.raises(ValueError, match='Password must contain at least one lowercase letter'):
-        User(name="Test", surname="User", email="test@example.com", password="NOLOWERCASE1!")
+    with pytest.raises(
+        ValueError, match="Password must contain at least one lowercase letter"
+    ):
+        User(
+            name="Test",
+            surname="User",
+            email="test@example.com",
+            password="NOLOWERCASE1!",
+        )
 
     # Test password missing special character
-    with pytest.raises(ValueError, match='Password must contain at least one special character'):
-        User(name="Test", surname="User", email="test@example.com", password="NoSpecial1")
+    with pytest.raises(
+        ValueError, match="Password must contain at least one special character"
+    ):
+        User(
+            name="Test", surname="User", email="test@example.com", password="NoSpecial1"
+        )
 
     # Test valid password
     try:
-        User(name="Test", surname="User", email="test@example.com", password="ValidPassword1!")
+        User(
+            name="Test",
+            surname="User",
+            email="test@example.com",
+            password="ValidPassword1!",
+        )
     except ValueError as e:
         pytest.fail(f"Valid password raised ValueError: {e}")

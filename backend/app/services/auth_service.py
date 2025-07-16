@@ -112,7 +112,6 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
     return _create_token(data, delta)
 
 
-
 def _decode_token(token: str, is_refresh_token: bool = False) -> str:
     """
     Decodes a JWT token and extracts the subject (email).
