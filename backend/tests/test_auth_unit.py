@@ -40,7 +40,7 @@ def mock_user_data():
         "name": "Test",
         "surname": "User",
         "email": "test@example.com",
-        "password": "testpassword",
+        "password": "TestPassword1!",
     }
 
 @pytest.fixture
@@ -78,7 +78,6 @@ def test_verify_password():
         assert verify_password("plainpassword", hashed_password) is True
         mock_pwd_context.verify.return_value = False
         assert verify_password("wrongpassword", hashed_password) is False
-
 
 
 def test_create_access_token():
@@ -262,3 +261,31 @@ async def test_get_current_user_user_not_found(mock_auth_service_users):
         with pytest.raises(HTTPException) as exc_info:
             await get_current_user("valid_access_token")
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_user_password_validation():
+    # Test password too short
+    with pytest.raises(ValueError, match='Password must be at least 8 characters long'):
+        User(name="Test", surname="User", email="test@example.com", password="Short1!")
+
+    # Test password missing number
+    with pytest.raises(ValueError, match='Password must contain at least one number'):
+        User(name="Test", surname="User", email="test@example.com", password="NoNumbers!")
+
+    # Test password missing uppercase
+    with pytest.raises(ValueError, match='Password must contain at least one uppercase letter'):
+        User(name="Test", surname="User", email="test@example.com", password="nouppercase1!")
+
+    # Test password missing lowercase
+    with pytest.raises(ValueError, match='Password must contain at least one lowercase letter'):
+        User(name="Test", surname="User", email="test@example.com", password="NOLOWERCASE1!")
+
+    # Test password missing special character
+    with pytest.raises(ValueError, match='Password must contain at least one special character'):
+        User(name="Test", surname="User", email="test@example.com", password="NoSpecial1")
+
+    # Test valid password
+    try:
+        User(name="Test", surname="User", email="test@example.com", password="ValidPassword1!")
+    except ValueError as e:
+        pytest.fail(f"Valid password raised ValueError: {e}")
