@@ -13,6 +13,5 @@ httpx
 mongomock_motor
 pytest
 python-multipart
-aiohttp
 types-python-jose
 google-genai
