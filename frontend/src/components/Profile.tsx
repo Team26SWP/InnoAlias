@@ -24,6 +24,11 @@ function Profile() {
     setLoading(true);
     setError(null);
     try {
+      const valid = config.validateToken();
+      if (!valid) {
+        config.navigateTo(config.Page.Home);
+        return;
+      }
       const token = localStorage.getItem('access_token');
       const response = await fetch(`${config.HTTP_URL}/profile/me`, {
         method: 'GET',
@@ -33,22 +38,6 @@ function Profile() {
         },
       });
       if (!response.ok) {
-        if (response.status === 401) {
-          const refresh = await fetch(`${config.HTTP_URL}/auth/refresh`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
-          });
-          const newToken = await refresh.json();
-          if (refresh.ok) {
-            localStorage.setItem('access_token', newToken.access_token);
-            localStorage.setItem('refresh_token', newToken.refresh_token);
-            await fetchProfile();
-            return;
-          }
-        }
         setError('Failed to fetch profile.');
         setLoading(false);
         return;
@@ -136,6 +125,11 @@ function Profile() {
 
   const deleteDeck = async () => {
     if (activeIndex === null) return;
+    const valid = await config.validateToken();
+    if (!valid) {
+      config.navigateTo(config.Page.Home);
+      return;
+    }
     const deckId = decks[activeIndex].id;
     const token = localStorage.getItem('access_token');
     try {
@@ -177,6 +171,8 @@ function Profile() {
 
   const saveAll = async () => {
     if (activeIndex === null || !draft) return;
+    const valid = await config.validateToken();
+    if (!valid) { config.navigateTo(config.Page.Home); return; }
     const deckId = decks[activeIndex].id;
     const token = localStorage.getItem('access_token');
     try {
@@ -190,23 +186,14 @@ function Profile() {
           deck_name: draft.name,
           words: draft.words,
           tags: draft.tags || [],
+          private: draft.private,
         }),
       });
       if (!response.ok) {
         setError('Failed to update deck.');
         return;
       }
-      const updatedDeck = await response.json();
-      setDecks((prev) => prev.map((deck, idx) => {
-        if (idx === activeIndex) {
-          return {
-            ...deck,
-            ...updatedDeck,
-            words_count: updatedDeck.words.length,
-          };
-        }
-        return deck;
-      }));
+      fetchProfile();
       setIsEditingAll(false);
     } catch (err) {
       setError('An unexpected error occurred while updating the deck.');
@@ -246,6 +233,8 @@ function Profile() {
 
   const createDeck = async () => {
     if (!draft) { return; }
+    const valid = await config.validateToken();
+    if (!valid) { config.navigateTo(config.Page.Home); return; }
     await fetch(`${config.HTTP_URL}/profile/deck/save`, {
       method: 'POST',
       headers: {

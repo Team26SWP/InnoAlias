@@ -107,6 +107,8 @@ export function Leaderboard() {
       return;
     }
     try {
+      const valid = await config.validateToken();
+      if (!valid) { config.navigateTo(config.Page.Home); return; }
       const saveResp = await fetch(`${HTTP_URL}/profile/deck/save`, {
         method: 'POST',
         headers: {
