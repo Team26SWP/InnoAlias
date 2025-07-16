@@ -163,7 +163,7 @@ async def add_player_to_game(game_id: str, player_name: str, team_id: str) -> Op
     if not game:
         return None
 
-    update_query = {
+    update_query: Dict[str, Dict[str, Any]] = {
         "$addToSet": {f"teams.{team_id}.players": player_name},
         "$set": {f"teams.{team_id}.scores.{player_name}": 0},
     }
@@ -171,7 +171,7 @@ async def add_player_to_game(game_id: str, player_name: str, team_id: str) -> Op
     # Set player as master if they are the first player and rotate_masters is false
     if not game.get("rotate_masters") and not game.get("teams", {}).get(team_id, {}).get("current_master"):
         if not game.get("teams", {}).get(team_id, {}).get("players"):
-             update_query["$set"][f"teams.{team_id}.current_master"] = player_name
+            update_query["$set"][f"teams.{team_id}.current_master"] = player_name
 
     return await games.find_one_and_update(
         {"_id": game_id, f"teams.{team_id}.players": {"$ne": player_name}},
@@ -187,7 +187,7 @@ async def remove_player_from_game(game_id: str, player_name: str, team_id: str) 
         if not game or team_id not in game.get("teams", {}):
             return None
 
-        update_query = {
+        update_query: Dict[str, Dict[str, Any]] = {
             "$pull": {f"teams.{team_id}.players": player_name},
             "$unset": {
                 f"teams.{team_id}.scores.{player_name}": "",
