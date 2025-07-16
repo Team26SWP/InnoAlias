@@ -46,7 +46,9 @@ class ConnectionManager:
             return None
         return self._remove_player_connection(game_id, websocket)
 
-    def _remove_player_connection(self, game_id: str, websocket: WebSocket) -> Optional[str]:
+    def _remove_player_connection(
+        self, game_id: str, websocket: WebSocket
+    ) -> Optional[str]:
         removed_player = None
         if game_id in self.players:
             initial_players = self.players[game_id]
@@ -202,7 +204,10 @@ def determine_winning_team(game: Dict[str, Any]) -> Optional[str]:
     else:
         return _handle_tie_breaking(game, winning_teams)
 
-def _handle_tie_breaking(game: Dict[str, Any], winning_teams: list[str]) -> Optional[str]:
+
+def _handle_tie_breaking(
+    game: Dict[str, Any], winning_teams: list[str]
+) -> Optional[str]:
     min_remaining_words = float("inf")
     final_winner = None
     for team_id in winning_teams:
@@ -254,13 +259,17 @@ async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, An
 
     return updated_game
 
+
 def _assign_current_master(game: Dict[str, Any], team_state: Dict[str, Any]):
     if game.get("rotate_masters") and team_state["players"]:
         team_state["current_master"] = choice(team_state["players"])
     elif not team_state.get("current_master") and team_state["players"]:
         team_state["current_master"] = team_state["players"][0]
 
-async def _check_and_set_game_finished(game_id: str, updated_game: Dict[str, Any]) -> Dict[str, Any]:
+
+async def _check_and_set_game_finished(
+    game_id: str, updated_game: Dict[str, Any]
+) -> Dict[str, Any]:
     if all(
         t.get("state") == "finished" for t in updated_game.get("teams", {}).values()
     ):

@@ -8,18 +8,26 @@ from backend.app.services.auth_service import users
 from backend.app.services.game_service import decks
 from backend.app.config import GALLERY_PAGE_SIZE
 
+
 async def get_gallery_service(number: int, search: str | None = None):
     """
     Retrieves a paginated list of public decks from the gallery based on the page number and an optional search query.
     """
     if number < 1:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid number")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Invalid number"
+        )
 
     query: Dict[str, Any] = {"private": False}
     if search:
         query["$text"] = {"$search": search}
 
-    cursor = decks.find(query).skip(number * GALLERY_PAGE_SIZE - GALLERY_PAGE_SIZE).limit(GALLERY_PAGE_SIZE).sort("name", DESCENDING)
+    cursor = (
+        decks.find(query)
+        .skip(number * GALLERY_PAGE_SIZE - GALLERY_PAGE_SIZE)
+        .limit(GALLERY_PAGE_SIZE)
+        .sort("name", DESCENDING)
+    )
 
     gallery_decks = await cursor.to_list(length=GALLERY_PAGE_SIZE)
     total_decks = await decks.count_documents(query)
@@ -28,6 +36,7 @@ async def get_gallery_service(number: int, search: str | None = None):
         "gallery": gallery_decks,
         "total_decks": total_decks,
     }
+
 
 async def save_deck_from_gallery_service(
     deck_id: str,
@@ -40,11 +49,17 @@ async def save_deck_from_gallery_service(
     user_doc = await users.find_one({"_id": current_user.id})
     gallery_deck_doc = await decks.find_one({"_id": deck_id})
     if not user_doc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
     if not gallery_deck_doc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deck not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Deck not found"
+        )
     if current_user.id in gallery_deck_doc.get("owner_ids", []):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Already have this deck")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Already have this deck"
+        )
     if gallery_deck_doc.get("private"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     new_deck_id = await generate_deck_id()

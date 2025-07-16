@@ -20,6 +20,7 @@ class AIGameConnectionManager:
     """
     Manages active WebSocket connections for AI games.
     """
+
     def __init__(self) -> None:
         self.active_connections: Dict[str, WebSocket] = {}
 

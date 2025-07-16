@@ -101,14 +101,12 @@ async def get_game_deck(game_id: str):
 
 @router.websocket("/{game_id}")
 async def _handle_start_game_action(game_id: str, game: dict[str, Any]):
-    await games.update_one(
-        {"_id": game_id}, {"$set": {"game_state": "in_progress"}}
-    )
+    await games.update_one({"_id": game_id}, {"$set": {"game_state": "in_progress"}})
     game["game_state"] = "in_progress"
     for tid in game["teams"]:
-        if game["teams"][tid].get("state") == "pending" and game["teams"][
-            tid
-        ].get("remaining_words"):
+        if game["teams"][tid].get("state") == "pending" and game["teams"][tid].get(
+            "remaining_words"
+        ):
             await process_new_word(game_id, tid, game["time_for_guessing"])
     refreshed = await games.find_one({"_id": game_id})
     if isinstance(refreshed, dict):
@@ -183,8 +181,10 @@ async def handle_game(websocket: WebSocket, game_id: str):
         # Disconnect all players associated with this game
         if game_id in manager.players:
             for player_websocket, _, _ in manager.players[game_id]:
-                await player_websocket.close(code=1000, reason="Host disconnected, closing player connection")
-            manager.players.pop(game_id, None) # Remove all players for this game
+                await player_websocket.close(
+                    code=1000, reason="Host disconnected, closing player connection"
+                )
+            manager.players.pop(game_id, None)  # Remove all players for this game
 
         # Delete the game from the database
         await games.delete_one({"_id": game_id})
@@ -296,7 +296,11 @@ async def delete_game(game_id: str):
 
 @router.websocket("/player/{game_id}")
 async def _handle_switch_team(
-    game_id: str, player_name: str, team_id: str, data: dict[str, Any], websocket: WebSocket
+    game_id: str,
+    player_name: str,
+    team_id: str,
+    data: dict[str, Any],
+    websocket: WebSocket,
 ) -> str:
     new_team_id = data.get("new_team_id")
     game = await games.find_one({"_id": game_id})
@@ -353,7 +357,11 @@ async def _handle_skip_action(game_id: str, team_id: str, time_for_guessing: int
 
 
 async def _handle_guess_action(
-    game_id: str, player_name: str, team_id: str, data: dict[str, Any], game: dict[str, Any]
+    game_id: str,
+    player_name: str,
+    team_id: str,
+    data: dict[str, Any],
+    game: dict[str, Any],
 ):
     guess = data.get("guess", "").strip().lower()
     team_state = game["teams"][team_id]
@@ -374,7 +382,9 @@ async def _handle_guess_action(
             return
 
     expires_at = team_state.get("expires_at")
-    if expires_at and datetime.now(timezone.utc) > expires_at.replace(tzinfo=timezone.utc):
+    if expires_at and datetime.now(timezone.utc) > expires_at.replace(
+        tzinfo=timezone.utc
+    ):
         return
 
     async with manager.locks[game_id]:
@@ -391,17 +401,13 @@ async def _handle_guess_action(
                         f"teams.{team_id}.scores.{player_name}": 1,
                         f"teams.{team_id}.current_correct": 1,
                     },
-                    "$addToSet": {
-                        f"teams.{team_id}.correct_players": player_name
-                    },
+                    "$addToSet": {f"teams.{team_id}.correct_players": player_name},
                 },
                 return_document=ReturnDocument.AFTER,
             )
-            if isinstance(updated_game, dict) and updated_game["teams"][
-                team_id
-            ]["current_correct"] >= required_to_advance(
-                updated_game["teams"][team_id]
-            ):
+            if isinstance(updated_game, dict) and updated_game["teams"][team_id][
+                "current_correct"
+            ] >= required_to_advance(updated_game["teams"][team_id]):
                 updated_game = await process_new_word(
                     game_id, team_id, game["time_for_guessing"]
                 )
@@ -487,9 +493,14 @@ async def handle_player(websocket: WebSocket, game_id: str):
             game = game_lookup
 
             if action == "switch_team" and game["game_state"] == "pending":
-                team_id = await _handle_switch_team(game_id, player_name, team_id, data, websocket)
+                team_id = await _handle_switch_team(
+                    game_id, player_name, team_id, data, websocket
+                )
 
-            elif action == "skip" and game["teams"][team_id].get("current_master") == player_name:
+            elif (
+                action == "skip"
+                and game["teams"][team_id].get("current_master") == player_name
+            ):
                 await _handle_skip_action(game_id, team_id, game["time_for_guessing"])
 
             elif action == "guess":

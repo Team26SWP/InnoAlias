@@ -16,6 +16,7 @@ from backend.app.models import (
 users = db.users
 decks = db.decks
 
+
 async def get_profile_service(
     user_id: str,
     current_user: UserInDB,
@@ -63,6 +64,7 @@ async def get_profile_service(
         ],
     )
 
+
 async def save_deck_service(
     deck: DeckIn,
     current_user: UserInDB,
@@ -87,6 +89,7 @@ async def save_deck_service(
         {"_id": current_user.id}, {"$addToSet": {"deck_ids": deck_id}}
     )
     return {"inserted_id": deck_id}
+
 
 async def edit_deck_service(
     deck_id: str,
@@ -128,6 +131,7 @@ async def edit_deck_service(
         private=updated.get("private", False),
     )
 
+
 async def get_deck_detail_service(deck_id: str):
     """
     Retrieves detailed information for a specific deck.
@@ -144,6 +148,7 @@ async def get_deck_detail_service(deck_id: str):
         words=deck.get("words", []),
     )
 
+
 async def delete_deck_service(
     deck_id: str,
     current_user: UserInDB,
@@ -158,12 +163,8 @@ async def delete_deck_service(
     if current_user.id not in deck.get("owner_ids", []):
         raise HTTPException(status_code=403, detail="Forbidden")
 
-    await users.update_one(
-        {"_id": current_user.id}, {"$pull": {"deck_ids": deck_id}}
-    )
-    await decks.update_one(
-        {"_id": deck_id}, {"$pull": {"owner_ids": current_user.id}}
-    )
+    await users.update_one({"_id": current_user.id}, {"$pull": {"deck_ids": deck_id}})
+    await decks.update_one({"_id": deck_id}, {"$pull": {"owner_ids": current_user.id}})
     updated_deck = await decks.find_one({"_id": deck_id})
     if not updated_deck or not updated_deck.get("owner_ids"):
         await decks.delete_one({"_id": deck_id})
