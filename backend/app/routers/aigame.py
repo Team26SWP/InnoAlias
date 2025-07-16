@@ -3,7 +3,7 @@ from backend.app.models import AIGame
 from backend.app.services.aigame_service import (
     manager,
     create_aigame,
-    process_new_word,
+    start_aigame_service,
     handle_guess,
     skip_word,
     check_timer,
@@ -16,12 +16,19 @@ router = APIRouter(tags=["aigame"])
 
 @router.post("/create")
 async def create_ai_game_endpoint(game: AIGame):
+    """
+    Creates a new AI game.
+    """
     game_id = await create_aigame(game)
     return {"game_id": game_id}
 
 
 @router.websocket("/{game_id}")
 async def aigame_websocket(websocket: WebSocket, game_id: str):
+    """
+    Handles WebSocket connections for AI game interactions.
+    Manages game state updates, guesses, skips, and timer.
+    """
     await manager.connect(websocket, game_id)
     timer_task = None
 
@@ -37,14 +44,9 @@ async def aigame_websocket(websocket: WebSocket, game_id: str):
             action = data.get("action")
 
             if action == "start_game":
-                game = await aigames.find_one({"_id": game_id})
-                if game and game.get("game_state") == "pending":
-                    await aigames.update_one(
-                        {"_id": game_id}, {"$set": {"game_state": "in_progress"}}
-                    )
-                    await process_new_word(game_id)
-                    if not timer_task or timer_task.done():
-                        timer_task = asyncio.create_task(check_timer(game_id))
+                await start_aigame_service(game_id)
+                if not timer_task or timer_task.done():
+                    timer_task = asyncio.create_task(check_timer(game_id))
 
             elif action == "guess":
                 guess = data.get("guess")

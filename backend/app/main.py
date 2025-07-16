@@ -15,12 +15,23 @@ from backend.app.routers.admin_panel import router as admin_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Context manager for application startup and shutdown events.
+    During startup, it creates a text index on the 'decks' collection
+    for efficient searching.
+    """
+    # Create a text index on the 'name' and 'tags' fields of the 'decks' collection
+    # Enables full-text search.
     await db.decks.create_index([("name", TEXT), ("tags", TEXT)])
     yield
 
 
+# Initialize the FastAPI application with the defined lifespan context
 app = FastAPI(lifespan=lifespan)
 
+# Configure CORS (Cross-Origin Resource Sharing) middleware
+# This allows requests from any origin (*) to access the API,
+# enabling credentials, and allowing all methods and headers.
 app.add_middleware(
     CORSMiddleware,  # type: ignore
     allow_credentials=True,
