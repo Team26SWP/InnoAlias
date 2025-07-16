@@ -89,7 +89,6 @@ Refreshes an expired access token using a valid refresh token.
 Creates a new game session. Requires authentication.
 
 **Body** (`application/json`)
-- `host_id`: string - The ID of the user hosting the game.
 - `number_of_teams`: integer - The number of teams in the game (e.g., `1` for a free-for-all, `2` or more for team play).
 - `deck`: array of strings - The list of words to be used in the game.
 - `words_amount`: integer *(optional)* - Limit the number of words taken from the deck.
@@ -155,9 +154,9 @@ Creates a new game session against an AI.
 ## Real-time Gameplay (WebSockets)
 
 ### Host Connection
-`ws://<host>/api/game/{game_id}?id=<host_id>`
+`ws://<host>/api/game/{game_id}`
 
-The host connects to this endpoint to manage the game. Requires the `host_id` to match the game's host.
+The host connects to this endpoint to manage the game.
 
 **Host Actions (Client -> Server)**
 - `{"action": "start_game"}`: Starts the game for all teams.
@@ -262,8 +261,7 @@ Retrieves the authenticated user's profile along with their saved decks.
 - `401 Unauthorized`: If the token is missing or invalid.
 
 ### GET `/api/profile/{user_id}`
-Retrieves a user's profile.
-
+Retrieves a user's profile. Only allows users to access their own profile.
 
 **Query Parameters**
 - `search`: string *(optional)* - A search term to filter decks by name or tags.
@@ -330,8 +328,7 @@ Deletes a deck from the user's profile.
 Retrieves a paginated list of public decks from the gallery.
 
 **Query Parameters**
-- `number`: The page number to retrieve (50 decks per page).
-
+- `number`: integer - The page number to retrieve (50 decks per page).
 - `search`: string *(optional)* - A search term to filter decks by name or tags.
 
 **Response**
@@ -353,7 +350,7 @@ Saves a public deck from the gallery to the current user's profile. Requires aut
 
 All admin endpoints require an admin user's Bearer Token.
 
-### DELETE `/api/admin/delete/user/{user_id}`
+### DELETE `/api/admin/delete/user/{email}`
 Deletes a user.
 
 **Query Parameters**
@@ -386,7 +383,7 @@ Deletes a deck.
 - `403 Forbidden`: If the current user is not an admin.
 - `404 Not Found`: If the deck does not exist.
 
-### PUT `/api/admin/add/{user_id}`
+### PUT `/api/admin/add/{email}`
 Grants admin privileges to a user.
 
 **Response**
@@ -395,7 +392,7 @@ Grants admin privileges to a user.
 - `403 Forbidden`: If the current user is not an admin.
 - `404 Not Found`: If the user does not exist.
 
-### PUT `/api/admin/remove/{user_id}`
+### PUT `/api/admin/remove/{email}`
 Revokes admin privileges from a user.
 
 **Response**
