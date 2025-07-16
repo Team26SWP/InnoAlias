@@ -22,6 +22,7 @@ router = APIRouter(prefix="", tags=["game"])
 
 @router.post("/create")
 async def create_game(game: Game):
+    """Create a new game instance in the database."""
     words = list(game.deck)
     shuffle(words)
 
@@ -75,6 +76,7 @@ async def create_game(game: Game):
 
 @router.get("/leaderboard/{game_id}/export")
 async def export_deck_txt(game_id: str):
+    """Export the game's deck as a downloadable text file."""
     game = await games.find_one({"_id": game_id})
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
@@ -93,6 +95,7 @@ async def export_deck_txt(game_id: str):
 
 @router.get("/deck/{game_id}")
 async def get_game_deck(game_id: str):
+    """Return the deck words for a given game."""
     game = await games.find_one({"_id": game_id})
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
@@ -101,12 +104,15 @@ async def get_game_deck(game_id: str):
 
 @router.websocket("/{game_id}")
 async def _handle_start_game_action(game_id: str, game: dict[str, Any]):
-    await games.update_one({"_id": game_id}, {"$set": {"game_state": "in_progress"}})
+    """Transition the game to the in-progress state and send updates."""
+    await games.update_one(
+        {"_id": game_id}, {"$set": {"game_state": "in_progress"}}
+    )
     game["game_state"] = "in_progress"
     for tid in game["teams"]:
-        if game["teams"][tid].get("state") == "pending" and game["teams"][tid].get(
-            "remaining_words"
-        ):
+        if game["teams"][tid].get("state") == "pending" and game["teams"][
+            tid
+        ].get("remaining_words"):
             await process_new_word(game_id, tid, game["time_for_guessing"])
     refreshed = await games.find_one({"_id": game_id})
     if isinstance(refreshed, dict):
@@ -114,6 +120,7 @@ async def _handle_start_game_action(game_id: str, game: dict[str, Any]):
 
 
 async def _handle_stop_game_action(game_id: str, game: dict[str, Any]):
+    """Finish the game and broadcast the winner to clients."""
     winning_team = determine_winning_team(game)
     await games.update_one(
         {"_id": game_id},
@@ -130,6 +137,7 @@ async def _handle_stop_game_action(game_id: str, game: dict[str, Any]):
 
 
 async def handle_game(websocket: WebSocket, game_id: str):
+    """Main WebSocket endpoint for the host controlling the game."""
     host_id = websocket.query_params.get("id")
     if host_id is None or not await games.find_one(
         {"_id": game_id, "host_id": host_id}
@@ -182,9 +190,12 @@ async def handle_game(websocket: WebSocket, game_id: str):
         if game_id in manager.players:
             for player_websocket, _, _ in manager.players[game_id]:
                 await player_websocket.close(
-                    code=1000, reason="Host disconnected, closing player connection"
+                    code=1000,
+                    reason="Host disconnected, closing player connection",
                 )
-            manager.players.pop(game_id, None)  # Remove all players for this game
+            manager.players.pop(
+                game_id, None
+            )  # Remove all players for this game
 
         # Delete the game from the database
         await games.delete_one({"_id": game_id})
@@ -192,6 +203,7 @@ async def handle_game(websocket: WebSocket, game_id: str):
 
 
 async def check_timers(game_id: str):
+    """Continuously check word timers and advance teams when expired."""
     while True:
         try:
             game_data = await games.find_one({"_id": game_id})
@@ -223,14 +235,18 @@ async def check_timers(game_id: str):
                         current_game = await games.find_one({"_id": game_id})
                         if not isinstance(current_game, dict):
                             continue
-                        current_expires_at = current_game["teams"][team_id].get(
-                            "expires_at"
-                        )
-                        if current_expires_at and now >= current_expires_at.replace(
-                            tzinfo=timezone.utc
+                        current_expires_at = current_game["teams"][
+                            team_id
+                        ].get("expires_at")
+                        if (
+                            current_expires_at
+                            and now
+                            >= current_expires_at.replace(tzinfo=timezone.utc)
                         ):
                             new_state = await process_new_word(
-                                game_id, team_id, game_data["time_for_guessing"]
+                                game_id,
+                                team_id,
+                                game_data["time_for_guessing"],
                             )
                             await manager.broadcast_state(game_id, new_state)
                 continue
@@ -254,6 +270,7 @@ async def check_timers(game_id: str):
 
 @router.get("/leaderboard/{game_id}")
 async def get_leaderboard(game_id: str):
+    """Return a leaderboard with team and player scores."""
     game = await games.find_one({"_id": game_id})
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
@@ -269,7 +286,11 @@ async def get_leaderboard(game_id: str):
     detailed_leaderboard = {}
     for team_name, total_score in sorted_teams.items():
         team_id = next(
-            (tid for tid, tdata in game["teams"].items() if tdata["name"] == team_name),
+            (
+                tid
+                for tid, tdata in game["teams"].items()
+                if tdata["name"] == team_name
+            ),
             None,
         )
         if team_id:
@@ -289,6 +310,7 @@ async def get_leaderboard(game_id: str):
 
 @router.delete("/delete/{game_id}")
 async def delete_game(game_id: str):
+    """Remove a game from the database."""
     if not await games.find_one_and_delete({"_id": game_id}):
         raise HTTPException(status_code=404, detail="Game not found")
     return {"status": "OK"}
@@ -302,6 +324,7 @@ async def _handle_switch_team(
     data: dict[str, Any],
     websocket: WebSocket,
 ) -> str:
+    """Move a player to another team if the request is valid."""
     new_team_id = data.get("new_team_id")
     game = await games.find_one({"_id": game_id})
     if (
@@ -350,7 +373,10 @@ async def _handle_switch_team(
     return new_team_id
 
 
-async def _handle_skip_action(game_id: str, team_id: str, time_for_guessing: int):
+async def _handle_skip_action(
+    game_id: str, team_id: str, time_for_guessing: int
+):
+    """Skip the current word and send the next one."""
     async with manager.locks[game_id]:
         new_state = await process_new_word(game_id, team_id, time_for_guessing)
     await manager.broadcast_state(game_id, new_state)
@@ -363,6 +389,7 @@ async def _handle_guess_action(
     data: dict[str, Any],
     game: dict[str, Any],
 ):
+    """Process a player's guess and update scores if correct."""
     guess = data.get("guess", "").strip().lower()
     team_state = game["teams"][team_id]
 
@@ -401,13 +428,17 @@ async def _handle_guess_action(
                         f"teams.{team_id}.scores.{player_name}": 1,
                         f"teams.{team_id}.current_correct": 1,
                     },
-                    "$addToSet": {f"teams.{team_id}.correct_players": player_name},
+                    "$addToSet": {
+                        f"teams.{team_id}.correct_players": player_name
+                    },
                 },
                 return_document=ReturnDocument.AFTER,
             )
-            if isinstance(updated_game, dict) and updated_game["teams"][team_id][
-                "current_correct"
-            ] >= required_to_advance(updated_game["teams"][team_id]):
+            if isinstance(updated_game, dict) and updated_game["teams"][
+                team_id
+            ]["current_correct"] >= required_to_advance(
+                updated_game["teams"][team_id]
+            ):
                 updated_game = await process_new_word(
                     game_id, team_id, game["time_for_guessing"]
                 )
@@ -419,7 +450,10 @@ async def _handle_guess_action(
                 await manager.broadcast_state(game_id, refreshed)
 
 
-async def _handle_player_disconnect(game_id: str, player_name: str, team_id: str):
+async def _handle_player_disconnect(
+    game_id: str, player_name: str, team_id: str
+):
+    """Clean up state when a player disconnects."""
     game = await games.find_one({"_id": game_id})
     if isinstance(game, dict):
         await games.update_one(
@@ -440,10 +474,13 @@ async def _handle_player_disconnect(game_id: str, player_name: str, team_id: str
 
 
 async def handle_player(websocket: WebSocket, game_id: str):
+    """WebSocket endpoint for players participating in the game."""
     player_name = websocket.query_params.get("name")
     team_id = websocket.query_params.get("team_id")
     if not player_name or not team_id:
-        await websocket.close(code=1008, reason="Missing player's name or team ID")
+        await websocket.close(
+            code=1008, reason="Missing player's name or team ID"
+        )
         return
 
     game_data = await games.find_one({"_id": game_id})
@@ -461,7 +498,10 @@ async def handle_player(websocket: WebSocket, game_id: str):
         {"$addToSet": {f"teams.{team_id}.players": player_name}},
     )
     await games.update_one(
-        {"_id": game_id, f"teams.{team_id}.scores.{player_name}": {"$exists": False}},
+        {
+            "_id": game_id,
+            f"teams.{team_id}.scores.{player_name}": {"$exists": False},
+        },
         {"$set": {f"teams.{team_id}.scores.{player_name}": 0}},
     )
 
@@ -501,10 +541,14 @@ async def handle_player(websocket: WebSocket, game_id: str):
                 action == "skip"
                 and game["teams"][team_id].get("current_master") == player_name
             ):
-                await _handle_skip_action(game_id, team_id, game["time_for_guessing"])
+                await _handle_skip_action(
+                    game_id, team_id, game["time_for_guessing"]
+                )
 
             elif action == "guess":
-                await _handle_guess_action(game_id, player_name, team_id, data, game)
+                await _handle_guess_action(
+                    game_id, player_name, team_id, data, game
+                )
 
     except (WebSocketDisconnect, Exception) as e:
         print(f"Player {player_name} disconnected or error: {e}")
