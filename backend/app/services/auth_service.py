@@ -131,7 +131,7 @@ def _decode_token(token: str, is_refresh_token: bool = False) -> str:
     """
     # Define standard exceptions for invalid or expired credentials.
 
-    redentials_exception = HTTPException(
+    credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
