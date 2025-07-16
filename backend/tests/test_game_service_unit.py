@@ -1,10 +1,12 @@
-import pytest
 from datetime import datetime
+
+import pytest
+
 from backend.app.services.game_service import (
-    process_new_word,
     add_player_to_game,
-    remove_player_from_game,
+    process_new_word,
     reassign_master,
+    remove_player_from_game,
 )
 
 
@@ -112,6 +114,7 @@ async def test_process_new_word_sets_next_word(test_db):
     assert len(result["teams"]["team_1"]["remaining_words"]) == 1
     assert isinstance(result["teams"]["team_1"]["expires_at"], datetime)
 
+
 @pytest.mark.asyncio
 async def test_reassign_game_master_after_player_removed(test_db):
     # Setup game with two players in one team
@@ -120,17 +123,19 @@ async def test_reassign_game_master_after_player_removed(test_db):
     player1 = "player1"
     player2 = "player2"
 
-    await test_db.games.insert_one({
-        "_id": game_id,
-        "teams": {
-            team_id: {
-                "players": [player1, player2],
-                "scores": {player1: 0, player2: 0},
-                "current_master": player1
-            }
-        },
-        "rotate_masters": True
-    })
+    await test_db.games.insert_one(
+        {
+            "_id": game_id,
+            "teams": {
+                team_id: {
+                    "players": [player1, player2],
+                    "scores": {player1: 0, player2: 0},
+                    "current_master": player1,
+                }
+            },
+            "rotate_masters": True,
+        }
+    )
 
     # Remove the current game master
     await remove_player_from_game(game_id, player1, team_id)

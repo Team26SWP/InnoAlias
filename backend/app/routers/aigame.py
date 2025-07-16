@@ -1,15 +1,17 @@
+import asyncio
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+
 from backend.app.models import AIGame
 from backend.app.services.aigame_service import (
-    manager,
-    create_aigame,
-    start_aigame_service,
-    handle_guess,
-    skip_word,
-    check_timer,
     aigames,
+    check_timer,
+    create_aigame,
+    handle_guess,
+    manager,
+    skip_word,
+    start_aigame_service,
 )
-import asyncio
 
 router = APIRouter(tags=["aigame"])
 

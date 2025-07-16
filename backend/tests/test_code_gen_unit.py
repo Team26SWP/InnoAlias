@@ -1,5 +1,6 @@
 import pytest
-from backend.app.code_gen import generate_game_code, generate_deck_id, generate_user_id
+
+from backend.app.code_gen import generate_deck_id, generate_game_code, generate_user_id
 
 
 @pytest.mark.asyncio

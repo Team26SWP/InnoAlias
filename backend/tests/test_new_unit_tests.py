@@ -1,11 +1,10 @@
 import pytest
 
-from backend.app.models import AIGame, AIGameSettings
-from backend.app.services.auth_service import verify_password, create_user
-from backend.app.models import User
-from backend.app.services.game_service import reassign_master
 from backend.app.code_gen import generate_game_code, generate_user_id
+from backend.app.models import AIGame, AIGameSettings, User
 from backend.app.services.aigame_service import create_aigame
+from backend.app.services.auth_service import create_user, verify_password
+from backend.app.services.game_service import reassign_master
 
 
 @pytest.mark.asyncio

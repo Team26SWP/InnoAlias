@@ -1,12 +1,13 @@
-from typing import Dict, Any
+from typing import Any
+
 from fastapi import HTTPException, status
 from pymongo import DESCENDING
 
 from backend.app.code_gen import generate_deck_id
+from backend.app.config import GALLERY_PAGE_SIZE
 from backend.app.models import UserInDB
 from backend.app.services.auth_service import users
 from backend.app.services.game_service import decks
-from backend.app.config import GALLERY_PAGE_SIZE
 
 
 async def get_gallery_service(number: int, search: str | None = None):
@@ -18,7 +19,7 @@ async def get_gallery_service(number: int, search: str | None = None):
             status_code=status.HTTP_404_NOT_FOUND, detail="Invalid number"
         )
 
-    query: Dict[str, Any] = {"private": False}
+    query: dict[str, Any] = {"private": False}
     if search:
         query["$text"] = {"$search": search}
 

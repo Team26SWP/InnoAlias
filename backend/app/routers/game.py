@@ -1,21 +1,22 @@
-from datetime import datetime, timezone
+import asyncio
+from datetime import UTC, datetime
 from random import shuffle
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
 from pymongo import ReturnDocument
-import asyncio
-from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
-from typing import Any, Dict
 
 from backend.app.code_gen import generate_game_code
 from backend.app.models import Game
 from backend.app.services.game_service import (
+    add_player_to_game,
+    determine_winning_team,
     games,
     manager,
     process_new_word,
-    required_to_advance,
-    determine_winning_team,
     remove_player_from_game,
-    add_player_to_game,
+    required_to_advance,
 )
 
 router = APIRouter(prefix="", tags=["game"])
@@ -34,8 +35,8 @@ async def create_game(game: Game):
 
     teams_data: dict[str, dict[str, Any]] = {}
     for i in range(game.number_of_teams):
-        team_id = f"team_{i+1}"
-        team_name = f"Team {i+1}"
+        team_id = f"team_{i + 1}"
+        team_name = f"Team {i + 1}"
 
         team_words = list(words)
         shuffle(team_words)
@@ -202,12 +203,12 @@ async def check_timers(game_id: str):
                 await asyncio.sleep(1)
                 continue
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             next_expiry = None
             for team in game_data.get("teams", {}).values():
                 if expires_at := team.get("expires_at"):
-                    if now >= expires_at.replace(tzinfo=timezone.utc):
+                    if now >= expires_at.replace(tzinfo=UTC):
                         async with manager.locks.get(game_id, asyncio.Lock()):
                             # Re-fetch inside lock to ensure atomicity
                             refreshed_game = await games.find_one({"_id": game_id})
@@ -228,9 +229,7 @@ async def check_timers(game_id: str):
                         next_expiry = expires_at
 
             if next_expiry:
-                sleep_duration = (
-                    next_expiry.replace(tzinfo=timezone.utc) - now
-                ).total_seconds()
+                sleep_duration = (next_expiry.replace(tzinfo=UTC) - now).total_seconds()
                 if sleep_duration > 0:
                     await asyncio.sleep(sleep_duration)
             else:
@@ -317,7 +316,7 @@ async def _handle_switch_team(
             f"teams.{team_id}.player_attempts.{player_name}": "",
         }
 
-        update_pipeline: Dict[str, Dict[str, Any]] = {
+        update_pipeline: dict[str, dict[str, Any]] = {
             "$pull": pull_query,
             "$unset": unset_query,
         }
@@ -339,7 +338,7 @@ async def _handle_switch_team(
 
         # Add to new team
         push_query = {f"teams.{new_team_id}.players": player_name}
-        set_query: Dict[str, Any] = {f"teams.{new_team_id}.scores.{player_name}": 0}
+        set_query: dict[str, Any] = {f"teams.{new_team_id}.scores.{player_name}": 0}
 
         new_team_players = game["teams"][new_team_id].get("players", [])
         if (
@@ -393,9 +392,7 @@ async def _handle_guess_action(
             return
 
     expires_at = team_state.get("expires_at")
-    if expires_at and datetime.now(timezone.utc) > expires_at.replace(
-        tzinfo=timezone.utc
-    ):
+    if expires_at and datetime.now(UTC) > expires_at.replace(tzinfo=UTC):
         return
 
     # Increment attempts first

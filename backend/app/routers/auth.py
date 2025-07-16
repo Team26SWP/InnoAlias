@@ -1,13 +1,13 @@
-from fastapi import HTTPException, Depends, APIRouter, Body
+from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
-from backend.app.models import User, Token
+from backend.app.models import Token, User
 from backend.app.services.auth_service import (
-    create_access_token,
-    get_user,
-    create_user,
     authenticate_user,
+    create_access_token,
     create_refresh_token,
+    create_user,
+    get_user,
     verify_refresh_token,
 )
 

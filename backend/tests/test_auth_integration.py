@@ -112,8 +112,9 @@ async def test_refresh_token_invalid(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_refresh_token_expired(client: AsyncClient, test_db):
     # Manually create an expired refresh token for a dummy user
-    from backend.app.services.auth_service import create_refresh_token
     from datetime import timedelta
+
+    from backend.app.services.auth_service import create_refresh_token
 
     expired_refresh_token = create_refresh_token(
         {"sub": "dummy@example.com"}, expires_delta=timedelta(days=-1)

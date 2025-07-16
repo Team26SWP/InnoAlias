@@ -1,0 +1,40 @@
+[tool.ruff]
+
+line-length = 88
+
+target-version = "py312"
+
+[tool.ruff.lint]
+
+select = [
+    "F",   # Pyflakes (syntax errors, undefined names, etc.)
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "I",   # isort (import sorting)
+    "N",   # pep8-naming (naming conventions)
+    "UP",  # pyupgrade (modernize code)
+    "B",   # flake8-bugbear (common bugs and bad practices)
+    "A",   # flake8-builtins (shadowing builtins)
+    "C4",  # flake8-comprehensions (unnecessary list/dict/set comprehensions)
+    "SIM", # flake8-simplify (refactoring suggestions)
+    "PTH", # flake8-use-pathlib (use pathlib instead of os.path)
+    "TID", # flake8-tidy-imports (banned and relative imports)
+    "RUF", # Ruff-specific rules
+]
+
+ignore = [
+    "B008",
+    "B905",
+    "E501",
+]
+
+per-file-ignores = { "__init__.py" = ["F401"] }
+fixable = ["ALL"]
+unfixable = []
+
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"

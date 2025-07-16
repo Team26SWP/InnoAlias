@@ -5,12 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pymongo import TEXT
 
 from backend.app.db import db
+from backend.app.routers.admin_panel import router as admin_router
+from backend.app.routers.aigame import router as aigame_router
 from backend.app.routers.auth import router as auth_router
+from backend.app.routers.gallery import router as gallery_router
 from backend.app.routers.game import router as game_router
 from backend.app.routers.profile import router as profile_router
-from backend.app.routers.gallery import router as gallery_router
-from backend.app.routers.aigame import router as aigame_router
-from backend.app.routers.admin_panel import router as admin_router
 
 
 @asynccontextmanager

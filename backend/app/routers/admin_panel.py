@@ -1,14 +1,15 @@
-from fastapi import HTTPException, Depends, APIRouter
-from backend.app.services.auth_service import get_current_user
+from fastapi import APIRouter, Depends, HTTPException
+
 from backend.app.services.admin_service import (
+    add_admin_service,
+    clear_logs_service,
+    delete_deck_service,
+    delete_tag_service,
     delete_user_service,
     get_logs_service,
-    delete_deck_service,
-    add_admin_service,
     remove_admin_service,
-    delete_tag_service,
-    clear_logs_service,
 )
+from backend.app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="", tags=["admin"])
 

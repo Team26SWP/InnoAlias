@@ -1,10 +1,11 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from fastapi import HTTPException
 
+from backend.app.config import DEFAULT_REASON_MESSAGE
 from backend.app.db import db
 from backend.app.services.auth_service import users
 from backend.app.services.game_service import decks
-from backend.app.config import DEFAULT_REASON_MESSAGE
 
 logs = db.logs
 
@@ -16,7 +17,7 @@ async def _log_admin_action(action: str, admin_email: str, **kwargs):
     log_entry = {
         "action": action,
         "admin_email": admin_email,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         **kwargs,
     }
     await logs.insert_one(log_entry)

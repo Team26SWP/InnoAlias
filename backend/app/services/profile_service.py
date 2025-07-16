@@ -1,16 +1,17 @@
+from typing import Any
+
 from fastapi import HTTPException
 from pymongo import DESCENDING
-from typing import Any, Dict
 
 from backend.app.code_gen import generate_deck_id
 from backend.app.db import db
 from backend.app.models import (
-    UserInDB,
-    ProfileResponse,
-    DeckPreview,
-    DeckIn,
-    DeckUpdate,
     DeckDetail,
+    DeckIn,
+    DeckPreview,
+    DeckUpdate,
+    ProfileResponse,
+    UserInDB,
 )
 
 users = db.users
@@ -37,7 +38,7 @@ async def get_profile_service(
     user_decks = []
 
     if deck_ids:
-        query: Dict[str, Any] = {"_id": {"$in": deck_ids}}
+        query: dict[str, Any] = {"_id": {"$in": deck_ids}}
         if search:
             query["$text"] = {"$search": search}
 

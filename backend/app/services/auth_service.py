@@ -1,20 +1,19 @@
-from datetime import timedelta, datetime, timezone
-from typing import Optional
-from fastapi import HTTPException, Depends, status
-from jose import JWTError, jwt, ExpiredSignatureError  # type: ignore
+from datetime import UTC, datetime, timedelta
 
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jose import ExpiredSignatureError, JWTError, jwt  # type: ignore
 from passlib.context import CryptContext  # type: ignore
 
 from backend.app.code_gen import generate_user_id
 from backend.app.config import (
-    SECRET_KEY,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
     REFRESH_TOKEN_EXPIRE_DAYS,
+    SECRET_KEY,
 )
-from backend.app.models import User, UserInDB
 from backend.app.db import db
+from backend.app.models import User, UserInDB
 
 # Access the 'users' collection from the database instance
 users = db.users
@@ -69,7 +68,7 @@ def _create_token(data: dict, expires_delta: timedelta) -> str:
     """
     to_encode = data.copy()
     # Calculate the expiration time by adding the delta to the current UTC time.
-    expire = datetime.now(timezone.utc) + expires_delta
+    expire = datetime.now(UTC) + expires_delta
     to_encode.update(
         {"exp": expire.timestamp()}
     )  # Add expiration timestamp to the payload
@@ -78,7 +77,7 @@ def _create_token(data: dict, expires_delta: timedelta) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """
     Creates an access token with a default or specified expiration time.
 
@@ -95,7 +94,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return _create_token(data, delta)
 
 
-def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """
     Creates a refresh token with a default or specified expiration time.
 
@@ -150,12 +149,12 @@ def _decode_token(token: str, is_refresh_token: bool = False) -> str:
         # Ensure the email is a string before returning.
         assert isinstance(email, str)
         return email
-    except ExpiredSignatureError:
+    except ExpiredSignatureError as err:
         # Catch specific error for expired tokens.
-        raise expired_exception
-    except JWTError:
+        raise expired_exception from err
+    except JWTError as err:
         # Catch general JWT errors (e.g., invalid signature, malformed token).
-        raise credentials_exception
+        raise credentials_exception from err
 
 
 async def verify_refresh_token(token: str) -> UserInDB:
@@ -185,7 +184,7 @@ async def verify_refresh_token(token: str) -> UserInDB:
     return user
 
 
-async def get_user(email: str) -> Optional[UserInDB]:
+async def get_user(email: str) -> UserInDB | None:
     """
     Retrieves a user from the database by their email address.
 
@@ -227,7 +226,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-async def authenticate_user(email: str, password: str) -> Optional[UserInDB]:
+async def authenticate_user(email: str, password: str) -> UserInDB | None:
     """
     Authenticates a user by verifying their email and password.
 

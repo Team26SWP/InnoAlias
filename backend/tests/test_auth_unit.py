@@ -1,27 +1,27 @@
-import pytest
-from datetime import timedelta, datetime, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from fastapi import HTTPException, status
 from jose import jwt
 
-from backend.app.services.auth_service import (
-    create_user,
-    verify_password,
-    create_access_token,
-    create_refresh_token,
-    _decode_token,
-    get_user,
-    authenticate_user,
-    verify_refresh_token,
-    get_current_user,
+from backend.app.config import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    ALGORITHM,
+    REFRESH_TOKEN_EXPIRE_DAYS,
+    SECRET_KEY,
 )
 from backend.app.models import User
-from backend.app.config import (
-    SECRET_KEY,
-    ALGORITHM,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    REFRESH_TOKEN_EXPIRE_DAYS,
+from backend.app.services.auth_service import (
+    _decode_token,
+    authenticate_user,
+    create_access_token,
+    create_refresh_token,
+    create_user,
+    get_current_user,
+    get_user,
+    verify_password,
+    verify_refresh_token,
 )
 
 
@@ -88,7 +88,7 @@ def test_create_access_token():
     assert decoded_payload["sub"] == data["sub"]
     assert "exp" in decoded_payload
     # Check if expiration is roughly correct (within a small margin)
-    expected_exp_time = datetime.now(timezone.utc) + timedelta(
+    expected_exp_time = datetime.now(UTC) + timedelta(
         minutes=ACCESS_TOKEN_EXPIRE_MINUTES
     )
     assert (
@@ -103,9 +103,7 @@ def test_create_refresh_token():
     assert decoded_payload["sub"] == data["sub"]
     assert "exp" in decoded_payload
     # Check if expiration is roughly correct (within a small margin)
-    expected_exp_time = datetime.now(timezone.utc) + timedelta(
-        days=REFRESH_TOKEN_EXPIRE_DAYS
-    )
+    expected_exp_time = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     assert (
         decoded_payload["exp"] - expected_exp_time.timestamp() < 5
     )  # Allow for a few seconds difference
