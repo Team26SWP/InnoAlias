@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
-from random import shuffle
+from random import shuffle, choice
 from fastapi.responses import Response
 from pymongo import ReturnDocument
 import asyncio
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
-from typing import Any, Dict, Optional
+from typing import Any
 
 from backend.app.code_gen import generate_game_code
 from backend.app.models import Game
@@ -13,7 +13,6 @@ from backend.app.services.game_service import (
     manager,
     process_new_word,
     required_to_advance,
-    reassign_master,
     determine_winning_team,
     remove_player_from_game,
     add_player_to_game,
@@ -383,7 +382,8 @@ async def _handle_guess_action(
         async with manager.locks.get(game_id, asyncio.Lock()):
             # Re-fetch game state inside lock
             current_game = await games.find_one({"_id": game_id})
-            if not current_game: return
+            if not current_game:
+                return
             
             team_state = current_game["teams"][team_id]
             # Check if player has already guessed correctly in another request

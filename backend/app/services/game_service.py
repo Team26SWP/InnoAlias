@@ -3,7 +3,7 @@
 from asyncio import Lock
 from datetime import datetime, timedelta, timezone
 from random import choice
-from typing import Optional, Tuple, Any, Dict, cast
+from typing import Optional, Tuple, Any, Dict
 
 from fastapi import WebSocket
 from pymongo import ReturnDocument

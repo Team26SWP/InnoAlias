@@ -6,12 +6,10 @@ Measures execution time of the complete game creation and gameplay scenario
 
 import asyncio
 import aiohttp
-import json
 import time
 import statistics
 import argparse
-from typing import Dict, List, Any
-import sys
+from typing import Dict, Any
 
 class InnoAliasPerformanceTest:
     def __init__(self, base_url: str = "http://localhost"):
