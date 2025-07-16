@@ -37,7 +37,6 @@ class Team(BaseModel):
 
 class Game(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
-    host_id: str
     number_of_teams: int = 1
     teams: Dict[str, Team] = Field(default_factory=dict)
     deck: List[str] = Field(default_factory=list)
