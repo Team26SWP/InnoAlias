@@ -226,6 +226,7 @@ export async function validateToken(): Promise<boolean> {
     },
   });
   if (response.status === 401) {
+    console.log('refresh');
     const refresh = await fetch(`${HTTP_URL}/auth/refresh`, {
       method: 'POST',
       headers: {

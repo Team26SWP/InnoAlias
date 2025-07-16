@@ -87,7 +87,7 @@ function Home() {
       return;
     }
     try {
-      config.validateToken();
+      await config.validateToken();
       setSaveLoading(true);
       if (!deckId || deckId === 'undefined') {
         throw new Error(`Invalid deck ID provided', ${deckId}`);

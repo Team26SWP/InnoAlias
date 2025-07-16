@@ -126,20 +126,6 @@ export function Leaderboard() {
         closeModal();
       } else if (saveResp.status === 404) {
         alert('User record not found.');
-      } else if (saveResp.status === 401) {
-        const refresh = await fetch(`${config.HTTP_URL}/auth/refresh`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
-        });
-        const newToken = await refresh.json();
-        if (refresh.ok) {
-          localStorage.setItem('access_token', newToken.access_token);
-          localStorage.setItem('refresh_token', newToken.refresh_token);
-          saveDeck();
-        }
       } else {
         alert('Failed to save deck.');
       }

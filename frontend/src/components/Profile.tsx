@@ -10,8 +10,10 @@ function Profile() {
   const [error, setError] = useState<string | null>(null);
   const [decks, setDecks] = useState<config.Deck[]>([]);
   const [tags, setTags] = useState<string[]>([]);
+  const [draftTags, setDraftTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchString, setSearchString] = useState<string | null>(null);
+  const [tagInput, setTagInput] = useState<string>('');
   const [deckLoad, setDeckLoad] = useState<boolean>(false);
   const [deckCreate, setDeckCreate] = useState<boolean>(false);
 
@@ -24,7 +26,7 @@ function Profile() {
     setLoading(true);
     setError(null);
     try {
-      const valid = config.validateToken();
+      const valid = await config.validateToken();
       if (!valid) {
         config.navigateTo(config.Page.Home);
         return;
@@ -113,6 +115,7 @@ function Profile() {
   const closeModal = () => {
     setActiveIndex(null);
     setIsEditingAll(false);
+    setDeckCreate(false);
     setNewWordText('');
   };
 
@@ -204,6 +207,7 @@ function Profile() {
     if (activeIndex !== null && draft) setDraft({ ...draft });
     setIsEditingAll(false);
     setNewWordText('');
+    setDeckCreate(false);
   };
 
   function checkDeck(deck: config.Deck) {
@@ -231,8 +235,21 @@ function Profile() {
     toPage('Create');
   };
 
-  const createDeck = async () => {
+  const addTag = () => {
+    if (!draft || draft.tags.includes(tagInput)) { return; }
+    draft.tags.push(tagInput);
+    setTagInput('');
+    setDraftTags(draft.tags);
+  };
+
+  const removeTag = (deleted: string) => {
     if (!draft) { return; }
+    draft.tags = draft.tags.filter((tag) => tag !== deleted);
+    setDraftTags(draft.tags);
+  };
+
+  const createDeck = async () => {
+    if (!draft || !draft.name || !draft.words || draft.words.length === 0) { return; }
     const valid = await config.validateToken();
     if (!valid) { config.navigateTo(config.Page.Home); return; }
     await fetch(`${config.HTTP_URL}/profile/deck/save`, {
@@ -249,6 +266,7 @@ function Profile() {
       }),
     });
     setIsEditingAll(false);
+    setDeckCreate(false);
     setDraft(null);
     fetchProfile();
   };
@@ -395,6 +413,36 @@ function Profile() {
                   <input type="radio" id="private" name="isPublic" className="mr-2" onClick={() => { draft.private = true; }} />
                   Private
                 </label>
+                <label htmlFor="tagInput" className="block text-sm text-[#3171a6] font-medium mb-1">
+                  <span className="font-bold w-36 inline-block">Tags</span>
+                  <div className="flex gap-2">
+                    <input
+                      id="tagInput"
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addTag()}
+                      className="flex-1 border rounded px-3 py-2"
+                      placeholder="Add a tag and press Enter"
+                      list="tag-suggestions"
+                      disabled={draft.tags.length >= 5}
+                    />
+                    <button type="button" onClick={() => addTag()} className="px-4 py-2 bg-[#1E6DB9] text-white rounded hover:bg-[#185a9e] transition">
+                      Add
+                    </button>
+                  </div>
+                </label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {draftTags.map((t) => (
+                    <span key={t} className="flex items-center bg-[#d9d9d9] text-[#3171a6] px-3 py-1 rounded-full text-sm">
+                      {t}
+                      <button type="button" onClick={() => removeTag(t)} className="ml-2 font-bold">
+                        x
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <span className="font-bold w-36 inline-block">Words</span>
                 <div className="flex gap-2 mb-4">
                   <input
                     type="text"
