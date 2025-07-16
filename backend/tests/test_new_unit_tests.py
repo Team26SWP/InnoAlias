@@ -22,8 +22,7 @@ async def test_password_hashing_and_verification(test_db):
 
 
 @pytest.mark.asyncio
-async def test_reassign_master_rotation(test_db, monkeypatch):
-    monkeypatch.setattr("backend.app.services.game_service.choice", lambda x: "p3")
+async def test_reassign_master_rotation(test_db):
     await test_db.games.insert_one(
         {
             "_id": "game_reassign_master_rotation",
