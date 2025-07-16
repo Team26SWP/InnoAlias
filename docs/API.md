@@ -264,6 +264,7 @@ Retrieves the authenticated user's profile along with their saved decks.
 ### GET `/api/profile/{user_id}`
 Retrieves a user's profile.
 
+
 **Query Parameters**
 - `search`: string *(optional)* - A search term to filter decks by name or tags.
 
@@ -330,6 +331,7 @@ Retrieves a paginated list of public decks from the gallery.
 
 **Query Parameters**
 - `number`: The page number to retrieve (50 decks per page).
+
 - `search`: string *(optional)* - A search term to filter decks by name or tags.
 
 **Response**

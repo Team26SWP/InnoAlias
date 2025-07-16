@@ -72,6 +72,7 @@ async def login(data: OAuth2PasswordRequestForm = Depends()):
     token = create_access_token(data={"sub": user.email})
     refresh_token = create_refresh_token(data={"sub": user.email})
 
+    
     return {
         "access_token": token,
         "refresh_token": refresh_token,
@@ -97,7 +98,7 @@ async def refresh(refresh_token: str = Body(..., embed=True)):
     # Generate new access and refresh tokens.
     new_access = create_access_token(data={"sub": user.email})
     new_refresh = create_refresh_token(data={"sub": user.email})
-
+    
     return {
         "access_token": new_access,
         "refresh_token": new_refresh,

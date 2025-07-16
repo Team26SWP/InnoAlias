@@ -74,6 +74,7 @@ def _create_token(data: dict, expires_delta: timedelta) -> str:
         {"exp": expire.timestamp()}
     )  # Add expiration timestamp to the payload
     # Encode the payload using the secret key and specified algorithm.
+
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -89,6 +90,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         str: The encoded access token.
     """
     # Use default access token expiration if not provided.
+
     delta = expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     return _create_token(data, delta)
 
@@ -105,8 +107,10 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
         str: The encoded refresh token.
     """
     # Use default refresh token expiration if not provided.
+
     delta = expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     return _create_token(data, delta)
+
 
 
 def _decode_token(token: str, is_refresh_token: bool = False) -> str:
@@ -126,6 +130,7 @@ def _decode_token(token: str, is_refresh_token: bool = False) -> str:
         str: The email (subject) extracted from the token payload.
     """
     # Define standard exceptions for invalid or expired credentials.
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

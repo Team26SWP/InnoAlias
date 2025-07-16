@@ -65,6 +65,11 @@ function Home() {
   }, []);
 
   const loadProfile = async () => {
+    const valid = await config.validateToken();
+    if (!valid) {
+      setIsLoggedIn(false);
+      return;
+    }
     const response = await fetch(`${config.HTTP_URL}/profile/me`, {
       method: 'GET',
       headers: {
@@ -73,27 +78,8 @@ function Home() {
       },
     });
     const newProfile = await response.json();
-    if (response.ok) {
-      setProfile(newProfile);
-      config.setProfile(newProfile);
-    } else if (response.status === 401) {
-      const refresh = await fetch(`${config.HTTP_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
-      });
-      const newToken = await refresh.json();
-      if (refresh.ok) {
-        localStorage.setItem('access_token', newToken.access_token);
-        localStorage.setItem('refresh_token', newToken.refresh_token);
-        loadProfile();
-      } else if (response.status === 401) {
-        localStorage.removeItem('access_token');
-        setIsLoggedIn(false);
-      }
-    }
+    setProfile(newProfile);
+    config.setProfile(newProfile);
   };
   const handleSaveDeck = useCallback(async (deckId: string): Promise<void> => {
     if (!isLoggedIn) {
@@ -101,6 +87,7 @@ function Home() {
       return;
     }
     try {
+      await config.validateToken();
       setSaveLoading(true);
       if (!deckId || deckId === 'undefined') {
         throw new Error(`Invalid deck ID provided', ${deckId}`);

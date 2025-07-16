@@ -43,7 +43,6 @@ def mock_user_data():
         "password": "testpassword",
     }
 
-
 @pytest.fixture
 def mock_user_in_db_data():
     return {
@@ -79,6 +78,7 @@ def test_verify_password():
         assert verify_password("plainpassword", hashed_password) is True
         mock_pwd_context.verify.return_value = False
         assert verify_password("wrongpassword", hashed_password) is False
+
 
 
 def test_create_access_token():
