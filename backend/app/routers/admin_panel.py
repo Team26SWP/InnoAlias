@@ -37,11 +37,15 @@ async def delete_user(
 
 
 @router.get("/logs")
-async def get_logs(current_user=Depends(admin_required)):
+async def get_logs(
+    page: int = 1,
+    page_size: int = 10,
+    current_user=Depends(admin_required),
+):
     """
     Retrieves all admin logs. Requires administrator privileges.
     """
-    return await get_logs_service()
+    return await get_logs_service(page, page_size)
 
 
 @router.delete("/delete/deck/{deck_id}")

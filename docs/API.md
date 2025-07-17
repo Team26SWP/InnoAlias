@@ -363,10 +363,14 @@ Deletes a user.
 - `404 Not Found`: If the user does not exist.
 
 ### GET `/api/admin/logs`
-Retrieves all admin action logs.
+Retrieves admin action logs with pagination.
+
+**Query Parameters**
+- `page`: integer (optional, default: 1) - The page number to retrieve.
+- `page_size`: integer (optional, default: 10) - The number of logs per page.
 
 **Response**
-- `200 OK`: Returns a list of logs.
+- `200 OK`: Returns a list of logs for the specified page.
 - `401 Unauthorized`: If authentication fails.
 - `403 Forbidden`: If the current user is not an admin.
 - `404 Not Found`: If there are no logs.
@@ -388,6 +392,7 @@ Grants admin privileges to a user.
 
 **Response**
 - `200 OK`: Confirms the user is now an admin.
+- `400 Bad Request`: If the user is already an admin.
 - `401 Unauthorized`: If authentication fails.
 - `403 Forbidden`: If the current user is not an admin.
 - `404 Not Found`: If the user does not exist.
@@ -397,6 +402,7 @@ Revokes admin privileges from a user.
 
 **Response**
 - `200 OK`: Confirms the user is no longer an admin.
+- `400 Bad Request`: If the user is not an admin or if you try to remove your own admin rights.
 - `401 Unauthorized`: If authentication fails.
 - `403 Forbidden`: If the current user is not an admin.
 - `404 Not Found`: If the user does not exist.
@@ -411,6 +417,7 @@ Deletes a tag from all decks.
 - `200 OK`: Confirms the tag has been deleted.
 - `401 Unauthorized`: If authentication fails.
 - `403 Forbidden`: If the current user is not an admin.
+- `404 Not Found`: If the tag is not found in any deck.
 
 ### DELETE `/api/admin/clear/logs`
 Clears all admin action logs.

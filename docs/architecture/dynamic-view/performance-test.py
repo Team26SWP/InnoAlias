@@ -4,12 +4,13 @@ Performance test script for InnoAlias game flow
 Measures execution time of the complete game creation and gameplay scenario
 """
 
-import asyncio
-import aiohttp
-import time
-import statistics
 import argparse
-from typing import Dict, Any
+import asyncio
+import statistics
+import time
+from typing import Any
+
+import aiohttp
 
 
 class InnoAliasPerformanceTest:
@@ -33,7 +34,7 @@ class InnoAliasPerformanceTest:
         if self.session:
             await self.session.close()
 
-    async def test_authentication(self) -> Dict[str, Any]:
+    async def test_authentication(self) -> dict[str, Any]:
         """Test user authentication flow"""
         start_time = time.time()
 
@@ -73,7 +74,7 @@ class InnoAliasPerformanceTest:
             duration = (end_time - start_time) * 1000
             return {"success": False, "duration_ms": duration, "error": str(e)}
 
-    async def test_game_creation(self, token: str) -> Dict[str, Any]:
+    async def test_game_creation(self, token: str) -> dict[str, Any]:
         """Test game creation flow"""
         start_time = time.time()
 
@@ -122,7 +123,7 @@ class InnoAliasPerformanceTest:
             duration = (end_time - start_time) * 1000
             return {"success": False, "duration_ms": duration, "error": str(e)}
 
-    async def test_leaderboard(self, game_id: str) -> Dict[str, Any]:
+    async def test_leaderboard(self, game_id: str) -> dict[str, Any]:
         """Test leaderboard retrieval"""
         start_time = time.time()
 
@@ -153,7 +154,7 @@ class InnoAliasPerformanceTest:
             duration = (end_time - start_time) * 1000
             return {"success": False, "duration_ms": duration, "error": str(e)}
 
-    async def run_performance_test(self, iterations: int = 10) -> Dict[str, Any]:
+    async def run_performance_test(self, iterations: int = 10) -> dict[str, Any]:
         """Run complete performance test suite"""
         print(f"Running performance test with {iterations} iterations...")
 
@@ -185,7 +186,7 @@ class InnoAliasPerformanceTest:
 
         return self.analyze_results()
 
-    def analyze_results(self) -> Dict[str, Any]:
+    def analyze_results(self) -> dict[str, Any]:
         """Analyze test results and generate statistics"""
         analysis = {}
 
