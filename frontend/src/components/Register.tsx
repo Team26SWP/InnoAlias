@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as config from './config';
 
 export interface RegisterForm {
@@ -16,6 +16,25 @@ function Register() {
     password: '',
   });
   const [error, setError] = useState <string | null>(null);
+
+  const [criteria, setCriteria] = useState({
+    length: false,
+    number: false,
+    uppercase: false,
+    lowercase: false,
+    special: false,
+  });
+
+  useEffect(() => {
+    const { password } = form;
+    setCriteria({
+      length: password.length >= 8,
+      number: /\d/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    });
+  }, [form.password]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -146,6 +165,58 @@ function Register() {
                 required
               />
             </label>
+            <ul className="mt-2 ml-4 text-sm space-y-1">
+              <li className="items-center">
+                <input
+                  aria-label="At least 8 characters"
+                  type="checkbox"
+                  checked={criteria.length}
+                  readOnly
+                  className="mr-2"
+                />
+                <span>At least 8 characters</span>
+              </li>
+              <li className="items-center">
+                <input
+                  aria-label="Contains a number"
+                  type="checkbox"
+                  checked={criteria.number}
+                  readOnly
+                  className="mr-2"
+                />
+                <span>Contains a number</span>
+              </li>
+              <li className="items-center">
+                <input
+                  aria-label="Contains an uppercase letter"
+                  type="checkbox"
+                  checked={criteria.uppercase}
+                  readOnly
+                  className="mr-2"
+                />
+                <span>Contains an uppercase letter</span>
+              </li>
+              <li className="items-center">
+                <input
+                  aria-label="Contains a lowercase letter"
+                  type="checkbox"
+                  checked={criteria.lowercase}
+                  readOnly
+                  className="mr-2"
+                />
+                <span>Contains a lowercase letter</span>
+              </li>
+              <li className="items-center">
+                <input
+                  aria-label="Contains a special character"
+                  type="checkbox"
+                  checked={criteria.special}
+                  readOnly
+                  className="mr-2"
+                />
+                <span>Contains a special character</span>
+              </li>
+            </ul>
           </div>
           {error && (
             <p className="text-red-500 text-center font-semibold">{error}</p>
