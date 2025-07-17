@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
 
 import pytest
 from fastapi import HTTPException
@@ -71,7 +71,7 @@ async def test_get_gallery_service_success(mock_gallery_service_decks):
             "total_count": [{"count": 2}],
         }
     ]
-    mock_gallery_service_decks.aggregate.return_value = mock_cursor
+    mock_gallery_service_decks.aggregate = MagicMock(return_value=mock_cursor)
 
     result = await get_gallery_service(page=1, search=None)
 
@@ -93,7 +93,7 @@ async def test_get_gallery_service_pagination(mock_gallery_service_decks):
             "total_count": [{"count": 20}],
         }
     ]
-    mock_gallery_service_decks.aggregate.return_value = mock_cursor_page_1
+    mock_gallery_service_decks.aggregate = MagicMock(return_value=mock_cursor_page_1)
     result_page_1 = await get_gallery_service(page=1, search=None)
     assert result_page_1["total_decks"] == 20
     assert len(result_page_1["gallery"]) == 10
@@ -103,7 +103,7 @@ async def test_get_gallery_service_pagination(mock_gallery_service_decks):
     mock_cursor_page_3.to_list.return_value = [
         {"decks": [], "total_count": [{"count": 20}]}
     ]
-    mock_gallery_service_decks.aggregate.return_value = mock_cursor_page_3
+    mock_gallery_service_decks.aggregate = MagicMock(return_value=mock_cursor_page_3)
     result_page_3 = await get_gallery_service(page=3, search=None)
     assert result_page_3["total_decks"] == 20
     assert len(result_page_3["gallery"]) == 0
@@ -119,7 +119,7 @@ async def test_get_gallery_service_search(mock_gallery_service_decks):
             "total_count": [{"count": 1}],
         }
     ]
-    mock_gallery_service_decks.aggregate.return_value = mock_cursor
+    mock_gallery_service_decks.aggregate = MagicMock(return_value=mock_cursor)
 
     result = await get_gallery_service(page=1, search="Another")
 

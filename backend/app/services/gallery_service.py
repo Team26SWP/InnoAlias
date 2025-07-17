@@ -37,7 +37,8 @@ async def get_gallery_service(page: int, search: str | None = None):
         },
     ]
 
-    result = await decks.aggregate(pipeline).to_list(1)
+    cursor = decks.aggregate(pipeline)
+    result = await cursor.to_list(1)
 
     if not result:
         gallery_decks = []
