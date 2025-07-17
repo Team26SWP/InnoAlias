@@ -112,7 +112,9 @@ async def remove_admin_service(email: str, admin_email: str):
     Logs the action.
     """
     if email == admin_email:
-        raise HTTPException(status_code=400, detail="Cannot remove your own admin rights")
+        raise HTTPException(
+            status_code=400, detail="Cannot remove your own admin rights"
+        )
     user = await users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -135,7 +137,9 @@ async def delete_tag_service(tag: str, reason: str, admin_email: str):
     Logs the action.
     """
     if not await decks.find_one({"tags": tag}):
-        raise HTTPException(status_code=404, detail=f"Tag '{tag}' not found in any deck")
+        raise HTTPException(
+            status_code=404, detail=f"Tag '{tag}' not found in any deck"
+        )
     await decks.update_many({"tags": tag}, {"$pull": {"tags": tag}})
 
     await _log_admin_action(
