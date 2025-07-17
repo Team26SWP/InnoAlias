@@ -16,6 +16,7 @@ function Profile() {
   const [tagInput, setTagInput] = useState<string>('');
   const [deckLoad, setDeckLoad] = useState<boolean>(false);
   const [deckCreate, setDeckCreate] = useState<boolean>(false);
+  const [gameMode, setGameMode] = useState<string>('multi');
 
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isEditingAll, setIsEditingAll] = useState<boolean>(false);
@@ -228,7 +229,8 @@ function Profile() {
   const selectDeck = async () => {
     if (!draft || !draft.words) { return; }
     config.addWords(draft.words);
-    if (config.loadCreationState().aiGame) {
+    console.log(gameMode);
+    if (config.loadCreationState().aiGame || gameMode === 'single') {
       toPage('Ai');
       return;
     }
@@ -475,7 +477,13 @@ function Profile() {
               ))}
             </ul>
             <div className="flex space-x-2 items-center justify-end mt-7">
-              {!isEditingAll && (<button type="button" onClick={selectDeck} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">Use</button>)}
+              {!isEditingAll && (<button type="button" onClick={selectDeck} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">{deckLoad ? 'Use' : 'Play'}</button>)}
+              {!isEditingAll && !deckLoad && (
+                <select id="game-type" defaultValue="multi" onChange={(e) => { setGameMode(e.target.value); }}>
+                  <option value="single">Singleplayer</option>
+                  <option value="multi">Multiplayer</option>
+                </select>
+              )}
             </div>
           </div>
         </div>
