@@ -73,7 +73,7 @@ async def save_deck_service(
     """
     Saves a new deck to the current user's profile.
     """
-    
+
     deck_id = await generate_deck_id()
     temp_deck = {
         "_id": deck_id,
@@ -141,7 +141,7 @@ async def get_deck_detail_service(deck_id: str, current_user: UserInDB):
     if not deck:
         raise HTTPException(status_code=404, detail="Deck not found")
 
-    if deck.get("private") and current_user.id not in deck.get("owner_ids", []):
+    if deck.get("private") and (current_user.id not in deck.get("owner_ids", [])):
         raise HTTPException(status_code=403, detail="Forbidden")
 
     return DeckDetail(

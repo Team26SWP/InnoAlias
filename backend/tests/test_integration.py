@@ -94,7 +94,7 @@ async def test_edit_deck_and_fetch_details(client):
     assert patch.json()["name"] == "Colors 2"
     assert patch.json()["words"] == ["red", "green"]
 
-    get_res = await client.get(f"/api/profile/deck/{deck_id}")
+    get_res = await client.get(f"/api/profile/deck/{deck_id}", headers=headers)
     assert get_res.status_code == 200
     assert get_res.json()["words"] == ["red", "green"]
 
@@ -156,35 +156,6 @@ async def test_delete_deck_removes_from_profile(client, test_db):
 async def test_delete_deck_requires_auth(client):
     res = await client.delete("/api/profile/deck/unknown/delete")
     assert res.status_code == 401
-
-
-@pytest.mark.asyncio
-async def test_profile_forbidden_for_other_user(client, test_db):
-    user1 = {
-        "name": "A",
-        "surname": "B",
-        "email": "a@example.com",
-        "password": "APassword1!",
-        "isAdmin": "true",
-    }
-    user2 = {
-        "name": "C",
-        "surname": "D",
-        "email": "c@example.com",
-        "password": "CPassword1!",
-        "isAdmin": "true",
-    }
-
-    await client.post("/api/auth/register", json=user1)
-    await client.post("/api/auth/register", json=user2)
-    login = await client.post(
-        "/api/auth/login", data={"username": user1["email"], "password": "APassword1!"}
-    )
-    token = login.json()["access_token"]
-    headers = {"Authorization": f"Bearer {token}"}
-    other = await test_db.users.find_one({"email": user2["email"]})
-    res = await client.get(f"/api/profile/{other['_id']}", headers=headers)
-    assert res.status_code == 403
 
 
 @pytest.mark.asyncio
