@@ -57,6 +57,7 @@ function Lobby() {
         }
       }
     };
+    ws.onclose = () => { config.navigateTo(config.Page.Home); };
   }, [code, name, isHost]);
 
   const changeTeam = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -69,6 +70,13 @@ function Lobby() {
 
   return (
     <div className="min-h-screen pt-32 px-9 bg-[#FAF6E9] dark:bg-[#1A1A1A] px-6 py-12 font-adlam">
+      <button
+        type="button"
+        onClick={() => config.navigateTo(config.Page.Home)}
+        className="absolute top-4 text-xl left-4 text-[#1E6DB9] hover:underline"
+      >
+        ←Back to main
+      </button>
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-start gap-12">
         <div className="w-full lg:w-1/3">
           <h2 className="text-xl font-bold text-[#1E6DB9] mb-4">
