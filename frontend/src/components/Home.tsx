@@ -12,10 +12,6 @@ interface Deck {
   private?: boolean
 }
 
-interface CreateParams {
-  deckId: string
-}
-
 interface GalleryResponse {
   gallery: Deck[]
   total_decks: number
@@ -196,11 +192,13 @@ function Home() {
 
   const useThisDeck = useCallback((): void => {
     if (!selectedDeck) return;
-    const deckId = selectedDeck._id;
-    if (!deckId) return;
-    // @ts-expect-error extra args
-    config.navigateTo(config.Page.Create, { deckId } as CreateParams);
-    // нужно правильно настроить
+    config.addWords(selectedDeck.words);
+    config.setDeckChoice(true);
+    if (config.loadCreationState().aiGame) {
+      config.navigateTo(config.Page.AiCreate);
+    } else {
+      config.navigateTo(config.Page.Create);
+    }
   }, [selectedDeck]);
 
   return (
