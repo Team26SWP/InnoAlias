@@ -136,10 +136,8 @@ Creates a new game session against an AI.
 ```json
 {
   "deck": ["word1", "word2", "word3"],
-  "settings": {
-    "time_for_guessing": 60,
-    "word_amount": 10
-  }
+  "time_for_guessing": 60,
+  "words_amount": 10
 }
 ```
 
@@ -164,6 +162,32 @@ The host connects to this endpoint to manage the game.
 
 **Host State (Server -> Client)**
 The host receives a `GameState` object, providing a complete overview of all teams. This is broadcasted whenever the game state changes. The host can always see the unmasked `current_word`.
+
+**`GameState` Model:**
+```json
+{
+  "game_state": "pending" | "in_progress" | "finished",
+  "teams": {
+    "<team_id>": {
+      "id": "string",
+      "name": "string",
+      "remaining_words_count": "integer",
+      "current_word": "string" | "null",
+      "expires_at": "datetime" | "null",
+      "current_master": "string" | "null",
+      "state": "pending" | "in_progress" | "finished",
+      "scores": {
+        "<player_name>": "integer"
+      },
+      "players": ["string"],
+      "current_correct": "integer",
+      "right_answers_to_advance": "integer"
+    }
+  },
+  "winning_team": "string" | "null"
+}
+```
+
 **Example `GameState` Payload:**
 ```json
 {
@@ -199,6 +223,29 @@ Players connect to this endpoint to participate in the game.
 
 **Player State (Server -> Client)**
 Players receive a `PlayerGameState` object, tailored to their perspective. This is broadcasted whenever the game state changes. The `current_word` is masked with asterisks for all players except the `current_master`.
+
+**`PlayerGameState` Model:**
+```json
+{
+  "game_state": "pending" | "in_progress" | "finished",
+  "team_id": "string",
+  "team_name": "string",
+  "expires_at": "datetime" | "null",
+  "remaining_words_count": "integer",
+  "tries_left": "integer" | "null",
+  "current_word": "string" | "null",
+  "current_master": "string" | "null",
+  "team_scores": {
+    "<player_name>": "integer"
+  },
+  "all_teams_scores": {
+    "<team_name>": "integer"
+  },
+  "players_in_team": ["string"],
+  "winning_team": "string" | "null"
+}
+```
+
 **Example `PlayerGameState` Payload:**
 ```json
 {
@@ -260,18 +307,6 @@ Retrieves the authenticated user's profile along with their saved decks.
 - `200 OK`: Returns a `ProfileResponse` object.
 - `401 Unauthorized`: If the token is missing or invalid.
 
-### GET `/api/profile/{user_id}`
-Retrieves a user's profile. Only allows users to access their own profile.
-
-**Query Parameters**
-- `search`: string *(optional)* - A search term to filter decks by name or tags.
-
-**Response**
-- `200 OK`: Returns a `ProfileResponse` object.
-- `401 Unauthorized`: If authentication fails.
-- `403 Forbidden`: If the user is trying to access another user's profile.
-- `404 Not Found`: If the user does not exist.
-
 ### POST `/api/profile/deck/save`
 Saves a new word deck to the user's profile.
 
@@ -305,10 +340,12 @@ Updates an existing deck.
 - `404 Not Found`: If the deck does not exist.
 
 ### GET `/api/profile/deck/{deck_id}`
-Retrieves full details of a saved deck.
+Retrieves full details of a saved deck. Requires authentication.
 
 **Response**
 - `200 OK`: Returns a `DeckDetail` object, which includes the `private` status.
+- `401 Unauthorized`: If authentication fails.
+- `403 Forbidden`: If the deck is private and not owned by the user.
 - `404 Not Found`: If the deck does not exist.
 
 ### DELETE `/api/profile/deck/{deck_id}/delete`
@@ -328,7 +365,7 @@ Deletes a deck from the user's profile.
 Retrieves a paginated list of public decks from the gallery.
 
 **Query Parameters**
-- `number`: integer - The page number to retrieve (50 decks per page).
+- `page`: integer - The page number to retrieve (50 decks per page).
 - `search`: string *(optional)* - A search term to filter decks by name or tags.
 
 **Response**
@@ -366,7 +403,7 @@ Deletes a user.
 Retrieves admin action logs with pagination.
 
 **Query Parameters**
-- `page`: integer (optional, default: 1) - The page number to retrieve.
+- `page`: integer - The page number to retrieve.
 - `page_size`: integer (optional, default: 10) - The number of logs per page.
 
 **Response**
