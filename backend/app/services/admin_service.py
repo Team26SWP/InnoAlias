@@ -49,11 +49,16 @@ async def delete_user_service(email: str, reason: str, admin_email: str):
     }
 
 
-async def get_logs_service():
+async def get_logs_service(page: int = 1, page_size: int = 10):
     """
-    Retrieves all administrative logs.
+    Retrieves all administrative logs with pagination.
     """
-    show_logs = await logs.find().to_list(length=None)
+    show_logs = (
+        await logs.find()
+        .skip((page - 1) * page_size)
+        .limit(page_size)
+        .to_list(length=page_size)
+    )
     if not show_logs:
         raise HTTPException(status_code=404, detail="No logs")
     response_logs = [{**log, "_id": str(log["_id"])} for log in show_logs]
@@ -88,6 +93,8 @@ async def add_admin_service(email: str, admin_email: str):
     user = await users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if user.get("isAdmin"):
+        raise HTTPException(status_code=400, detail="User is already an admin")
     await users.update_one({"email": email}, {"$set": {"isAdmin": True}})
 
     await _log_admin_action(
@@ -104,9 +111,15 @@ async def remove_admin_service(email: str, admin_email: str):
     Revokes administrator privileges from a user.
     Logs the action.
     """
+    if email == admin_email:
+        raise HTTPException(
+            status_code=400, detail="Cannot remove your own admin rights"
+        )
     user = await users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if not user.get("isAdmin"):
+        raise HTTPException(status_code=400, detail="User is not an admin")
     await users.update_one({"email": email}, {"$set": {"isAdmin": False}})
 
     await _log_admin_action(
@@ -123,6 +136,10 @@ async def delete_tag_service(tag: str, reason: str, admin_email: str):
     Deletes a tag from all decks in the database.
     Logs the action.
     """
+    if not await decks.find_one({"tags": tag}):
+        raise HTTPException(
+            status_code=404, detail=f"Tag '{tag}' not found in any deck"
+        )
     await decks.update_many({"tags": tag}, {"$pull": {"tags": tag}})
 
     await _log_admin_action(
@@ -139,10 +156,9 @@ async def clear_logs_service(admin_email: str):
     Clears all administrative logs from the database.
     Logs the action.
     """
-    await db.drop_collection("logs")
-
     await _log_admin_action(
         action="CLEAR_LOGS",
         admin_email=admin_email,
     )
+    await db.drop_collection("logs")
     return {"message": "Logs cleared."}

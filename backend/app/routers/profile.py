@@ -15,24 +15,14 @@ router = APIRouter(prefix="", tags=["profile"])
 
 @router.get("/me", response_model=ProfileResponse)
 async def get_my_profile(
-    search: str = Query(None), current_user: UserInDB = Depends(get_current_user)
+    search: str = Query(None),
+    current_user: UserInDB = Depends(get_current_user),
 ):
     """
     Retrieves the profile of the current authenticated user.
     """
-    return await get_profile_service(current_user.id, current_user, search)
 
-
-@router.get("/{user_id}", response_model=ProfileResponse)
-async def get_profile(
-    user_id: str,
-    current_user: UserInDB = Depends(get_current_user),
-    search: str = Query(None),
-):
-    """
-    Retrieves the profile of a specific user by ID. Requires the current user to be the owner of the profile.
-    """
-    return await get_profile_service(user_id, current_user, search)
+    return await get_profile_service(current_user, search)
 
 
 @router.post("/deck/save")
@@ -59,11 +49,13 @@ async def edit_deck(
 
 
 @router.get("/deck/{deck_id}", response_model=DeckDetail)
-async def get_additional_deck_info(deck_id: str):
+async def get_additional_deck_info(
+    deck_id: str, current_user: UserInDB = Depends(get_current_user)
+):
     """
     Retrieves detailed information for a specific deck.
     """
-    return await get_deck_detail_service(deck_id)
+    return await get_deck_detail_service(deck_id, current_user)
 
 
 @router.delete("/deck/{deck_id}/delete")

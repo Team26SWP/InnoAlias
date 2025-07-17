@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.app.services.admin_service import (
@@ -19,7 +21,9 @@ async def admin_required(current_user=Depends(get_current_user)):
     Dependency to ensure the current user is an administrator.
     Raises HTTPException 403 if the user is not an admin.
     """
-    if not current_user.isAdmin:
+    if isinstance(current_user, dict):
+        current_user = SimpleNamespace(**current_user)
+    if not getattr(current_user, "isAdmin", False):
         raise HTTPException(status_code=403, detail="Forbidden")
     return current_user
 
@@ -37,11 +41,15 @@ async def delete_user(
 
 
 @router.get("/logs")
-async def get_logs(current_user=Depends(admin_required)):
+async def get_logs(
+    page: int = 1,
+    page_size: int = 10,
+    current_user=Depends(admin_required),
+):
     """
     Retrieves all admin logs. Requires administrator privileges.
     """
-    return await get_logs_service()
+    return await get_logs_service(page, page_size)
 
 
 @router.delete("/delete/deck/{deck_id}")

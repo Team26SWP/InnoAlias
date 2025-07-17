@@ -1,7 +1,7 @@
 from typing import Any
 
 from fastapi import HTTPException
-from pymongo import DESCENDING
+from pymongo import ASCENDING
 
 from backend.app.code_gen import generate_deck_id
 from backend.app.db import db
@@ -19,18 +19,15 @@ decks = db.decks
 
 
 async def get_profile_service(
-    user_id: str,
     current_user: UserInDB,
     search: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
 ):
     """
-    Retrieves a user's profile and their associated decks.
-    Requires the current user to be the owner of the profile.
+    Retrieves the current user's profile and their associated decks.
     """
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Forbidden")
-
-    user_data = await users.find_one({"_id": user_id})
+    user_data = await users.find_one({"_id": current_user.id})
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -42,11 +39,14 @@ async def get_profile_service(
         if search:
             query["$text"] = {"$search": search}
 
-        cursor = decks.find(query, {"name": 1, "words": 1, "tags": 1}).sort(
-            "name", DESCENDING
+        cursor = (
+            decks.find(query, {"name": 1, "words": 1, "tags": 1})
+            .sort("name", ASCENDING)
+            .skip(skip)
+            .limit(limit)
         )
 
-        user_decks = await cursor.to_list(length=100)
+        user_decks = await cursor.to_list(length=limit)
 
     return ProfileResponse(
         id=user_data["_id"],
@@ -73,8 +73,7 @@ async def save_deck_service(
     """
     Saves a new deck to the current user's profile.
     """
-    if not await users.find_one({"_id": current_user.id}):
-        raise HTTPException(status_code=404, detail="User not found")
+
     deck_id = await generate_deck_id()
     temp_deck = {
         "_id": deck_id,
@@ -133,13 +132,17 @@ async def edit_deck_service(
     )
 
 
-async def get_deck_detail_service(deck_id: str):
+async def get_deck_detail_service(deck_id: str, current_user: UserInDB):
     """
     Retrieves detailed information for a specific deck.
+    Ensures the deck is public or the current user is an owner.
     """
     deck = await decks.find_one({"_id": deck_id})
     if not deck:
         raise HTTPException(status_code=404, detail="Deck not found")
+
+    if deck.get("private") and (current_user.id not in deck.get("owner_ids", [])):
+        raise HTTPException(status_code=403, detail="Forbidden")
 
     return DeckDetail(
         id=deck["_id"],

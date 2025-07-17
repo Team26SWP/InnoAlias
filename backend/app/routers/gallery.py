@@ -11,11 +11,11 @@ router = APIRouter(prefix="", tags=["gallery"])
 
 
 @router.get("/decks")
-async def get_gallery(number: int, search: str = Query(None, min_length=1)):
+async def get_gallery(page: int, search: str = Query(None, min_length=1)):
     """
     Retrieves a paginated list of public decks from the gallery.
     """
-    return await get_gallery_service(number, search)
+    return await get_gallery_service(page, search)
 
 
 @router.put("/decks/{deck_id}")

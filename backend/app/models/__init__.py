@@ -87,7 +87,7 @@ class PlayerGameState(BaseModel):
 
 
 class Deck(BaseModel):
-    id: str
+    id: str | None = Field(None, alias="_id")
     name: str = Field(max_length=20)
     words: list[str] = Field(default_factory=list)
     owner_ids: list[str] = Field(default_factory=list)
