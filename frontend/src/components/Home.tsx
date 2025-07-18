@@ -18,7 +18,7 @@ interface GalleryResponse {
 }
 
 async function fetchGallery(page: number = 1): Promise<GalleryResponse> {
-  const response = await fetch(`${config.HTTP_URL}/gallery/decks?number=${page}`, {
+  const response = await fetch(`${config.HTTP_URL}/gallery/decks?page=${page}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });

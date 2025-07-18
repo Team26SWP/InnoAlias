@@ -100,10 +100,13 @@ function Profile() {
       setIsEditingAll(true);
     } else {
       const deckId = decks[index].id;
-
+      const token = localStorage.getItem('access_token');
       const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
       const data = await response.json();
       setDraft({ ...decks[index], words: data.words, private: data.private });
