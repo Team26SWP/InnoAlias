@@ -158,6 +158,9 @@ async def handle_game(websocket: WebSocket, game_id: str):
         print(f"Host disconnected or error in handle_game for {game_id}: {e}")
     finally:
         timer_task.cancel()
+        game = await games.find_one({"_id": game_id})
+        if game and game.get("game_state") == "pending":
+            await manager.disconnect_all_players(game_id)
         manager.disconnect(game_id, websocket)
 
 
@@ -445,6 +448,8 @@ async def handle_player(websocket: WebSocket, game_id: str):
         manager.disconnect(game_id, websocket)
         game = await games.find_one({"_id": game_id})
         if isinstance(game, dict):
+            is_master = game["teams"][team_id].get("current_master") == player_name
+            
             await games.update_one(
                 {"_id": game_id},
                 {
@@ -452,11 +457,10 @@ async def handle_player(websocket: WebSocket, game_id: str):
                     "$unset": {f"teams.{team_id}.scores.{player_name}": ""},
                 },
             )
-            if (
-                game.get("game_state") != "finished"
-                and game["teams"][team_id].get("current_master") == player_name
-            ):
+
+            if game.get("game_state") != "finished" and is_master:
                 await reassign_master(game_id, team_id)
+
             refreshed = await games.find_one({"_id": game_id})
             if isinstance(refreshed, dict):
                 await manager.broadcast_state(game_id, refreshed)

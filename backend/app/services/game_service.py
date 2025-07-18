@@ -56,6 +56,12 @@ class ConnectionManager:
             self.players[game_id] = remaining_players
         return removed_player
 
+    async def disconnect_all_players(self, game_id: str):
+        if game_id in self.players:
+            for ws, _, _ in self.players[game_id]:
+                await ws.close(code=1012, reason="Host disconnected")
+            del self.players[game_id]
+
     def switch_player_team(
         self, game_id: str, player_name: str, new_team_id: str, websocket: WebSocket
     ):
@@ -156,17 +162,32 @@ async def remove_player_from_game(game_id: str, player_name: str, team_id: str):
     return await games.find_one({"_id": game_id})
 
 
+def _get_next_master_circular(current_master: Optional[str], players: list[str]) -> Optional[str]:
+    if not players:
+        return None
+    if not current_master or current_master not in players:
+        return players[0]
+    
+    try:
+        current_index = players.index(current_master)
+        next_index = (current_index + 1) % len(players)
+        return players[next_index]
+    except ValueError:
+        return players[0]
+
 async def reassign_master(game_id: str, team_id: str):
     game = await games.find_one({"_id": game_id})
     if not game or not (team_state := game.get("teams", {}).get(team_id)):
         return
 
     players = team_state.get("players", [])
-    new_master = (
-        (choice(players) if game.get("rotate_masters") else players[0])
-        if players
-        else None
-    )
+    if not players:
+        new_master = None
+    elif game.get("rotate_masters"):
+        new_master = _get_next_master_circular(team_state.get("current_master"), players)
+    else:
+        new_master = players[0]
+
     await games.update_one(
         {"_id": game_id}, {"$set": {f"teams.{team_id}.current_master": new_master}}
     )
@@ -230,7 +251,9 @@ async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, An
     )
 
     if game.get("rotate_masters") and team_state["players"]:
-        team_state["current_master"] = choice(team_state["players"])
+        team_state["current_master"] = _get_next_master_circular(
+            team_state.get("current_master"), team_state["players"]
+        )
     elif not team_state.get("current_master") and team_state["players"]:
         team_state["current_master"] = team_state["players"][0]
 
