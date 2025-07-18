@@ -36,7 +36,9 @@ function Home() {
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [apiGallery, setApiGallery] = useState<Deck[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [visibleCount, setVisibleCount] = useState<number>(8);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [showGallery, setShowGallery] = useState<boolean>(false);
   const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
@@ -53,16 +55,6 @@ function Home() {
       window.removeEventListener('scroll', handleScroll);
     };
   }, [handleScroll]);
-
-  const loadGallery = useCallback(async (page: number = 1): Promise<void> => {
-    try {
-      const data = await fetchGallery(page);
-      const decks = data.gallery as Deck[];
-      setApiGallery([...decks].reverse());
-    } catch (error) {
-      console.error('Failed to load gallery:', error);
-    }
-  }, []);
 
   const loadProfile = async () => {
     const valid = await config.validateToken();
@@ -81,6 +73,67 @@ function Home() {
     setProfile(newProfile);
     config.setProfile(newProfile);
   };
+
+  const loadGallery = useCallback(async (pageToLoad: number = 1, append = false): Promise<void> => {
+    try {
+      setLoadingMore(true);
+      const data = await fetchGallery(pageToLoad);
+      const decks = data.gallery as Deck[];
+      setHasMore((decks.length > 0) && ((apiGallery.length + decks.length) < data.total_decks));
+      setApiGallery((prev) => (append ? [...prev, ...decks] : decks));
+    } catch (error) {
+      setHasMore(false);
+      console.error('Failed to load gallery:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [searchTerm, apiGallery.length]);
+
+  // Инфинити скрол
+  useEffect(() => {
+    const handleInfiniteScroll = () => {
+      if (loadingMore || !hasMore) return;
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const threshold = document.body.offsetHeight - 300;
+      if (scrollPosition >= threshold) {
+        setPage((prev) => prev + 1);
+      }
+    };
+    window.addEventListener('scroll', handleInfiniteScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleInfiniteScroll);
+    };
+  }, [loadingMore, hasMore]);
+
+  // Меняется стр => подгруз нового
+  useEffect(() => {
+    if (page === 1) return;
+    loadGallery(page, true);
+  }, [page]);
+
+  // Начальное
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    loadGallery(1, false);
+    config.closeConnection();
+    config.resetGameCreation();
+    async function gameLoad() {
+      if (!config.getProfile() && localStorage.getItem('access_token')) {
+        await loadProfile();
+      }
+      const code = new URLSearchParams(window.location.search).get('code');
+      const newProfile = config.getProfile();
+      if (!newProfile && code) {
+        config.navigateTo(config.Page.Login);
+      }
+      if (newProfile && code) {
+        config.navigateTo(config.Page.Join, { name: newProfile.name, code, isHost: false });
+      }
+    }
+    gameLoad();
+  }, [searchTerm]);
+
   const handleSaveDeck = useCallback(async (deckId: string): Promise<void> => {
     if (!isLoggedIn) {
       config.navigateTo(config.Page.Login);
@@ -112,27 +165,6 @@ function Home() {
       setSaveLoading(false);
     }
   }, [isLoggedIn]);
-
-  useEffect(() => {
-    loadGallery();
-    config.closeConnection();
-    config.resetGameCreation();
-    async function gameLoad() {
-      if (!config.getProfile() && localStorage.getItem('access_token')) {
-        await loadProfile();
-      }
-      const code = new URLSearchParams(window.location.search).get('code');
-      const newProfile = config.getProfile();
-      if (!newProfile && code) {
-        config.navigateTo(config.Page.Login);
-      }
-      if (newProfile && code) {
-        config.navigateTo(config.Page.Join, { name: newProfile.name, code, isHost: false });
-      }
-    }
-    gameLoad();
-  }, [loadGallery]);
-
   const filtered = useMemo<Deck[]>(() => {
     const term = searchTerm.trim().toLowerCase();
     return apiGallery.filter((t) => {
@@ -244,7 +276,7 @@ function Home() {
           />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-          {filtered.slice(0, visibleCount).map((item) => (
+          {filtered.map((item) => (
             <button
               key={item._id}
               type="button"
@@ -261,14 +293,11 @@ function Home() {
             </button>
           ))}
         </div>
-        {visibleCount < filtered.length && (
-        <button
-          type="button"
-          onClick={() => setVisibleCount((c) => c + 8)}
-          className="mt-6 block mx-auto hover:underline font-adlam"
-        >
-          Show more
-        </button>
+        {loadingMore && (
+          <div className="mt-6 block mx-auto text-center text-[#1E6DB9] font-adlam">Loading more...</div>
+        )}
+        {!hasMore && filtered.length === 0 && (
+          <div className="mt-6 block mx-auto text-center text-[#1E6DB9] font-adlam">No decks found.</div>
         )}
       </div>
       {selectedDeck && (
