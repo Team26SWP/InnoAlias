@@ -1,10 +1,10 @@
 from asyncio import Lock
-from datetime import datetime, timedelta, timezone
-from random import choice
-from typing import Optional, Tuple, Any, Dict, cast
+from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 
 from fastapi import WebSocket
 from pymongo import ReturnDocument
+
 from backend.app.db import db
 from backend.app.models import GameState, PlayerGameState, TeamStateForHost
 
@@ -21,7 +21,7 @@ def required_to_advance(team_state: dict) -> int:
 class ConnectionManager:
     def __init__(self) -> None:
         self.hosts: dict[str, WebSocket] = {}
-        self.players: dict[str, list[Tuple[WebSocket, str, str]]] = {}
+        self.players: dict[str, list[tuple[WebSocket, str, str]]] = {}
         self.locks: dict[str, Lock] = {}
 
     async def connect_host(self, websocket: WebSocket, game_id: str) -> bool:
@@ -39,7 +39,7 @@ class ConnectionManager:
         await websocket.accept()
         self.players.setdefault(game_id, []).append((websocket, player_name, team_id))
 
-    def disconnect(self, game_id: str, websocket: WebSocket) -> Optional[str]:
+    def disconnect(self, game_id: str, websocket: WebSocket) -> str | None:
         if self.hosts.get(game_id) is websocket:
             del self.hosts[game_id]
             self.locks.pop(game_id, None)
@@ -66,12 +66,12 @@ class ConnectionManager:
         self, game_id: str, player_name: str, new_team_id: str, websocket: WebSocket
     ):
         if game_id in self.players:
-            for i, (ws, name, team_id) in enumerate(self.players[game_id]):
+            for i, (ws, name, _team_id) in enumerate(self.players[game_id]):
                 if ws is websocket and name == player_name:
                     self.players[game_id][i] = (ws, name, new_team_id)
                     break
 
-    async def broadcast_state(self, game_id: str, game: Dict[str, Any]) -> None:
+    async def broadcast_state(self, game_id: str, game: dict[str, Any]) -> None:
         if host_ws := self.hosts.get(game_id):
             host_teams_state = {
                 team_id: TeamStateForHost(
@@ -131,7 +131,7 @@ async def add_player_to_game(game_id: str, player_name: str, team_id: str):
         {"_id": game_id, f"teams.{team_id}.scores.{player_name}": {"$exists": False}},
         {"$set": {f"teams.{team_id}.scores.{player_name}": 0}},
     )
-    game = cast(Dict[str, Any], await games.find_one({"_id": game_id}))
+    game = cast(dict[str, Any], await games.find_one({"_id": game_id}))
     if not game.get("rotate_masters") and not game["teams"][team_id].get(
         "current_master"
     ):
@@ -143,7 +143,7 @@ async def add_player_to_game(game_id: str, player_name: str, team_id: str):
 
 
 async def remove_player_from_game(game_id: str, player_name: str, team_id: str):
-    game = cast(Dict[str, Any], await games.find_one({"_id": game_id}))
+    game = cast(dict[str, Any], await games.find_one({"_id": game_id}))
     if not game:
         return None
 
@@ -162,18 +162,21 @@ async def remove_player_from_game(game_id: str, player_name: str, team_id: str):
     return await games.find_one({"_id": game_id})
 
 
-def _get_next_master_circular(current_master: Optional[str], players: list[str]) -> Optional[str]:
+def _get_next_master_circular(
+    current_master: str | None, players: list[str]
+) -> str | None:
     if not players:
         return None
     if not current_master or current_master not in players:
         return players[0]
-    
+
     try:
         current_index = players.index(current_master)
         next_index = (current_index + 1) % len(players)
         return players[next_index]
     except ValueError:
         return players[0]
+
 
 async def reassign_master(game_id: str, team_id: str):
     game = await games.find_one({"_id": game_id})
@@ -184,7 +187,9 @@ async def reassign_master(game_id: str, team_id: str):
     if not players:
         new_master = None
     elif game.get("rotate_masters"):
-        new_master = _get_next_master_circular(team_state.get("current_master"), players)
+        new_master = _get_next_master_circular(
+            team_state.get("current_master"), players
+        )
     else:
         new_master = players[0]
 
@@ -193,7 +198,7 @@ async def reassign_master(game_id: str, team_id: str):
     )
 
 
-def determine_winning_team(game: Dict[str, Any]) -> Optional[str]:
+def determine_winning_team(game: dict[str, Any]) -> str | None:
     team_scores = {
         tid: sum(t.get("scores", {}).values())
         for tid, t in game.get("teams", {}).items()
@@ -226,8 +231,8 @@ def determine_winning_team(game: Dict[str, Any]) -> Optional[str]:
         return final_winner
 
 
-async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, Any]:
-    game = cast(Dict[str, Any], await games.find_one({"_id": game_id}))
+async def process_new_word(game_id: str, team_id: str, sec: int) -> dict[str, Any]:
+    game = cast(dict[str, Any], await games.find_one({"_id": game_id}))
     team_state = game["teams"][team_id]
 
     new_word = (
@@ -239,9 +244,7 @@ async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, An
         {
             "current_word": new_word,
             "expires_at": (
-                datetime.now(timezone.utc) + timedelta(seconds=sec)
-                if new_word
-                else None
+                datetime.now(UTC) + timedelta(seconds=sec) if new_word else None
             ),
             "current_correct": 0,
             "player_attempts": {},
@@ -258,7 +261,7 @@ async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, An
         team_state["current_master"] = team_state["players"][0]
 
     updated_game = cast(
-        Dict[str, Any],
+        dict[str, Any],
         await games.find_one_and_update(
             {"_id": game_id},
             {"$set": {f"teams.{team_id}": team_state}},
@@ -274,6 +277,6 @@ async def process_new_word(game_id: str, team_id: str, sec: int) -> Dict[str, An
             {"_id": game_id},
             {"$set": {"game_state": "finished", "winning_team": winning_team_id}},
         )
-        updated_game = cast(Dict[str, Any], await games.find_one({"_id": game_id}))
+        updated_game = cast(dict[str, Any], await games.find_one({"_id": game_id}))
 
     return updated_game
