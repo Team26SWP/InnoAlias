@@ -85,5 +85,5 @@ jobs:
              && git pull origin main \
              && docker-compose down \
              && docker-compose pull \
-             && docker-compose up -f docker-compose-prod.yaml -d \
+             && docker-compose up -d \
              && docker image prune -f"
