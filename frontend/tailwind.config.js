@@ -6,7 +6,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        adlam: ['ADLaM Display', 'Comfortaa'],
+        adlam: ['Comfortaa', 'sans-serif'],
       },
       colors: {
         background: '#FAF6E9',
