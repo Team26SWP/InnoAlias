@@ -137,8 +137,7 @@ export function Leaderboard() {
   const exportDeck = async () => {
     const name = prompt('Input the name of the file');
     const profile = config.getProfile();
-    if (!deckName || !profile) { return; }
-
+    if (!name || !profile) { return; }
     const response = await fetch(`${HTTP_URL}/game/leaderboard/${config.getArgs().code}/export`, {
       method: 'GET',
       headers: {
@@ -217,7 +216,7 @@ export function Leaderboard() {
 
       <div className="mt-6 flex flex-wrap justify-center gap-4">
         <button type="button" className="bg-[#d9d9d9] text-[#3171a6] text-xl px-5 py-2 rounded-lg font-semibold" onClick={exportDeck}>
-          Export Deck
+          Download Deck
         </button>
         <button
           type="button"
