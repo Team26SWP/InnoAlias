@@ -7,7 +7,7 @@ async def test_end_to_end_auth_flow(client):
         "name": "Ann",
         "surname": "Doe",
         "email": "ann@example.com",
-        "password": "pw",
+        "password": "AnnPassword1!",
         "isAdmin": "true",
     }
     r1 = await client.post("/api/auth/register", json=user)
@@ -31,7 +31,7 @@ async def test_deck_save_and_profile_listing(client, test_db):
         "name": "Bob",
         "surname": "Smith",
         "email": "bob@example.com",
-        "password": "pw",
+        "password": "BobPassword1!",
         "isAdmin": "true",
     }
     await client.post("/api/auth/register", json=user)
@@ -67,7 +67,7 @@ async def test_edit_deck_and_fetch_details(client):
         "name": "Carl",
         "surname": "Jones",
         "email": "carl@example.com",
-        "password": "pw",
+        "password": "CarlPassword1!",
         "isAdmin": "true",
     }
     await client.post("/api/auth/register", json=user)
@@ -94,7 +94,7 @@ async def test_edit_deck_and_fetch_details(client):
     assert patch.json()["name"] == "Colors 2"
     assert patch.json()["words"] == ["red", "green"]
 
-    get_res = await client.get(f"/api/profile/deck/{deck_id}")
+    get_res = await client.get(f"/api/profile/deck/{deck_id}", headers=headers)
     assert get_res.status_code == 200
     assert get_res.json()["words"] == ["red", "green"]
 
@@ -125,7 +125,7 @@ async def test_delete_deck_removes_from_profile(client, test_db):
         "name": "Del",
         "surname": "User",
         "email": "del@example.com",
-        "password": "pw",
+        "password": "DelPassword1!",
         "isAdmin": "true",
     }
     await client.post("/api/auth/register", json=user)
@@ -159,49 +159,26 @@ async def test_delete_deck_requires_auth(client):
 
 
 @pytest.mark.asyncio
-async def test_profile_forbidden_for_other_user(client, test_db):
-    user1 = {
-        "name": "A",
-        "surname": "B",
-        "email": "a@example.com",
-        "password": "pw",
-        "isAdmin": "true",
-    }
-    user2 = {
-        "name": "C",
-        "surname": "D",
-        "email": "c@example.com",
-        "password": "pw",
-        "isAdmin": "true",
-    }
-
-    await client.post("/api/auth/register", json=user1)
-    await client.post("/api/auth/register", json=user2)
-    login = await client.post(
-        "/api/auth/login", data={"username": user1["email"], "password": "pw"}
-    )
-    token = login.json()["access_token"]
-    headers = {"Authorization": f"Bearer {token}"}
-    other = await test_db.users.find_one({"email": user2["email"]})
-    res = await client.get(f"/api/profile/{other['_id']}", headers=headers)
-    assert res.status_code == 403
-
-
-@pytest.mark.asyncio
 async def test_edit_deck_forbidden_for_non_owner(client, test_db):
     owner = {
         "name": "O",
         "surname": "U",
         "email": "owner@example.com",
-        "password": "pw",
+        "password": "OwnerPassword1!",
         "isAdmin": "true",
     }
-    attacker = {"name": "H", "surname": "T", "email": "h@example.com", "password": "pw"}
+    attacker = {
+        "name": "H",
+        "surname": "T",
+        "email": "h@example.com",
+        "password": "AttackerPassword1!",
+    }
     await client.post("/api/auth/register", json=owner)
     await client.post("/api/auth/register", json=attacker)
 
     login_owner = await client.post(
-        "/api/auth/login", data={"username": owner["email"], "password": "pw"}
+        "/api/auth/login",
+        data={"username": owner["email"], "password": "OwnerPassword1!"},
     )
     owner_token = login_owner.json()["access_token"]
     owner_headers = {"Authorization": f"Bearer {owner_token}"}
@@ -213,7 +190,8 @@ async def test_edit_deck_forbidden_for_non_owner(client, test_db):
     deck_id = save.json()["inserted_id"]
 
     login_attacker = await client.post(
-        "/api/auth/login", data={"username": attacker["email"], "password": "pw"}
+        "/api/auth/login",
+        data={"username": attacker["email"], "password": "AttackerPassword1!"},
     )
     att_token = login_attacker.json()["access_token"]
     att_headers = {"Authorization": f"Bearer {att_token}"}

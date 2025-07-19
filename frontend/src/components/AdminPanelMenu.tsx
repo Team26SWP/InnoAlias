@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { HTTP_URL } from './config';
+import {
+  HTTP_URL,
+  validateToken,
+  navigateTo,
+  Page,
+} from './config';
 
 /*
 // In MongoDB shell or MongoDB Compass
@@ -31,6 +36,8 @@ function AdminPanelMenu() {
     setResult(null);
     setLogs(null);
     try {
+      const valid = await validateToken();
+      if (!valid) { navigateTo(Page.Login); }
       const res = await fetch(`${HTTP_URL}/admin/delete/user/${userEmail}?reason=${encodeURIComponent(reason)}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),

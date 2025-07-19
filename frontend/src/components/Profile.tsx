@@ -2,83 +2,70 @@ import React, { useEffect, useState } from 'react';
 import * as config from './config';
 import AdminPanelMenu from './AdminPanelMenu';
 
-type DeckWithWords = config.Deck & { words: string[] };
+type DeckWithWords = config.Deck & { words: string[], private: boolean };
 
 function Profile() {
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [decks, setDecks] = useState<config.Deck[]>([
-    {
-      id: 'Aboba',
-      name: 'Abobny',
-      words_count: 10,
-      tags: [],
-    },
-  ]);
+  const [decks, setDecks] = useState<config.Deck[]>([]);
   const [tags, setTags] = useState<string[]>([]);
+  const [draftTags, setDraftTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchString, setSearchString] = useState<string | null>(null);
+  const [tagInput, setTagInput] = useState<string>('');
   const [deckLoad, setDeckLoad] = useState<boolean>(false);
+  const [deckCreate, setDeckCreate] = useState<boolean>(false);
+  const [gameMode, setGameMode] = useState<string>('multi');
 
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isEditingAll, setIsEditingAll] = useState<boolean>(false);
   const [draft, setDraft] = useState<DeckWithWords | null>(null);
   const [newWordText, setNewWordText] = useState<string>('');
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${config.HTTP_URL}/profile/me`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        if (!response.ok) {
-          if (response.status === 401) {
-            const refresh = await fetch(`${config.HTTP_URL}/auth/refresh`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
-            });
-            const newToken = await refresh.json();
-            if (refresh.ok) {
-              localStorage.setItem('access_token', newToken.access_token);
-              localStorage.setItem('refresh_token', newToken.refresh_token);
-              await fetchProfile();
-              return;
-            }
-          }
-          setError('Failed to fetch profile.');
-          setLoading(false);
-          return;
-        }
-        const data: config.UserProfile = await response.json();
-        setProfile(data);
-        config.setProfile(data);
-        setDecks(data.decks);
-        const supp: string[] = [];
-        data.decks.forEach((deck) => {
-          deck.tags.forEach((tag) => {
-            if (!supp.includes(tag)) {
-              supp.push(tag);
-            }
-          });
-        });
-        setTags(supp);
-      } catch (err) {
-        setError('An unexpected error occurred.');
-      } finally {
-        setLoading(false);
+  const fetchProfile = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const valid = await config.validateToken();
+      if (!valid) {
+        config.navigateTo(config.Page.Home);
+        return;
       }
-    };
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${config.HTTP_URL}/profile/me`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        setError('Failed to fetch profile.');
+        setLoading(false);
+        return;
+      }
+      const data: config.UserProfile = await response.json();
+      setProfile(data);
+      config.setProfile(data);
+      setDecks(data.decks);
+      const supp: string[] = [];
+      data.decks.forEach((deck) => {
+        deck.tags.forEach((tag) => {
+          if (!supp.includes(tag)) {
+            supp.push(tag);
+          }
+        });
+      });
+      setTags(supp);
+    } catch (err) {
+      setError('An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfile();
     setDeckLoad(config.getDeckChoice());
   }, []);
@@ -100,22 +87,39 @@ function Profile() {
   };
 
   const openModal = async (index: number) => {
-    const deckId = decks[index].id;
-
-    const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const data = await response.json();
+    if (index === -1) {
+      setDeckCreate(true);
+      setDraft({
+        id: '',
+        name: '',
+        words_count: 0,
+        tags: [],
+        words: [],
+        private: true,
+      });
+      setIsEditingAll(true);
+    } else {
+      const deckId = decks[index].id;
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${config.HTTP_URL}/profile/deck/${deckId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      setDraft({ ...decks[index], words: data.words, private: data.private });
+      setIsEditingAll(false);
+    }
     setActiveIndex(index);
-    setDraft({ ...decks[index], words: data.words });
-    setIsEditingAll(false);
     setNewWordText('');
   };
 
   const closeModal = () => {
     setActiveIndex(null);
     setIsEditingAll(false);
+    setDeckCreate(false);
     setNewWordText('');
   };
 
@@ -128,6 +132,11 @@ function Profile() {
 
   const deleteDeck = async () => {
     if (activeIndex === null) return;
+    const valid = await config.validateToken();
+    if (!valid) {
+      config.navigateTo(config.Page.Home);
+      return;
+    }
     const deckId = decks[activeIndex].id;
     const token = localStorage.getItem('access_token');
     try {
@@ -169,6 +178,8 @@ function Profile() {
 
   const saveAll = async () => {
     if (activeIndex === null || !draft) return;
+    const valid = await config.validateToken();
+    if (!valid) { config.navigateTo(config.Page.Home); return; }
     const deckId = decks[activeIndex].id;
     const token = localStorage.getItem('access_token');
     try {
@@ -182,23 +193,14 @@ function Profile() {
           deck_name: draft.name,
           words: draft.words,
           tags: draft.tags || [],
+          private: draft.private,
         }),
       });
       if (!response.ok) {
         setError('Failed to update deck.');
         return;
       }
-      const updatedDeck = await response.json();
-      setDecks((prev) => prev.map((deck, idx) => {
-        if (idx === activeIndex) {
-          return {
-            ...deck,
-            ...updatedDeck,
-            words_count: updatedDeck.words.length,
-          };
-        }
-        return deck;
-      }));
+      fetchProfile();
       setIsEditingAll(false);
     } catch (err) {
       setError('An unexpected error occurred while updating the deck.');
@@ -209,6 +211,7 @@ function Profile() {
     if (activeIndex !== null && draft) setDraft({ ...draft });
     setIsEditingAll(false);
     setNewWordText('');
+    setDeckCreate(false);
   };
 
   function checkDeck(deck: config.Deck) {
@@ -229,11 +232,48 @@ function Profile() {
   const selectDeck = async () => {
     if (!draft || !draft.words) { return; }
     config.addWords(draft.words);
-    if (config.loadCreationState().aiGame) {
+    console.log(gameMode);
+    if (config.loadCreationState().aiGame || gameMode === 'single') {
       toPage('Ai');
       return;
     }
     toPage('Create');
+  };
+
+  const addTag = () => {
+    if (!draft || draft.tags.includes(tagInput)) { return; }
+    draft.tags.push(tagInput);
+    setTagInput('');
+    setDraftTags(draft.tags);
+  };
+
+  const removeTag = (deleted: string) => {
+    if (!draft) { return; }
+    draft.tags = draft.tags.filter((tag) => tag !== deleted);
+    setDraftTags(draft.tags);
+  };
+
+  const createDeck = async () => {
+    if (!draft || !draft.name || !draft.words || draft.words.length === 0) { return; }
+    const valid = await config.validateToken();
+    if (!valid) { config.navigateTo(config.Page.Home); return; }
+    await fetch(`${config.HTTP_URL}/profile/deck/save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+      },
+      body: JSON.stringify({
+        deck_name: draft.name,
+        words: draft.words,
+        tags: draft.tags,
+        private: draft.private,
+      }),
+    });
+    setIsEditingAll(false);
+    setDeckCreate(false);
+    setDraft(null);
+    fetchProfile();
   };
 
   function logOut() {
@@ -309,6 +349,15 @@ function Profile() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 md:grid-cols-3 gap-4 mt-8">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => openModal(-1)}
+          onKeyDown={(e) => e.key === 'Enter' && openModal(-1)}
+          className="cursor-pointer bg-[#d9d9d9] hover:bg-[#c9c9c9] text-[#1E6DB9] font-bold text-sm py-5 px-4 rounded-lg shadow-sm transition"
+        >
+          <div>Create a deck</div>
+        </div>
         {decks.filter((deck) => checkDeck(deck)).map((deck, idx) => (
           <div
             key={deck.id}
@@ -346,7 +395,7 @@ function Profile() {
               <div className="flex space-x-2">
                 {isEditingAll ? (
                   <>
-                    <button type="button" onClick={saveAll} className="px-2 py-1 text-[#1E6DB9] rounded text-sm">Save</button>
+                    <button type="button" onClick={deckCreate ? createDeck : saveAll} className="px-2 py-1 text-[#1E6DB9] rounded text-sm">{deckCreate ? 'Create' : 'Save'}</button>
                     <button type="button" onClick={cancelAll} className="px-2 py-1 text-gray-500 rounded text-sm">Cancel</button>
                   </>
                 ) : (
@@ -360,16 +409,56 @@ function Profile() {
             </div>
 
             {isEditingAll && (
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="text"
-                  placeholder="New word"
-                  value={newWordText}
-                  onChange={(e) => setNewWordText(e.target.value)}
-                  className="flex-1 p-2 border rounded"
-                />
-                <button type="button" onClick={addDraftWord} className="px-4 py-2 bg-[#1E6DB9] text-white rounded hover:bg-[#185a9e] transition">Add</button>
-              </div>
+              <>
+                <label htmlFor="public" className="mr-10">
+                  <input type="radio" id="public" name="isPublic" className="mr-2" defaultChecked onClick={() => { draft.private = false; }} />
+                  Public
+                </label>
+                <label htmlFor="private" className="mr-10">
+                  <input type="radio" id="private" name="isPublic" className="mr-2" onClick={() => { draft.private = true; }} />
+                  Private
+                </label>
+                <label htmlFor="tagInput" className="block text-sm text-[#3171a6] font-medium mb-1">
+                  <span className="font-bold w-36 inline-block">Tags</span>
+                  <div className="flex gap-2">
+                    <input
+                      id="tagInput"
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addTag()}
+                      className="flex-1 border rounded px-3 py-2"
+                      placeholder="Add a tag and press Enter"
+                      list="tag-suggestions"
+                      disabled={draft.tags.length >= 5}
+                    />
+                    <button type="button" onClick={() => addTag()} className="px-4 py-2 bg-[#1E6DB9] text-white rounded hover:bg-[#185a9e] transition">
+                      Add
+                    </button>
+                  </div>
+                </label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {draftTags.map((t) => (
+                    <span key={t} className="flex items-center bg-[#d9d9d9] text-[#3171a6] px-3 py-1 rounded-full text-sm">
+                      {t}
+                      <button type="button" onClick={() => removeTag(t)} className="ml-2 font-bold">
+                        x
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <span className="font-bold w-36 inline-block">Words</span>
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    placeholder="New word"
+                    value={newWordText}
+                    onChange={(e) => setNewWordText(e.target.value)}
+                    className="flex-1 p-2 border rounded"
+                  />
+                  <button type="button" onClick={addDraftWord} className="px-4 py-2 bg-[#1E6DB9] text-white rounded hover:bg-[#185a9e] transition">Add</button>
+                </div>
+              </>
             )}
 
             <ul className="space-y-2">
@@ -391,7 +480,13 @@ function Profile() {
               ))}
             </ul>
             <div className="flex space-x-2 items-center justify-end mt-7">
-              {!isEditingAll && (<button type="button" onClick={selectDeck} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">Use</button>)}
+              {!isEditingAll && (<button type="button" onClick={selectDeck} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">{deckLoad ? 'Use' : 'Play'}</button>)}
+              {!isEditingAll && !deckLoad && (
+                <select id="game-type" defaultValue="multi" onChange={(e) => { setGameMode(e.target.value); }}>
+                  <option value="single">Singleplayer</option>
+                  <option value="multi">Multiplayer</option>
+                </select>
+              )}
             </div>
           </div>
         </div>

@@ -217,6 +217,33 @@ export function getProfile(): UserProfile | null {
   return profile;
 }
 
+export async function validateToken(): Promise<boolean> {
+  const response = await fetch(`${HTTP_URL}/profile/me`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  if (response.status === 401) {
+    console.log('refresh');
+    const refresh = await fetch(`${HTTP_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
+    });
+    if (refresh.status === 401) {
+      return false;
+    }
+    const newToken = await refresh.json();
+    localStorage.setItem('access_token', newToken.access_token);
+    localStorage.setItem('refresh_token', newToken.refresh_token);
+  }
+  return true;
+}
+
 // Initial states
 export function setInitialHostState(init: HostGameState) { // Host
   initialHostGameState = init;

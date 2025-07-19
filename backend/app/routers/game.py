@@ -1,20 +1,21 @@
-from datetime import datetime, timezone
+import asyncio
+from datetime import UTC, datetime
 from random import shuffle
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
 from pymongo import ReturnDocument
-import asyncio
-from fastapi import WebSocket, WebSocketDisconnect, APIRouter, HTTPException
-from typing import Any
 
 from backend.app.code_gen import generate_game_code
 from backend.app.models import Game
 from backend.app.services.game_service import (
+    determine_winning_team,
     games,
     manager,
     process_new_word,
-    required_to_advance,
     reassign_master,
-    determine_winning_team,
+    required_to_advance,
 )
 
 router = APIRouter(prefix="", tags=["game"])
@@ -32,8 +33,8 @@ async def create_game(game: Game):
 
     teams_data: dict[str, dict[str, Any]] = {}
     for i in range(game.number_of_teams):
-        team_id = f"team_{i+1}"
-        team_name = f"Team {i+1}"
+        team_id = f"team_{i + 1}"
+        team_name = f"Team {i + 1}"
 
         team_words = list(words)
         shuffle(team_words)
@@ -56,7 +57,6 @@ async def create_game(game: Game):
 
     new_game = {
         "_id": code,
-        "host_id": game.host_id,
         "number_of_teams": game.number_of_teams,
         "teams": teams_data,
         "deck": words,
@@ -101,18 +101,7 @@ async def get_game_deck(game_id: str):
 
 @router.websocket("/{game_id}")
 async def handle_game(websocket: WebSocket, game_id: str):
-    host_id = websocket.query_params.get("id")
-    if host_id is None or not await games.find_one(
-        {"_id": game_id, "host_id": host_id}
-    ):
-        await websocket.close(
-            code=1011, reason="Game not found or not authorized as host"
-        )
-        return
-
-    assert host_id is not None
-
-    if not await manager.connect_host(websocket, game_id, host_id):
+    if not await manager.connect_host(websocket, game_id):
         return
 
     timer_task = asyncio.create_task(check_timers(game_id))
@@ -121,6 +110,7 @@ async def handle_game(websocket: WebSocket, game_id: str):
         game_data = await games.find_one({"_id": game_id})
         if not isinstance(game_data, dict):
             return
+        game: dict[str, Any] | None = game_data
         await manager.broadcast_state(game_id, game_data)
 
         while True:
@@ -169,6 +159,9 @@ async def handle_game(websocket: WebSocket, game_id: str):
         print(f"Host disconnected or error in handle_game for {game_id}: {e}")
     finally:
         timer_task.cancel()
+        game = await games.find_one({"_id": game_id})
+        if game and game.get("game_state") == "pending":
+            await manager.disconnect_all_players(game_id)
         manager.disconnect(game_id, websocket)
 
 
@@ -183,7 +176,7 @@ async def check_timers(game_id: str):
                 await asyncio.sleep(1)
                 continue
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             expirations = [
                 team.get("expires_at")
@@ -195,7 +188,7 @@ async def check_timers(game_id: str):
                 team_id
                 for team_id, team_data in game_data.get("teams", {}).items()
                 if team_data.get("expires_at")
-                and now >= team_data["expires_at"].replace(tzinfo=timezone.utc)
+                and now >= team_data["expires_at"].replace(tzinfo=UTC)
             ]
 
             if expired_teams:
@@ -208,7 +201,7 @@ async def check_timers(game_id: str):
                             "expires_at"
                         )
                         if current_expires_at and now >= current_expires_at.replace(
-                            tzinfo=timezone.utc
+                            tzinfo=UTC
                         ):
                             new_state = await process_new_word(
                                 game_id, team_id, game_data["time_for_guessing"]
@@ -218,9 +211,7 @@ async def check_timers(game_id: str):
 
             if expirations:
                 next_expiry = min(expirations)
-                sleep_duration = (
-                    next_expiry.replace(tzinfo=timezone.utc) - now
-                ).total_seconds()
+                sleep_duration = (next_expiry.replace(tzinfo=UTC) - now).total_seconds()
                 if sleep_duration > 0:
                     await asyncio.sleep(sleep_duration)
             else:
@@ -410,9 +401,7 @@ async def handle_player(websocket: WebSocket, game_id: str):
                         continue
 
                 expires_at = team_state.get("expires_at")
-                if expires_at and datetime.now(timezone.utc) > expires_at.replace(
-                    tzinfo=timezone.utc
-                ):
+                if expires_at and datetime.now(UTC) > expires_at.replace(tzinfo=UTC):
                     continue
 
                 async with manager.locks[game_id]:
@@ -456,6 +445,8 @@ async def handle_player(websocket: WebSocket, game_id: str):
         manager.disconnect(game_id, websocket)
         game = await games.find_one({"_id": game_id})
         if isinstance(game, dict):
+            is_master = game["teams"][team_id].get("current_master") == player_name
+
             await games.update_one(
                 {"_id": game_id},
                 {
@@ -463,11 +454,10 @@ async def handle_player(websocket: WebSocket, game_id: str):
                     "$unset": {f"teams.{team_id}.scores.{player_name}": ""},
                 },
             )
-            if (
-                game.get("game_state") != "finished"
-                and game["teams"][team_id].get("current_master") == player_name
-            ):
+
+            if game.get("game_state") != "finished" and is_master:
                 await reassign_master(game_id, team_id)
+
             refreshed = await games.find_one({"_id": game_id})
             if isinstance(refreshed, dict):
                 await manager.broadcast_state(game_id, refreshed)

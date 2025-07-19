@@ -1,11 +1,10 @@
 import pytest
 
-from backend.app.models import AIGame, AIGameSettings
-from backend.app.services.auth_service import verify_password, create_user
-from backend.app.models import User
-from backend.app.services.game_service import reassign_master
 from backend.app.code_gen import generate_game_code, generate_user_id
+from backend.app.models import AIGame, AIGameSettings, User
 from backend.app.services.aigame_service import create_aigame
+from backend.app.services.auth_service import create_user, verify_password
+from backend.app.services.game_service import reassign_master
 
 
 @pytest.mark.asyncio
@@ -14,16 +13,15 @@ async def test_password_hashing_and_verification(test_db):
         name="test",
         surname="user",
         email="test@example.com",
-        password="test_password",
+        password="TestPassword1!",
     )
     created_user = await create_user(user)
-    assert verify_password("test_password", created_user["hashed_password"])
+    assert verify_password("TestPassword1!", created_user["hashed_password"])
     assert not verify_password("wrong_password", created_user["hashed_password"])
 
 
 @pytest.mark.asyncio
-async def test_reassign_master_rotation(test_db, monkeypatch):
-    monkeypatch.setattr("backend.app.services.game_service.choice", lambda x: x[2])
+async def test_reassign_master_rotation(test_db):
     await test_db.games.insert_one(
         {
             "_id": "game_reassign_master_rotation",

@@ -12,17 +12,13 @@ interface Deck {
   private?: boolean
 }
 
-interface CreateParams {
-  deckId: string
-}
-
 interface GalleryResponse {
   gallery: Deck[]
   total_decks: number
 }
 
 async function fetchGallery(page: number = 1): Promise<GalleryResponse> {
-  const response = await fetch(`${config.HTTP_URL}/gallery/decks?number=${page}`, {
+  const response = await fetch(`${config.HTTP_URL}/gallery/decks?page=${page}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -36,7 +32,9 @@ function Home() {
   const [profile, setProfile] = useState<config.UserProfile | null>(null);
   const [apiGallery, setApiGallery] = useState<Deck[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [visibleCount, setVisibleCount] = useState<number>(8);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [showGallery, setShowGallery] = useState<boolean>(false);
   const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
@@ -54,17 +52,12 @@ function Home() {
     };
   }, [handleScroll]);
 
-  const loadGallery = useCallback(async (page: number = 1): Promise<void> => {
-    try {
-      const data = await fetchGallery(page);
-      const decks = data.gallery as Deck[];
-      setApiGallery([...decks].reverse());
-    } catch (error) {
-      console.error('Failed to load gallery:', error);
-    }
-  }, []);
-
   const loadProfile = async () => {
+    const valid = await config.validateToken();
+    if (!valid) {
+      setIsLoggedIn(false);
+      return;
+    }
     const response = await fetch(`${config.HTTP_URL}/profile/me`, {
       method: 'GET',
       headers: {
@@ -73,34 +66,77 @@ function Home() {
       },
     });
     const newProfile = await response.json();
-    if (response.ok) {
-      setProfile(newProfile);
-      config.setProfile(newProfile);
-    } else if (response.status === 401) {
-      const refresh = await fetch(`${config.HTTP_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
-      });
-      const newToken = await refresh.json();
-      if (refresh.ok) {
-        localStorage.setItem('access_token', newToken.access_token);
-        localStorage.setItem('refresh_token', newToken.refresh_token);
-        loadProfile();
-      } else if (response.status === 401) {
-        localStorage.removeItem('access_token');
-        setIsLoggedIn(false);
+    setProfile(newProfile);
+    config.setProfile(newProfile);
+  };
+
+  const loadGallery = useCallback(async (pageToLoad: number = 1, append = false): Promise<void> => {
+    try {
+      setLoadingMore(true);
+      const data = await fetchGallery(pageToLoad);
+      const decks = data.gallery as Deck[];
+      setHasMore((decks.length > 0) && ((apiGallery.length + decks.length) < data.total_decks));
+      setApiGallery((prev) => (append ? [...prev, ...decks] : decks));
+    } catch (error) {
+      setHasMore(false);
+      console.error('Failed to load gallery:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [searchTerm, apiGallery.length]);
+
+  // Инфинити скрол
+  useEffect(() => {
+    const handleInfiniteScroll = () => {
+      if (loadingMore || !hasMore) return;
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const threshold = document.body.offsetHeight - 300;
+      if (scrollPosition >= threshold) {
+        setPage((prev) => prev + 1);
+      }
+    };
+    window.addEventListener('scroll', handleInfiniteScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleInfiniteScroll);
+    };
+  }, [loadingMore, hasMore]);
+
+  // Меняется стр => подгруз нового
+  useEffect(() => {
+    if (page === 1) return;
+    loadGallery(page, true);
+  }, [page]);
+
+  // Начальное
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    loadGallery(1, false);
+    config.closeConnection();
+    config.resetGameCreation();
+    async function gameLoad() {
+      if (!config.getProfile() && localStorage.getItem('access_token')) {
+        await loadProfile();
+      }
+      const code = new URLSearchParams(window.location.search).get('code');
+      const newProfile = config.getProfile();
+      if (!newProfile && code) {
+        config.navigateTo(config.Page.Login);
+      }
+      if (newProfile && code) {
+        config.navigateTo(config.Page.Join, { name: newProfile.name, code, isHost: false });
       }
     }
-  };
+    gameLoad();
+  }, [searchTerm]);
+
   const handleSaveDeck = useCallback(async (deckId: string): Promise<void> => {
     if (!isLoggedIn) {
       config.navigateTo(config.Page.Login);
       return;
     }
     try {
+      await config.validateToken();
       setSaveLoading(true);
       if (!deckId || deckId === 'undefined') {
         throw new Error(`Invalid deck ID provided', ${deckId}`);
@@ -125,27 +161,6 @@ function Home() {
       setSaveLoading(false);
     }
   }, [isLoggedIn]);
-
-  useEffect(() => {
-    loadGallery();
-    config.closeConnection();
-    config.resetGameCreation();
-    async function gameLoad() {
-      if (!config.getProfile() && localStorage.getItem('access_token')) {
-        await loadProfile();
-      }
-      const code = new URLSearchParams(window.location.search).get('code');
-      const newProfile = config.getProfile();
-      if (!newProfile && code) {
-        config.navigateTo(config.Page.Login);
-      }
-      if (newProfile && code) {
-        config.navigateTo(config.Page.Join, { name: newProfile.name, code, isHost: false });
-      }
-    }
-    gameLoad();
-  }, [loadGallery]);
-
   const filtered = useMemo<Deck[]>(() => {
     const term = searchTerm.trim().toLowerCase();
     return apiGallery.filter((t) => {
@@ -177,11 +192,13 @@ function Home() {
 
   const useThisDeck = useCallback((): void => {
     if (!selectedDeck) return;
-    const deckId = selectedDeck._id;
-    if (!deckId) return;
-    // @ts-expect-error extra args
-    config.navigateTo(config.Page.Create, { deckId } as CreateParams);
-    // нужно правильно настроить
+    config.addWords(selectedDeck.words);
+    config.setDeckChoice(true);
+    if (config.loadCreationState().aiGame) {
+      config.navigateTo(config.Page.AiCreate);
+    } else {
+      config.navigateTo(config.Page.Create);
+    }
   }, [selectedDeck]);
 
   return (
@@ -196,7 +213,7 @@ function Home() {
           {isLoggedIn ? 'Profile' : 'Log in'}
         </button>
         <h1 className="text-9xl font-bold font-adlam mb-8">alias</h1>
-        <div className="flex gap-4">
+        <div className="flex gap-4 mb-8">
           <button
             type="button"
             onClick={handleCreateGame}
@@ -219,6 +236,26 @@ function Home() {
             Singleplayer
           </button>
         </div>
+        {!showGallery && (
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+            aria-label="Scroll to gallery"
+            className="absolute bottom-6 animate-bounce focus:outline-none"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-6 h-6 sm:w-8 sm:h-8 text-white opacity-70"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        )}
+
       </div>
       <div
         className={`w-full max-w-5xl mx-auto px-6 pb-10 transition-opacity duration-500 ${
@@ -226,7 +263,6 @@ function Home() {
         }`}
         aria-hidden={showGallery}
       >
-
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-4xl font-semibold">Gallery:</h2>
           <input
@@ -238,7 +274,7 @@ function Home() {
           />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-          {filtered.slice(0, visibleCount).map((item) => (
+          {filtered.map((item) => (
             <button
               key={item._id}
               type="button"
@@ -255,14 +291,11 @@ function Home() {
             </button>
           ))}
         </div>
-        {visibleCount < filtered.length && (
-        <button
-          type="button"
-          onClick={() => setVisibleCount((c) => c + 8)}
-          className="mt-6 block mx-auto hover:underline font-adlam"
-        >
-          Show more
-        </button>
+        {loadingMore && (
+          <div className="mt-6 block mx-auto text-center text-[#1E6DB9] font-adlam">Loading more...</div>
+        )}
+        {!hasMore && filtered.length === 0 && (
+          <div className="mt-6 block mx-auto text-center text-[#1E6DB9] font-adlam">No decks found.</div>
         )}
       </div>
       {selectedDeck && (

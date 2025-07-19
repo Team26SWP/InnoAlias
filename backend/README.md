@@ -6,16 +6,14 @@ This folder contains a FastAPI backend for a game.
 ## Usage (locally)
 1. Install dependencies:
    ```bash
-   pip install -r backend/requirements.txt
+   python -m pip install -r backend/requirements.txt
    ```
 2. Copy `.env.example` **from the repository root** to `.env`:
    ```bash
-   cp .env.example .env # it must be under InnoAlias/.env
+   cp .env.example .env 
    ```
-3. Modify .env:
-   ```bash
-   nano .env # specify all entries
-   ```
+   > **Note**: The `.env` file must be in the root of the `InnoAlias` repository.
+3. Modify the `.env` file with your local configuration.
    The backend uses MongoDB. Set `MONGO_URI` to point at your database instance
    (default is `mongodb://localhost:27017/`).
 4. Run the server **from the repository root:**
@@ -31,7 +29,7 @@ Install test dependencies and run:
 pytest -q
 ```
 
-Additional API documentation can be found under `backend/docs/API.md`.
+Additional API documentation can be found under `docs/API.md`.
 
 
 ## Structure
