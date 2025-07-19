@@ -11,6 +11,8 @@ function Lobby() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [socket, setSocket] = useState<WebSocket>();
   const [teams, setTeams] = useState<string[]>([]);
+  const teamStates = useRef<{ [teamId: string]: config.TeamGameState }>({});
+  const [error, setError] = useState<string>('');
   const { name, code, isHost } = args.current;
   const gameUrl = `http://${window.location.host}?code=${code}`;
 
@@ -43,6 +45,7 @@ function Lobby() {
           setPlayers(sup);
         }
         setTeams(Object.keys(data.teams));
+        teamStates.current = data.teams;
         if (data.game_state === 'in_progress') {
           config.setInitialHostState(data);
           config.navigateTo(config.Page.Host, args.current);
@@ -60,11 +63,37 @@ function Lobby() {
     ws.onclose = () => { config.navigateTo(config.Page.Home); };
   }, [code, name, isHost]);
 
+  function checkGameValidity() {
+    console.log(teamStates.current);
+    const troubledTeams : string[] = [];
+    for (let i = 0; i < teams.length; i += 1) {
+      if (teamStates.current[Object.keys(teamStates.current)[i]].players.length < 2) {
+        troubledTeams.push(teamStates.current[Object.keys(teamStates.current)[i]].name);
+      }
+    }
+    if (troubledTeams.length === 0 && Object.keys(teamStates.current).length > 0) {
+      return true;
+    }
+    if (teams.length === 1 || Object.keys(teamStates.current).length === 0) {
+      setError('Too few players!');
+    } else if (troubledTeams.length === 1) {
+      setError(`Too few players in ${troubledTeams[0]}!`);
+    } else if (troubledTeams.length === 2) {
+      setError(`Too few players in ${troubledTeams[0]} and ${troubledTeams[1]}!`);
+    } else {
+      setError(`Too few players in ${troubledTeams[0]}, ${troubledTeams[1]} and ${troubledTeams.length - 2} more team(s)!`);
+    }
+    return false;
+  }
+
   const changeTeam = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     socket?.send(JSON.stringify({ action: 'switch_team', new_team_id: `team_${e.target.value}` }));
   };
 
   const handleStartGame = () => {
+    if (!checkGameValidity()) {
+      return;
+    }
     socket?.send(JSON.stringify({ action: 'start_game' }));
   };
 
@@ -130,10 +159,12 @@ function Lobby() {
             type="button"
             onClick={handleStartGame}
             className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-full text-lg font-medium hover:opacity-90 transition disabled:bg-gray-400"
-            disabled={players.length === 0}
           >
             Start game
           </button>
+          <div className="text-[#FF0000] mt-3 text-lg">
+            {error}
+          </div>
         </div>
       ) : (teams.length !== 1 && (
         <div className="mt-12 text-center">

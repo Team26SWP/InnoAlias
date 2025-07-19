@@ -65,7 +65,7 @@ export function CreateGame(prop: CreateProp) {
   const deleteWord = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!(e.target instanceof HTMLElement)) { return; }
     const deleted = e.target.textContent;
-    setWords(words.filter((word) => word !== deleted));
+    setWords(words.filter((word) => word !== deleted?.substring(0, deleted.length - 2)));
   };
 
   const handleCreateGame = async () => {
@@ -196,6 +196,7 @@ export function CreateGame(prop: CreateProp) {
               <button type="button" key={word} onClick={deleteWord}>
                 <span key={word} className="bg-[#E2E2E2] text-[#1E6DB9] px-4 py-2 rounded-full text-center text-sm font-adlam">
                   {word}
+                  {' ✕'}
                 </span>
               </button>
             ))}
@@ -270,11 +271,11 @@ export function CreateGame(prop: CreateProp) {
                 placeholder={settings.deckLimit === 0 ? '' : settings.deckLimit.toString()}
                 className="w-12 p-2 rounded-md"
               />
-              <span className="text-sm">cards</span>
+              <span className="text-sm">card(s)</span>
             </div>
             {!aiGame && (
               <>
-                <span className="font-bold text-left">Amount Of Guesses:</span>
+                <span className="font-bold text-left">Amount of guesses (per word):</span>
                 <div />
                 <div />
                 <div className="flex items-center gap-2">
@@ -292,7 +293,7 @@ export function CreateGame(prop: CreateProp) {
                   <span className="text-sm">guesses</span>
                 </div>
 
-                <span className="font-bold text-left">Limit Of Correct Answers For The Card:</span>
+                <span className="font-bold text-left">Limit of correct answers for the card:</span>
                 <div />
                 <div />
                 <div className="flex items-center gap-2">
@@ -306,7 +307,7 @@ export function CreateGame(prop: CreateProp) {
                         .toString();
                     }}
                   />
-                  <span className="text-sm">answers</span>
+                  <span className="text-sm">answer(s)</span>
                 </div>
 
                 <span className="font-bold text-left">Number of teams:</span>
@@ -323,7 +324,7 @@ export function CreateGame(prop: CreateProp) {
                         .toString();
                     }}
                   />
-                  <span className="text-sm">teams</span>
+                  <span className="text-sm">team(s)</span>
                 </div>
               </>
             )}

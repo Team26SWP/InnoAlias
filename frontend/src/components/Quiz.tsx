@@ -16,6 +16,7 @@ function Quiz() {
   const [enteredWords, setEnteredWords] = useState<string[]>([]);
   const [inputWord, setInputWord] = useState<string>('');
   const [correctCount, setCorrectCount] = useState(0);
+  const [totalWords, setTotalWords] = useState<number>(0);
   const ws = useRef<WebSocket | null>(null);
 
   // Variables to:
@@ -98,9 +99,10 @@ function Quiz() {
     setGameState(initialState);
     if (!initialState || !initialState.expires_at
       || !initialState.tries_left || !initialState.team_scores) { return; }
-    expiresAt.current = initialState?.expires_at;
-    triesLeft.current = initialState?.tries_left;
-    score.current = initialState?.team_scores[args.current.name];
+    setTotalWords(initialState.remaining_words_count + 1);
+    expiresAt.current = initialState.expires_at;
+    triesLeft.current = initialState.tries_left;
+    score.current = initialState.team_scores[args.current.name];
     setAttemptsLeft(triesLeft.current);
     setCorrectCount(score.current);
   }, []);
@@ -192,6 +194,8 @@ function Quiz() {
             Correct:
             {' '}
             {correctCount}
+            {' / '}
+            {totalWords}
           </div>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col items-center w-full max-w-xl">

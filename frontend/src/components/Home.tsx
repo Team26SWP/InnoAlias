@@ -360,7 +360,7 @@ function Home() {
                 <button
                   type="button"
                   onClick={useThisDeck}
-                  className="px-4 py-2 bg-[#3171a6] text-[#FAF6E9] rounded hover:opacity-90 transition"
+                  className="px-4 py-2 bg-[#1E6DB9] text-[#FAF6E9] rounded hover:opacity-90 transition"
                 >
                   Use this deck
                 </button>
