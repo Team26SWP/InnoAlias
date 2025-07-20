@@ -81,7 +81,7 @@ async def save_deck_service(
         "tags": deck.tags,
         "words": deck.words,
         "owner_ids": [current_user.id],
-        "private": False,
+        "private": deck.private,
     }
 
     await decks.insert_one(temp_deck)
@@ -150,6 +150,7 @@ async def get_deck_detail_service(deck_id: str, current_user: UserInDB):
         words_count=len(deck.get("words", [])),
         tags=deck.get("tags"),
         words=deck.get("words", []),
+        private=deck.get("private", False),
     )
 
 
