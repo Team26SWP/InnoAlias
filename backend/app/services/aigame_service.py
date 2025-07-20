@@ -181,7 +181,7 @@ async def generate_clue(
         )
 
         response_json = json.loads(result.stdout)
-        generated_text = response_json["candidates"][0]["content"]["parts"][0]["text"]
+        generated_text = response_json['candidates'][0]['content']['parts'][0]['text']
 
         return generated_text.strip() or ""
 
