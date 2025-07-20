@@ -207,6 +207,7 @@ function Home() {
   }, []);
 
   const useThisDeck = useCallback((): void => {
+    if (!isLoggedIn) { config.navigateTo(config.Page.Login); return; }
     if (!selectedDeck) return;
     config.addWords(selectedDeck.words);
     config.setDeckChoice(true);
@@ -354,12 +355,20 @@ function Home() {
           ))}
         </div>
         {loadingMore && (
-          <div className="mt-6 block mx-auto text-center text-[#1E6DB9] font-adlam">Loading more...</div>
+          <div className="mt-6 block mx-auto text-center text-4xl text-[#1E6DB9] font-adlam">Loading more...</div>
         )}
         {!hasMore && filtered.length === 0 && (
-          <div className="mt-6 block mx-auto text-center text-[#1E6DB9] font-adlam">No decks found.</div>
+          <div className="mt-6 block mx-auto text-center text-4xl text-[#1E6DB9] font-adlam">No decks found.</div>
         )}
       </div>
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
       {selectedDeck && (
         <>
           <button
