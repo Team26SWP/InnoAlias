@@ -186,10 +186,11 @@ async def generate_clue(
         return generated_text.strip() or ""
 
     except subprocess.CalledProcessError as e:
-        error_message = "Error executing curl command:\n"
-        error_message += f"Exit Code: {e.returncode}\n"
-
-        return error_message
+        print("--- API CALL FAILED ---")
+        print(f"Status Code: {e.response.status_code}")
+        print(f"Error Response Body: {e.response.text}") 
+        print("-----------------------")
+        return "Error: Could not generate a clue due to an API error."
 
 
 async def handle_guess(game_id: str, guess: str):
