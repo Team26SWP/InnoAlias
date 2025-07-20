@@ -2,9 +2,7 @@ name: CD
 
 on:
   push:
-    tags:
-      - 'mvp_v*'
-      - 'v*'
+    branches: [ main ]
 
 concurrency:
   group: deploy-${{ github.ref }}
