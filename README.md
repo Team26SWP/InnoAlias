@@ -10,17 +10,15 @@
 
 <p align="center">
    The best web-application for learning terminology! </br>
-   <a href="http://77.233.212.78/">Check this out!</a>
+   <a href="http://innoalias.duckdns.org/">Check this out!</a>
    <a href="https://drive.google.com/file/d/1oolvEd4Spec83L30ltrqCgKBHdhIibCs/view?usp=drive_link">View demo</a>
 </p>
 
-## About us
+## About the project
 
-Memorizing new terminology can be tedious and boring, we are sure we've all faced this problem. And there are many tools that aim to fix it, take flashcards, for example. However, they can also fail to be engaging. That is where our solution comes in.
-Alias is a game where players explain words to eachother, gaining points for each correct guess. Our app will help you learn new terminology, while also having fun with your friends, also improving the understanding of said terminology. With it, you can:
-- Combine business with pleasure
-- Actually understand new words, not simply memorize them
-- Have a unique experience tailored specifically to your needs
+Alias is a game that helps you memorize terms. Players divide into teams, and in each team a player called the "game master" explains a word to their teammates, while they guess. The goal is to guess as many words as possible.
+
+The problem with regular memorization methods is that they are often boring and too shallow. Our product solves this problem by making learning fun and efficient. Moreover, it makes playing with your friends convenient, as it introduces savable decks, flexible game settings and a deck gallery to share decks with others! 
 
 ## Project context diagram
 
@@ -36,30 +34,69 @@ Alias is a game where players explain words to eachother, gaining points for eac
 - [x] Teams game mode
 - [x] Deck gallery
 - [x] Singleplayer
+- [ ] Additional game modes
+- [ ] Innopolis SSO support
 
 ## Usage   
 
-- Go to our website
-- Create a new account
-- Have fun with your friends!
+| URL            | http://innoalias.duckdns.org/ |
+|----------------|------------------------------|
+
+### Creating an account
+1. Click "Log in"
+2. "Sign in"
+3. Enter your credentials and click "Create"
+
+### Hosting a game
+1. Click "Create lobby"
+2. Enter words by hand, via a txt file or from a saved deck
+3. Change settings to your preferences (optional)
+4. Click "Create Game"
+5. Whenever you are ready, click "Start game"
+
+### Joining game
+1. Click "Join game"
+2. Enter code shared by the host
+3. Click "Join"
+
+OR
+
+Go to the link shared by the host
+
+OR
+
+Scan the QR code shared by the host
+
+### Saving a deck (after a played game)
+1. Click "Save deck"
+2. Provide name, tags and select privacy option
+3. Click "Save"
+
+### Creating a deck
+1. Click "Profile"
+2. Click "Create deck"
+3. Fill in deck name, words and pick privacy option
+4. Click "Create"
+
+### Browsing gallery
+1. Scroll down on the main page
+2. Select the deck you are interested in
+3. Click "Save to profile" to save to profile
+4. Click "Use this deck" to start creating a game with words from this deck
+
+### Playing with AI
+1. Click "Singleplayer"
+2. Add words, similarly to regular game
+3. Change settings to your preferences (optional)
+4. Click "Create game"
 
 ## Installation
 
-### 1. Hosted demo (fastest way)
-
-| URL            | http://77.233.212.78/ |
-|----------------|------------------------------|
-| Test account   | email: demo@example.com<br>password: Demo1234! |
-
-1. Open the link above.  
-2. Sign in with the test credentials.  
-3. Explore features.
-
-### 2. Running locally (via Docker)
+### Running locally (via Docker)
 
 If you want to **build and run everything from source on your own computer**, follow the steps below.
 
-#### 2.1  Prerequisites
+#### 1  Prerequisites
 
 | Tool | Version | Check |
 |------|---------|-------|
@@ -70,14 +107,14 @@ If you want to **build and run everything from source on your own computer**, fo
 
 ---
 
-#### 2.2  Clone the repo
+#### 2  Clone the repo
 
 ```bash
 git clone https://github.com/Team26/InnoAlias.git
 cd innoalias
 ```
 
-#### 2.3 Add local environment variables
+#### 3 Add local environment variables
 ```bash
 cp .env.example .env # Secret key you can generate via command "openssl rand -base64 32"
 nano .env
@@ -85,7 +122,7 @@ nano .env
 
 The .env file already contains safe defaults (no production secrets). Adjust anything you need.
 
-#### 2.4 Launch the building!
+#### 4 Launch the building!
 
 ```bash
 docker-compose -f docker-compose-dev.yml up -d --build
