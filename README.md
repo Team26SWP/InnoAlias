@@ -88,7 +88,7 @@ The .env file already contains safe defaults (no production secrets). Adjust any
 #### 2.4 Launch the building!
 
 ```bash
-docker-compose up -f docker-compose-dev.yml -d --build
+docker-compose -f docker-compose-dev.yml up -d --build
 ```
 
 After build, you can use app on localhost.
