@@ -1,5 +1,7 @@
 import asyncio
+import json
 import random
+import subprocess
 from datetime import UTC, datetime, timedelta
 
 import requests
@@ -150,11 +152,9 @@ async def generate_clue(
     if previous_clues:
         prompt += "PREVIOUS CLUES:" + ", ".join(previous_clues)
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL_NAME}:generateContent"
-
     data = {
         "generationConfig": {
-            "stopSequences": [[".", "?", "!", "\n"]],
+            "stopSequences": [".", "?", "!", "\n"],
             "temperature": 0.8,
             "maxOutputTokens": 50,
             "topP": 0.95,
@@ -163,13 +163,33 @@ async def generate_clue(
         "contents": [{"parts": [{"text": f"{prompt}"}]}],
     }
 
-    headers = {
-        "content-type": "application/json",
-        "x-goog-api-key": f"{GEMINI_API_KEY}",
-    }
+    curl_command = [
+        'curl',
+        f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL_NAME}:generateContent',
+        '-X', 'POST',
+        '-H', 'Content-Type: application/json',
+        '-H', f'x-goog-api-key: {GEMINI_API_KEY}',
+        '-d', json.dumps(data)
+    ]
 
-    response = requests.post(url, json=data, headers=headers)
-    return response.text or ""
+    try:
+        result = subprocess.run(
+            curl_command,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        response_json = json.loads(result.stdout)
+        generated_text = response_json['candidates'][0]['content']['parts'][0]['text']
+
+        return generated_text.strip() or ""
+
+    except subprocess.CalledProcessError as e:
+        error_message = f"Error executing curl command:\n"
+        error_message += f"Exit Code: {e.returncode}\n"
+
+        return error_message
 
 
 async def handle_guess(game_id: str, guess: str):
