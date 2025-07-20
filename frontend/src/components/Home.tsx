@@ -223,7 +223,7 @@ function Home() {
       <div className="relative h-screen flex flex-col items-center justify-center px-6">
         <div className="absolute top-4 left-4 p-1 flex justify-between items-center">
           <a
-            href="https://github.com/Team26SWP"
+            href="https://github.com/Team26SWP/InnoAlias"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"
