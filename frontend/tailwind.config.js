@@ -1,12 +1,12 @@
 module.exports = {
-  darkMode: 'media',
+  darkMode: 'class',
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",  
   ],
   theme: {
     extend: {
       fontFamily: {
-        adlam: ['"ADLaM Display"', 'sans-serif'],
+        adlam: ['Comfortaa', 'sans-serif'],
       },
       colors: {
         background: '#FAF6E9',

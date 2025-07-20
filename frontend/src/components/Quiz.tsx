@@ -3,6 +3,51 @@ import React, {
 } from 'react';
 import * as config from './config';
 
+interface StackCardProps {
+  word: string
+  layerCount?: number
+  offsetPx?: number
+}
+
+function StackCard({
+  word,
+  layerCount = 4,
+  offsetPx = 6,
+}: StackCardProps) {
+  const layers = Array.from({ length: layerCount }, (_, i) => i);
+
+  return (
+    <div className="relative w-80 h-48 mb-6">
+      {layers.map((i) => (
+        <div
+          key={i}
+          className="absolute left-0 right-0 rounded-2xl flex items-center justify-center"
+          style={{
+            top: `${i * offsetPx}px`,
+            height: '100%',
+            backgroundColor:
+              i === 0
+                ? '#DBD9D1'
+                : `rgba(217, 217, 217, ${0.8 - i * (0.8 / layerCount)})`,
+            zIndex: layerCount - i,
+          }}
+        >
+          {i === 0 && (
+            <span className="text-4xl font-bold text-primary">
+              {word}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+StackCard.defaultProps = {
+  layerCount: 4,
+  offsetPx: 6,
+};
+
 function Quiz() {
   const args = useRef<config.Arguments>({ name: '', code: '', isHost: false });
 
@@ -169,9 +214,7 @@ function Quiz() {
         <div className="text-xl mb-6">
           {gameState.current_word !== null ? `Time left: ${timeStr}` : 'Out of words!'}
         </div>
-        <div className="text-4xl font-bold bg-gray-200 px-12 py-8 rounded-xl shadow mb-4">
-          {gameState.current_word || 'Your team is out of words!'}
-        </div>
+        <StackCard word={gameState.current_word || 'Your team is out of words!'} />
         <button type="button" onClick={handleSkip} className="mt-2 bg-[#3171a6] text-white px-6 py-3 rounded-lg hover:bg-[#2c5d8f]">Skip</button>
       </div>
     );

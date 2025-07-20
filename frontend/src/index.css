@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 body {
-  @apply font-adlam;
+    @apply font-adlam;
 }
+
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;

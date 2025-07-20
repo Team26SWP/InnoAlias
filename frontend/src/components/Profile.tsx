@@ -369,7 +369,7 @@ function Profile() {
           tabIndex={0}
           onClick={() => openModal(-1)}
           onKeyDown={(e) => e.key === 'Enter' && openModal(-1)}
-          className="text-center cursor-pointer bg-[#1E6DB9] hover:opacity-90 text-[#d9d9d9] font-bold text-3xl py-5 px-4 rounded-lg shadow-sm transition"
+          className="text-center cursor-pointer bg-[#1E6DB9] hover:opacity-90 text-[#d9d9d9] font-bold text-3xl py-4 px-6 rounded-lg shadow-sm transition"
         >
           <div>Create a deck</div>
         </div>
@@ -417,9 +417,9 @@ function Profile() {
                   <>
                     <button type="button" onClick={toggleEditAll} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">Edit</button>
                     <button type="button" onClick={deleteDeck} className="px-2 py-1 text-red-500 rounded text-sm">Delete</button>
+                    <button type="button" onClick={closeModal} className="px-2 py-1 text-gray-500 hover:text-gray-700 text-sm">✕</button>
                   </>
                 )}
-                <button type="button" onClick={closeModal} className="px-2 py-1 text-gray-500 hover:text-gray-700 text-sm">✕</button>
               </div>
             </div>
 

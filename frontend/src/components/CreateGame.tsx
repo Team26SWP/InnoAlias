@@ -62,11 +62,11 @@ export function CreateGame(prop: CreateProp) {
     return num;
   }
 
-  const deleteWord = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!(e.target instanceof HTMLElement)) { return; }
-    const deleted = e.target.textContent;
-    setWords(words.filter((word) => word !== deleted?.substring(0, deleted.length - 2)));
-  };
+  // const deleteWord = (e: React.MouseEvent<HTMLButtonElement>) => {
+  //   if (!(e.target instanceof HTMLElement)) { return; }
+  //   const deleted = e.target.textContent;
+  //   setWords(words.filter((word) => word !== deleted?.substring(0, deleted.length - 2)));
+  // };
 
   const handleCreateGame = async () => {
     setIsLoading(true);
@@ -174,7 +174,7 @@ export function CreateGame(prop: CreateProp) {
       </button>
       <h1 className="text-4xl font-bold mb-10 text-center">Create Game</h1>
 
-      <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl items-start">
+      <div className="flex flex-col sm:flex-row sm:gap-4 gap-8 w-full min-w-lg max-w-6xl items-start">
         <div className="flex-1 w-full">
           <form onSubmit={handleSubmit}>
             <input
@@ -182,35 +182,44 @@ export function CreateGame(prop: CreateProp) {
               placeholder="Enter a word(-s)........"
               value={currentWord}
               onChange={(e) => setCurrentWord(e.target.value)}
-              className="w-full bg-[#D9D9D9] placeholder:text-[#7d7d7d] text-[#1E6DB9] px-6 py-4 text-lg rounded-full outline-none font-adlam mb-10"
+              className="w-[90%] bg-[#D9D9D9] placeholder:text-[#7d7d7d] text-[#1E6DB9] px-6 py-4 text-lg rounded-full outline-none font-adlam mb-10"
             />
           </form>
 
-          <h2 className="text-xl font-bold mb-4">
+          <h2 className="text-sm sm:text-2xl font-bold mb-4">
             Added Words (
             {words.length}
             ):
           </h2>
-          <div className="grid grid-cols-5 md:grid-cols-7 gap-4">
-            {words.map((word) => (
-              <button type="button" key={word} onClick={deleteWord}>
-                <span key={word} className="bg-[#E2E2E2] text-[#1E6DB9] px-4 py-2 rounded-full text-center text-sm font-adlam">
-                  {word}
-                  {' ✕'}
-                </span>
-              </button>
-            ))}
+          <div className="max-h-40 overflow-y-auto outline-none max-w-43 pr-2">
+            <ul className="space-y-2 ">
+              {words.map((word) => (
+                <li
+                  key={word}
+                  className="flex items-center gap-2 group"
+                >
+                  <span className="text-[#1E6DB9] break-words whitespace-normal font-adlam">{word}</span>
+                  <button
+                    type="button"
+                    onClick={() => setWords(words.filter((w) => w !== word))}
+                    className="text-[#1E6DB9] opacity-0 group-hover:opacity-100 transition-opacity hover:text-[#1E6DB9] text-sm"
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 min-w-[160px]">
-          <button type="button" onClick={handleSubmit} className="bg-[#1E6DB9] text-[#FAF6E9] px-4 py-5 rounded-md font-adlam">Add</button>
-          <label htmlFor="file-submit" className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-md text-center font-adlam cursor-pointer">
+        <div className="flex flex-col gap-4 min-w-[60px]">
+          <button type="button" onClick={handleSubmit} className="bg-[#1E6DB9] text-[#FAF6E9] px-2 py-1 sm:px-5 sm:py-2 md:px-6 md:py-3  lg:px-7 lg:py-3  xl:px-8 xl:py-3  2xl:px-8 2xl:py-3 rounded-md font-adlam">Add</button>
+          <label htmlFor="file-submit" className="bg-[#1E6DB9] text-[#FAF6E9]  px-2 py-1 sm:px-5 sm:py-2 md:px-6 md:py-3  lg:px-7 lg:py-3  xl:px-8 xl:py-3  2xl:px-8 2xl:py-3  rounded-md text-center font-adlam cursor-pointer">
             Import via txt
             <input type="file" className="hidden" onChange={fileSubmit} id="file-submit" accept=".txt" />
           </label>
-          <button type="button" onClick={loadDeck} className="bg-[#1E6DB9] text-[#FAF6E9] px-8 py-3 rounded-md font-adlam">Saved Decks</button>
-          <button type="button" onClick={() => setShowSettings(true)} className="bg-[#DBD9D1] text-[#1E6DB9] px-4 py-3 rounded-md font-adlam">Settings</button>
+          <button type="button" onClick={loadDeck} className="bg-[#1E6DB9] text-[#FAF6E9] px-2 py-1 sm:px-5 sm:py-2 md:px-6 md:py-3  lg:px-7 lg:py-3  xl:px-8 xl:py-3  2xl:px-8 2xl:py-3 rounded-md font-adlam">Saved Decks</button>
+          <button type="button" onClick={() => setShowSettings(true)} className="bg-[#DBD9D1] text-[#1E6DB9] px-2 py-1 sm:px-5 sm:py-2 md:px-6 md:py-3  lg:px-7 lg:py-3  xl:px-8 xl:py-3  2xl:px-8 2xl:py-3 rounded-md font-adlam">Settings</button>
         </div>
       </div>
 
