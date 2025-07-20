@@ -101,6 +101,22 @@ function Home() {
     };
   }, [loadingMore, hasMore]);
 
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const isDarkMode = savedTheme === 'dark';
+    setIsDark(isDarkMode);
+    document.documentElement.classList.toggle('dark', isDarkMode);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = !isDark;
+    setIsDark(newTheme);
+    document.documentElement.classList.toggle('dark', newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+  };
+
   // Меняется стр => подгруз нового
   useEffect(() => {
     if (page === 1) return;
@@ -204,6 +220,52 @@ function Home() {
   return (
     <div className="bg-[#FAF6E9] dark:bg-[#1A1A1A] text-[#1E6DB9]">
       <div className="relative h-screen flex flex-col items-center justify-center px-6">
+        <div className="absolute top-4 left-4 p-1 flex justify-between items-center">
+          <a
+            href="https://github.com/Team26SWP"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub"
+            className="text-gray-700 dark:text-white hover:opacity-80 transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 .5C5.73.5.5 5.74.5 12.01c0 5.1 3.29 9.43 7.86 10.96.58.11.79-.25.79-.56
+                      0-.28-.01-1.02-.01-2-3.2.7-3.87-1.54-3.87-1.54-.53-1.35-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71
+                      1.17.08 1.79 1.21 1.79 1.21 1.04 1.78 2.73 1.27 3.4.97.11-.76.41-1.28.74-1.57-2.55-.29-5.23-1.28-5.23-5.7
+                      0-1.26.45-2.29 1.2-3.1-.12-.3-.52-1.49.11-3.1 0 0 .97-.31 3.17 1.18a11.03 11.03 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63
+                      1.61.23 2.8.11 3.1.75.81 1.2 1.84 1.2 3.1 0 4.43-2.68 5.41-5.24 5.69.43.37.81 1.1.81 2.22 0 1.6-.01 2.89-.01 3.28 0
+                      .31.21.68.8.56A10.51 10.51 0 0 0 23.5 12C23.5 5.74 18.27.5 12 .5z"
+              />
+            </svg>
+          </a>
+        </div>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+          className="absolute top-4 left-14 p-1.5 text-gray-700 dark:text-white hover:opacity-80 transition"
+        >
+          {isDark ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"
+              />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4V2m0 20v-2m8-8h2M2 12h2m14.14-7.07l1.42-1.42M4.44 19.56l1.42-1.42M19.56 19.56l-1.42-1.42M4.44 4.44l1.42 1.42M12 7a5 5 0 100 10 5 5 0 000-10z"
+              />
+            </svg>
+          )}
+        </button>
+
         <button
           type="button"
           aria-label={isLoggedIn ? 'Profile' : 'Log in'}
@@ -241,11 +303,11 @@ function Home() {
             type="button"
             onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
             aria-label="Scroll to gallery"
-            className="absolute bottom-6 animate-bounce focus:outline-none"
+            className="absolute bottom-16 animate-bounce focus:outline-none"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6 sm:w-8 sm:h-8 text-white opacity-70"
+              className="w-6 h-6 sm:w-8 sm:h-8 text-gray-700 dark:text-white opacity-70"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

@@ -98,6 +98,7 @@ function Profile() {
         private: true,
       });
       setIsEditingAll(true);
+      setDraftTags([]);
     } else {
       const deckId = decks[index].id;
       const token = localStorage.getItem('access_token');
@@ -109,7 +110,14 @@ function Profile() {
         },
       });
       const data = await response.json();
-      setDraft({ ...decks[index], words: data.words, private: data.private });
+      console.log(data.private);
+      setDraft({
+        ...decks[index],
+        words: data.words,
+        private: data.private,
+        tags: data.tags,
+      });
+      setDraftTags(data.tags);
       setIsEditingAll(false);
     }
     setActiveIndex(index);
@@ -208,6 +216,12 @@ function Profile() {
   };
 
   const cancelAll = () => {
+    if (deckCreate) {
+      setIsEditingAll(false);
+      setDeckCreate(false);
+      setDraft(null);
+      closeModal();
+    }
     if (activeIndex !== null && draft) setDraft({ ...draft });
     setIsEditingAll(false);
     setNewWordText('');
@@ -257,6 +271,7 @@ function Profile() {
     if (!draft || !draft.name || !draft.words || draft.words.length === 0) { return; }
     const valid = await config.validateToken();
     if (!valid) { config.navigateTo(config.Page.Home); return; }
+    console.log(draft.private);
     await fetch(`${config.HTTP_URL}/profile/deck/save`, {
       method: 'POST',
       headers: {
@@ -354,7 +369,7 @@ function Profile() {
           tabIndex={0}
           onClick={() => openModal(-1)}
           onKeyDown={(e) => e.key === 'Enter' && openModal(-1)}
-          className="cursor-pointer bg-[#d9d9d9] hover:bg-[#c9c9c9] text-[#1E6DB9] font-bold text-sm py-5 px-4 rounded-lg shadow-sm transition"
+          className="text-center cursor-pointer bg-[#1E6DB9] hover:opacity-90 text-[#d9d9d9] font-bold text-3xl py-4 px-6 rounded-lg shadow-sm transition"
         >
           <div>Create a deck</div>
         </div>
@@ -402,20 +417,20 @@ function Profile() {
                   <>
                     <button type="button" onClick={toggleEditAll} className="px-2 py-1 bg-[#1E6DB9] text-white rounded text-sm">Edit</button>
                     <button type="button" onClick={deleteDeck} className="px-2 py-1 text-red-500 rounded text-sm">Delete</button>
+                    <button type="button" onClick={closeModal} className="px-2 py-1 text-gray-500 hover:text-gray-700 text-sm">✕</button>
                   </>
                 )}
-                <button type="button" onClick={closeModal} className="px-2 py-1 text-gray-500 hover:text-gray-700 text-sm">✕</button>
               </div>
             </div>
 
             {isEditingAll && (
               <>
                 <label htmlFor="public" className="mr-10">
-                  <input type="radio" id="public" name="isPublic" className="mr-2" defaultChecked onClick={() => { draft.private = false; }} />
+                  <input type="radio" id="public" name="isPublic" className="mr-2" defaultChecked={!draft.private} onClick={() => { draft.private = false; }} />
                   Public
                 </label>
                 <label htmlFor="private" className="mr-10">
-                  <input type="radio" id="private" name="isPublic" className="mr-2" onClick={() => { draft.private = true; }} />
+                  <input type="radio" id="private" name="isPublic" className="mr-2" defaultChecked={draft.private} onClick={() => { draft.private = true; }} />
                   Private
                 </label>
                 <label htmlFor="tagInput" className="block text-sm text-[#3171a6] font-medium mb-1">
