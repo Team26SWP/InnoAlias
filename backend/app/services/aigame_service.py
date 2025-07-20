@@ -1,17 +1,15 @@
 import asyncio
 import random
+import requests
 from datetime import UTC, datetime, timedelta
 
 from fastapi import WebSocket
-from google import genai
 from google.genai.types import GenerateContentConfig
 
 from backend.app.code_gen import generate_aigame_code
 from backend.app.config import GEMINI_API_KEY, GEMINI_MODEL_NAME, system_instructions
 from backend.app.db import db
 from backend.app.models import AIGame
-
-client = genai.Client(api_key=GEMINI_API_KEY)
 
 aigames = db.aigames
 
@@ -153,17 +151,41 @@ async def generate_clue(
     if previous_clues:
         prompt += "PREVIOUS CLUES:" + ", ".join(previous_clues)
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL_NAME,
-        contents=prompt,
-        config=GenerateContentConfig(
-            stop_sequences=[".", "?", "!", "\n"],
-            system_instruction=system_instructions,
-            temperature=0.8,
-            max_output_tokens=50,
-            top_p=0.95,
-        ),
-    )
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL_NAME}:generateContent"
+
+    data = {
+        "generationConfig": {
+            "stopSequences": [
+                [".", "?", "!", "\n"]
+            ],
+            "temperature": 0.8,
+            "maxOutputTokens": 50,
+            "topP": 0.95
+        },
+
+        "system_instruction": {
+            "parts": [
+                {
+                    "text": f"{system_instructions}"
+                }
+            ]
+        },
+
+        "contents": [
+          {
+            "parts": [
+              {
+                "text": f"{prompt}"
+              }
+            ]
+          }
+        ]
+      }
+
+    headers = {"content-type": "application/json", "x-goog-api-key": f"{GEMINI_API_KEY}"}
+
+    response = requests.post(url, json=data, headers=headers)
     return response.text or ""
 
 
