@@ -14,5 +14,3 @@ mongomock_motor
 pytest
 python-multipart
 types-python-jose
-requests
-types-requests

@@ -4,7 +4,6 @@ import random
 import subprocess
 from datetime import UTC, datetime, timedelta
 
-import requests
 from fastapi import WebSocket
 
 from backend.app.code_gen import generate_aigame_code
@@ -164,29 +163,30 @@ async def generate_clue(
     }
 
     curl_command = [
-        'curl',
-        f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL_NAME}:generateContent',
-        '-X', 'POST',
-        '-H', 'Content-Type: application/json',
-        '-H', f'x-goog-api-key: {GEMINI_API_KEY}',
-        '-d', json.dumps(data)
+        "curl",
+        f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL_NAME}:generateContent",
+        "-X",
+        "POST",
+        "-H",
+        "Content-Type: application/json",
+        "-H",
+        f"x-goog-api-key: {GEMINI_API_KEY}",
+        "-d",
+        json.dumps(data),
     ]
 
     try:
         result = subprocess.run(
-            curl_command,
-            capture_output=True,
-            text=True,
-            check=True
+            curl_command, capture_output=True, text=True, check=True
         )
 
         response_json = json.loads(result.stdout)
-        generated_text = response_json['candidates'][0]['content']['parts'][0]['text']
+        generated_text = response_json["candidates"][0]["content"]["parts"][0]["text"]
 
         return generated_text.strip() or ""
 
     except subprocess.CalledProcessError as e:
-        error_message = f"Error executing curl command:\n"
+        error_message = "Error executing curl command:\n"
         error_message += f"Exit Code: {e.returncode}\n"
 
         return error_message
