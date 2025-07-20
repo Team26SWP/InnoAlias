@@ -4,6 +4,7 @@ import random
 import subprocess
 from datetime import UTC, datetime, timedelta
 
+import requests
 from fastapi import WebSocket
 
 from backend.app.code_gen import generate_aigame_code
