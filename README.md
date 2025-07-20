@@ -10,7 +10,7 @@
 
 <p align="center">
    The best web-application for learning terminology! </br>
-   <a href="http://217.199.253.164/">Check this out!</a>
+   <a href="http://77.233.212.78/">Check this out!</a>
    <a href="https://drive.google.com/file/d/1oolvEd4Spec83L30ltrqCgKBHdhIibCs/view?usp=drive_link">View demo</a>
 </p>
 
@@ -18,7 +18,7 @@
 
 Memorizing new terminology can be tedious and boring, we are sure we've all faced this problem. And there are many tools that aim to fix it, take flashcards, for example. However, they can also fail to be engaging. That is where our solution comes in.
 Alias is a game where players explain words to eachother, gaining points for each correct guess. Our app will help you learn new terminology, while also having fun with your friends, also improving the understanding of said terminology. With it, you can:
-- Combine buisness with pleasure
+- Combine business with pleasure
 - Actually understand new words, not simply memorize them
 - Have a unique experience tailored specifically to your needs
 
@@ -47,7 +47,7 @@ Alias is a game where players explain words to eachother, gaining points for eac
 
 ### 1. Hosted demo (fastest way)
 
-| URL            | http://217.199.253.164/ |
+| URL            | http://77.233.212.78/ |
 |----------------|------------------------------|
 | Test account   | email: demo@example.com<br>password: Demo1234! |
 
@@ -88,16 +88,16 @@ The .env file already contains safe defaults (no production secrets). Adjust any
 #### 2.4 Launch the building!
 
 ```bash
-docker-compose up -f docker-compose-dev.yml -d --build
+docker-compose -f docker-compose-dev.yml up -d --build
 ```
 
 After build, you can use app on localhost.
 
 ## Documentation
 
-- [Develompent](https://github.com/Team26SWP/InnoAlias/blob/main/CONTRIBUTING.md)
-- [Quality attribute scenatios](https://github.com/Team26SWP/InnoAlias/blob/main/docs/quality-attributes/quality-attribute-scenarios.md)
-- [Quality assurane](https://github.com/Team26SWP/InnoAlias/tree/main/docs/quality-assurance)
+- [Development](https://github.com/Team26SWP/InnoAlias/blob/main/CONTRIBUTING.md)
+- [Quality attribute scenarios](https://github.com/Team26SWP/InnoAlias/blob/main/docs/quality-attributes/quality-attribute-scenarios.md)
+- [Quality assurance](https://github.com/Team26SWP/InnoAlias/tree/main/docs/quality-assurance)
 - [Build and deployment](https://github.com/Team26SWP/InnoAlias/tree/main/docs/automation)
 - [Architecture](https://github.com/Team26SWP/InnoAlias/blob/main/docs/architecture/achitecture.md)
 

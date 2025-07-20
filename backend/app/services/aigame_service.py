@@ -1,17 +1,15 @@
 import asyncio
+import json
 import random
+import subprocess
 from datetime import UTC, datetime, timedelta
 
 from fastapi import WebSocket
-from google import genai
-from google.genai.types import GenerateContentConfig
 
 from backend.app.code_gen import generate_aigame_code
 from backend.app.config import GEMINI_API_KEY, GEMINI_MODEL_NAME, system_instructions
 from backend.app.db import db
 from backend.app.models import AIGame
-
-client = genai.Client(api_key=GEMINI_API_KEY)
 
 aigames = db.aigames
 
@@ -153,18 +151,46 @@ async def generate_clue(
     if previous_clues:
         prompt += "PREVIOUS CLUES:" + ", ".join(previous_clues)
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL_NAME,
-        contents=prompt,
-        config=GenerateContentConfig(
-            stop_sequences=[".", "?", "!", "\n"],
-            system_instruction=system_instructions,
-            temperature=0.8,
-            max_output_tokens=50,
-            top_p=0.95,
-        ),
-    )
-    return response.text or ""
+    data = {
+        "generationConfig": {
+            "stopSequences": [".", "?", "!", "\n"],
+            "temperature": 0.8,
+            "maxOutputTokens": 50,
+            "topP": 0.95,
+        },
+        "system_instruction": {"parts": [{"text": f"{system_instructions}"}]},
+        "contents": [{"parts": [{"text": f"{prompt}"}]}],
+    }
+
+    curl_command = [
+        "curl",
+        f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL_NAME}:generateContent",
+        "-X",
+        "POST",
+        "-H",
+        "Content-Type: application/json",
+        "-H",
+        f"x-goog-api-key: {GEMINI_API_KEY}",
+        "-d",
+        json.dumps(data),
+    ]
+
+    try:
+        result = subprocess.run(
+            curl_command, capture_output=True, text=True, check=True
+        )
+
+        response_json = json.loads(result.stdout)
+        generated_text = response_json['candidates'][0]['content']['parts'][0]['text']
+
+        return generated_text.strip() or ""
+
+    except subprocess.CalledProcessError as e:
+        print("--- API CALL FAILED ---")
+        print(f"Status Code: {e.response.status_code}")
+        print(f"Error Response Body: {e.response.text}") 
+        print("-----------------------")
+        return "Error: Could not generate a clue due to an API error."
 
 
 async def handle_guess(game_id: str, guess: str):

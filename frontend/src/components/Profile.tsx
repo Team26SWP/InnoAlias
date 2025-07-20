@@ -369,7 +369,7 @@ function Profile() {
           tabIndex={0}
           onClick={() => openModal(-1)}
           onKeyDown={(e) => e.key === 'Enter' && openModal(-1)}
-          className="text-center cursor-pointer bg-[#1E6DB9] hover:opacity-90 text-[#d9d9d9] font-bold text-3xl py-4 px-6 rounded-lg shadow-sm transition"
+          className="text-center cursor-pointer bg-[#1E6DB9] hover:opacity-90 text-[#d9d9d9] font-bold text-3xl py-4 px-6 rounded-lg shadow-sm transition"      
         >
           <div>Create a deck</div>
         </div>
