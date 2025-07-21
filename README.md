@@ -8,6 +8,10 @@
 
 <h1 align="center">Alias</h1>
 
+<div align="center">
+   <img src="docs/images/logo.svg" height="200px" align="center">
+</div>
+
 <p align="center">
    The best web-application for learning terminology! </br>
    <a href="http://innoalias.duckdns.org/">Check this out!</a>
